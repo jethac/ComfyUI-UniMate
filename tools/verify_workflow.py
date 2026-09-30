@@ -154,7 +154,8 @@ def verify(args):
             str(args.cloud_root.resolve()) + os.pathsep + env.get("PYTHONPATH", "")
         )
     command = [
-        str(args.python.resolve()),
+        # Resolving a Unix venv symlink selects the system interpreter instead.
+        str(args.python.absolute()),
         str(args.comfy_root.resolve() / "main.py"),
         "--listen",
         "127.0.0.1",
@@ -173,6 +174,8 @@ def verify(args):
         "comfy-unimate",
         "cloud-runtime",
     ]
+    if getattr(args, "cpu", False):
+        command.append("--cpu")
     revision = subprocess.run(
         ["git", "-C", str(args.comfy_root), "rev-parse", "HEAD"],
         capture_output=True,
@@ -183,6 +186,8 @@ def verify(args):
         "comfy_root": str(args.comfy_root),
         "comfy_revision": revision,
         "workspace": str(workspace),
+        "python_executable": str(args.python.absolute()),
+        "cpu_requested": bool(getattr(args, "cpu", False)),
         "graphs": [],
     }
     log = (workspace / "server.log").open("wb")
@@ -211,6 +216,7 @@ def verify(args):
         assert all(graph[n]["class_type"] in info for n in graph), (
             "UniMate nodes failed registration"
         )
+        report["system_stats"] = json.loads(request(base, "/system_stats"))
         if args.cloud_root:
             # Capture actual node values through ComfyUI execution, never direct codec calls.
             capture = json.loads(json.dumps(graph))
@@ -357,6 +363,7 @@ def main():
         help="Cloud Offload source checkout with runner bridge nodes",
     )
     parser.add_argument("--branching", action="store_true")
+    parser.add_argument("--cpu", action="store_true", help="Run ComfyUI on CPU")
     args = parser.parse_args()
     print(json.dumps(verify(args), indent=2))
 

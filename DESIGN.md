@@ -138,7 +138,7 @@ Dependencies cover the inference closure; upstream's full training requirements 
 
 `models/unimate` is a registered category. `tools/build_bundle.py` manually converts selected artifacts using `torch.load(weights_only=True)` and explicit EMA tensors, with no raw fallback. Legacy statistics require `--trust-legacy-stats` and the pinned official digest before deserializing the authenticated snapshot. Runtime loads safetensors/numeric NPZ only and never downloads.
 
-ComfyUI selects execution/offload devices and manages both networks through ModelPatcher. An encoder wrapper handles Transformers' read-only device property; detach callbacks clear upstream's unregistered lazy rotary GPU tensors. Float32 Windows CUDA inference/unload was verified. Linux CPU node plumbing and Blender checks passed. Complete CPU generation, Linux GPU inference, lower precision, and other GPUs remain unclaimed.
+ComfyUI selects execution/offload devices and manages both networks through ModelPatcher. An encoder wrapper handles Transformers' read-only device property; detach callbacks clear upstream's unregistered lazy rotary GPU tensors. Float32 Windows CUDA inference/unload was verified. Linux CPU generation, partition bridges, and Blender playback passed on the recorded synthetic fixture. Linux GPU inference, lower precision, and other GPUs remain unclaimed.
 
 Text/joint encoding is local. Prepared conditioning goes directly to the pinned sampler without a dataset directory. Normalization, masks, topology, and guidance are reference-compared. Embeddings are cached on CPU; runtime objects are keyed by complete bundle identity.
 

@@ -64,6 +64,18 @@ Separate localhost tests use a real bearer-authenticated FastAPI/uvicorn server,
 
 Cloud evidence references coordinator baseline `46de766fcbd0f557adefeac6f740973b8dd0aa3b` plus the integration commit recorded in deploy/README.md. No published corrected image is identified. The Linux [runner recipe](deploy/README.md) is prepared, unbuilt, and untested. [Linux CI](https://github.com/jethac/ComfyUI-UniMate/actions/runs/36657862434) passed on node-pack revision `718a12a`, using checksum-verified Blender 5.1.1 and the pinned ComfyUI fork. This verifies CPU node plumbing, Blender, and process cleanup; it does not run model inference or the worker container.
 
+## Headless stadia-testbed run — 2026-10-01
+
+Passed on `stadia-testbed`: Ubuntu Linux kernel 5.15.0-191-generic, Intel Xeon W-2135, Python 3.11.15, Blender 5.1.1, torch 2.14.1+cpu, transformers 5.18.0, NumPy 2.4.6, SciPy 1.17.1. The process used six CPU threads; its AMD Vega GPU was not used. Sources: this pack `317f466` plus the harness fix below, ComfyUI `84ba8577`, coordinator `ab8b2d8`, extension `220273f`. The model bundle hash matches the licensed archive recorded above.
+
+The seven-joint branching fixture ran all five nodes with prompt `A character walks forward.`, seed 0, guidance 3, and `objaverse` normalization. A second workflow restored and consumed all four actual partition boundary types, including the full model bundle, then regenerated motion. Both workflows succeeded without cached nodes. Six outputs were retrieved: three GLBs and three provenance JSONs. Total workflow time was 1,182.99 seconds, including startup and transfer work; this is a recorded CPU run, not a generation benchmark.
+
+All three GLBs were byte-identical: 13,164 bytes, SHA-256 `00be100482edd5bc7e32fa1dd51ce7605359f6d24420f87475d825d7ebd69d91`. Provenance values were identical after JSON parsing. Source nodes, skins, meshes, materials, textures, images, and original binary data were preserved. Headless Blender playback matched an independent glTF skinning evaluator over all 60 frames at 30 fps, with maximum vertex error `1.708e-6` world units against a `2e-5` limit. The generated geometry moved and remained finite.
+
+A separate authenticated coordinator HTTP test transferred the real 739,698,499-byte model bundle and input GLB, staged them through production worker methods, and retrieved/restored the generated GLB/provenance pair with exact byte comparisons. This covered artifact transfer and staging; it did not exercise provider provisioning, rental preflight, or job scheduling. The remote repository suite passed 170 tests with 20 skips and 6 subtests; focused coordinator and extension suites passed 77 and 103 tests. All task servers and processes stopped.
+
+The first attempt exposed a Unix harness bug: resolving a virtualenv Python symlink launched the system interpreter and lost installed dependencies. The harness now preserves the executable path, accepts `--cpu`, and records the interpreter and ComfyUI system statistics. The fixed run above verified this in a real virtualenv.
+
 ## Repeat checks
 
 The integration changes are now on the sibling repositories' default branches at the revisions in deploy/README.md. After applying them to those branches, the focused coordinator suite passed 77 tests and the extension suite passed 103 tests. The earlier full-suite counts above describe the original integration baseline.
@@ -85,12 +97,14 @@ python tools/verify_workflow.py --comfy-root /path/to/ComfyUI --bundle /path/to/
 
 `tests/test_workflow_integration.py` uses `UNIMATE_INTEGRATION_BUNDLE`, `COMFYUI_ROOT`, `CLOUD_OFFLOAD_ROOT`, and `UNIMATE_BLENDER`. Exact model/reference environment variables are in their integration test files. Test elapsed times include setup/reference work and are not generation benchmarks.
 
+For a CPU-only host, add `--cpu` to the workflow command or set `UNIMATE_INTEGRATION_CPU=1` for the pytest integration wrapper.
+
 ## Open gates
 
 - Linux GPU inference, worker-container execution, and live provider provisioning.
 - Redistributable real characters, arbitrary-rig motion quality, and the complete upstream preprocessing CLI.
 - Independent graphical glTF viewer playback/appearance review; current independent verification is numeric.
-- Complete CPU generation, other GPUs/operating systems, and lower precision.
+- Other GPUs/operating systems and lower precision. CPU generation passed the recorded synthetic fixture; broader asset quality remains open.
 - Latency/peak VRAM measurements and a real deployed-image workflow.
 
 These limits prevent a claim that all [release gates](DESIGN.md#verification-and-release-gates) passed.

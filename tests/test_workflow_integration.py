@@ -30,6 +30,7 @@ def test_real_comfy_api_and_cloud_partition_workflow(tmp_path):
             workdir=tmp_path / "isolated ComfyUI",
             cloud_root=Path(os.environ["CLOUD_OFFLOAD_ROOT"]),
             branching=True,
+            cpu=os.environ.get("UNIMATE_INTEGRATION_CPU") == "1",
         )
     )
     assert report["status"] == "passed"
