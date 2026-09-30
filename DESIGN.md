@@ -138,7 +138,7 @@ Dependencies cover the inference closure; upstream's full training requirements 
 
 `models/unimate` is a registered category. `tools/build_bundle.py` manually converts selected artifacts using `torch.load(weights_only=True)` and explicit EMA tensors, with no raw fallback. Legacy statistics require `--trust-legacy-stats` and the pinned official digest before deserializing the authenticated snapshot. Runtime loads safetensors/numeric NPZ only and never downloads.
 
-ComfyUI selects execution/offload devices and manages both networks through ModelPatcher. An encoder wrapper handles Transformers' read-only device property; detach callbacks clear upstream's unregistered lazy rotary GPU tensors. Float32 Windows CUDA inference/unload was verified. Complete CPU generation, lower precision, other GPUs, and other operating systems remain unclaimed.
+ComfyUI selects execution/offload devices and manages both networks through ModelPatcher. An encoder wrapper handles Transformers' read-only device property; detach callbacks clear upstream's unregistered lazy rotary GPU tensors. Float32 Windows CUDA inference/unload was verified. Linux CPU node plumbing and Blender checks passed. Complete CPU generation, Linux GPU inference, lower precision, and other GPUs remain unclaimed.
 
 Text/joint encoding is local. Prepared conditioning goes directly to the pinned sampler without a dataset directory. Normalization, masks, topology, and guidance are reference-compared. Embeddings are cached on CPU; runtime objects are keyed by complete bundle identity.
 
@@ -185,6 +185,6 @@ Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/byte
 
 Trusted loaded node classes declare selected files via `cloud_offload_assets(inputs)`: GLBs use `__input__`; bundles use `unimate`. Exact declarations override generic discovery at their uniquely matching input. Preflight checks local file identities and uploads only unresolved declared artifacts. Workers stage inputs under ComfyUI/input and bundles under registered model paths. Missing runner requirements fail instead of falling back to local execution.
 
-Export returns core `3d` GLB and `files` JSON metadata. Executor retrieval and gateway restoration preserve distinct output pairs under validated job/subfolder paths. [deploy/README.md](deploy/README.md) lists required sibling changes and the prepared runner recipe. Actual Windows bridge/inference execution and localhost HTTP staging passed; Linux/container execution and live providers remain unverified.
+Export returns core `3d` GLB and `files` JSON metadata. Executor retrieval and gateway restoration preserve distinct output pairs under validated job/subfolder paths. [deploy/README.md](deploy/README.md) lists required sibling changes and the prepared runner recipe. Actual Windows bridge/inference execution and localhost HTTP staging passed. Linux CPU/Blender CI passed; Linux GPU inference, worker-container execution, and live providers remain unverified.
 
 Native core integration and transport optimization remain later decisions.

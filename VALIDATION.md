@@ -1,6 +1,6 @@
 # Validation
 
-Recorded 2026-09-30. Implementation is present; release gates remain open. Evidence covers Windows local execution, actual ComfyUI partition bridges, and authenticated localhost transport. No paid provider was provisioned.
+Recorded 2026-09-30. Implementation is present; release gates remain open. Evidence covers Windows GPU execution, actual ComfyUI partition bridges, authenticated localhost transport, and Linux CPU/Blender CI. No paid provider was provisioned.
 
 ## Runtime
 
@@ -39,6 +39,8 @@ Suites overlap; counts are not additive. Skips are not passed checks. The reposi
 | Cloud coordinator suite | 1237 passed, 6 skipped | Coordinator regressions after review fixes |
 | Authenticated localhost transport | Passed separately | Real HTTP transfer, source resolution, Worker staging/return |
 | Current licensed real workflow | 1 passed | All five nodes, four boundary types, six output downloads |
+| Linux CI repository suite | 170 passed, 20 skipped | Ubuntu 24.04, Python 3.11.16, pinned ComfyUI; no model weights |
+| Linux Blender integration | 10 passed | Blender 5.1.1, both topologies, actual POSIX process-tree cleanup |
 
 All five nodes also registered through real ComfyUI `load_custom_node`. A model-loader filename collision checks exact `unimate` category selection against a different checkpoint. Export cancellation signals the real ComfyUI interrupt flag during fsync and verifies no output pair is published.
 
@@ -48,7 +50,7 @@ Fixtures are original MIT procedural GLBs: a five-joint chain and seven-joint br
 
 Checks cover rest-only input, facing choices, joint ordering/identity, source-animation ignoring, transformed ancestors/intermediaries, rest skinning, original binary preservation, root displacement, timestamps, and quaternion continuity. Blender and an independent glTF skinning evaluator agree at every sample within `2e-5` world units. Canonical/FK reference tolerances range from `2e-7` to `3e-6` by stage.
 
-Reference tests execute pinned rest-extraction/preprocessing/recovery functions independently. Recovery comparisons use local-only Motion checkout `ac236251f90e5ca37c444c53ad383fc85de6d833`; it is not redistributed. The full upstream preprocessing CLI was not run. Windows child cancellation/reaping passed; the actual POSIX parent/grandchild lifecycle test remains skipped.
+Reference tests execute pinned rest-extraction/preprocessing/recovery functions independently. Recovery comparisons use local-only Motion checkout `ac236251f90e5ca37c444c53ad383fc85de6d833`; it is not redistributed. The full upstream preprocessing CLI was not run. Windows child cancellation/reaping passed. The actual POSIX parent/grandchild lifecycle test passed in Linux CI.
 
 Official inference tests verify original EMA tensors/T5 embeddings, global RNG isolation, cancellation, and ComfyUI unload/reload including unregistered rotary GPU cache cleanup. Adapter and pinned original sampling on the same upstream model instance are bit-identical. Independently allocated original/managed instances have normalized full-solver maximum difference `1.44004822e-4` overall, `3.88622284e-5` on the actual five joints; comparison tolerance is `2e-4`. Allocation/kernel effects are plausible, but the precise cause is unproven. Cross-device bitwise reproducibility is unclaimed.
 
@@ -60,7 +62,7 @@ Both five-joint and seven-joint fixtures passed with the same installed EMA bund
 
 Separate localhost tests use a real bearer-authenticated FastAPI/uvicorn server, multipart upload, artifact HEAD, digest-checked download, LocalStorage resolution, and actual Worker staging. Inputs land under ComfyUI/input; bundles under models/unimate; GLB/provenance descriptors restore locally. Their small bundle fixture checks transport, not inference. These transport and real inference bridge tests cover different local execution stages.
 
-Cloud evidence references coordinator baseline `46de766fcbd0f557adefeac6f740973b8dd0aa3b` plus integration working-tree changes. No published corrected image is identified. The Linux [runner recipe](deploy/README.md) is prepared, unbuilt, and untested. Linux CI installs checksum-verified Blender 5.1.1 and includes integration tests, but that workflow has not executed here.
+Cloud evidence references coordinator baseline `46de766fcbd0f557adefeac6f740973b8dd0aa3b` plus the integration commit recorded in deploy/README.md. No published corrected image is identified. The Linux [runner recipe](deploy/README.md) is prepared, unbuilt, and untested. [Linux CI](https://github.com/splatterfacegames/ComfyUI-UniMate/actions/runs/36657862434) passed on node-pack revision `718a12a`, using checksum-verified Blender 5.1.1 and the pinned ComfyUI fork. This verifies CPU node plumbing, Blender, and process cleanup; it does not run model inference or the worker container.
 
 ## Repeat checks
 
@@ -83,7 +85,7 @@ python tools/verify_workflow.py --comfy-root /path/to/ComfyUI --bundle /path/to/
 
 ## Open gates
 
-- Linux/container execution, POSIX process-tree lifecycle, and live provider provisioning.
+- Linux GPU inference, worker-container execution, and live provider provisioning.
 - Redistributable real characters, arbitrary-rig motion quality, and the complete upstream preprocessing CLI.
 - Independent graphical glTF viewer playback/appearance review; current independent verification is numeric.
 - Complete CPU generation, other GPUs/operating systems, and lower precision.
