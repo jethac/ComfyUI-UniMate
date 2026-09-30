@@ -62,7 +62,7 @@ Both five-joint and seven-joint fixtures passed with the same installed EMA bund
 
 Separate localhost tests use a real bearer-authenticated FastAPI/uvicorn server, multipart upload, artifact HEAD, digest-checked download, LocalStorage resolution, and actual Worker staging. Inputs land under ComfyUI/input; bundles under models/unimate; GLB/provenance descriptors restore locally. Their small bundle fixture checks transport, not inference. These transport and real inference bridge tests cover different local execution stages.
 
-Cloud evidence references coordinator baseline `46de766fcbd0f557adefeac6f740973b8dd0aa3b` plus the integration commit recorded in deploy/README.md. No published corrected image is identified. The Linux [runner recipe](deploy/README.md) is prepared, unbuilt, and untested. [Linux CI](https://github.com/splatterfacegames/ComfyUI-UniMate/actions/runs/36657862434) passed on node-pack revision `718a12a`, using checksum-verified Blender 5.1.1 and the pinned ComfyUI fork. This verifies CPU node plumbing, Blender, and process cleanup; it does not run model inference or the worker container.
+Cloud evidence references coordinator baseline `46de766fcbd0f557adefeac6f740973b8dd0aa3b` plus the integration commit recorded in deploy/README.md. No published corrected image is identified. The Linux [runner recipe](deploy/README.md) is prepared, unbuilt, and untested. [Linux CI](https://github.com/jethac/ComfyUI-UniMate/actions/runs/36657862434) passed on node-pack revision `718a12a`, using checksum-verified Blender 5.1.1 and the pinned ComfyUI fork. This verifies CPU node plumbing, Blender, and process cleanup; it does not run model inference or the worker container.
 
 ## Repeat checks
 

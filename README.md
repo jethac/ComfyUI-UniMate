@@ -18,7 +18,7 @@ Use ComfyUI's Python environment. Python 3.11+ and ComfyUI's current extension A
 
 ```sh
 cd ComfyUI/custom_nodes
-git clone https://github.com/splatterfacegames/ComfyUI-UniMate.git comfy-unimate
+git clone https://github.com/jethac/ComfyUI-UniMate.git comfy-unimate
 cd comfy-unimate
 python -m pip install -r requirements.txt
 ```

@@ -24,7 +24,7 @@ dependencies = [
 test = ["pytest>=8", "ruff>=0.9"]
 
 [project.urls]
-Repository = "https://github.com/splatterfacegames/ComfyUI-UniMate"
+Repository = "https://github.com/jethac/ComfyUI-UniMate"
 
 [tool.setuptools.packages.find]
 include = ["unimate_pack*"]
