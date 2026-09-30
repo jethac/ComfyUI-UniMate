@@ -8,7 +8,7 @@ Required integration:
 - cloud-offload: artifact HEAD/upload resolution, `__input__` staging under ComfyUI/input, provenance retrieval, and worker file-output return.
 - Runner bridge: `CloudPartitionInput` / `CloudPartitionOutput` using `comfy.partition.bundle.v1`, with `COMFY_PARTITION_ROOT` set to a managed job directory.
 
-Local integration commits: ComfyUI-Cloud-Offload `90cefb8183c8a2ab41e27d11c46585cf90bb8ff1`; cloud-offload `9699f8aa421ea397db557ec9c74bb02da6b974d3`. Both are on `feat/unimate-cloud-assets` in the sibling checkouts. They are not published runner releases.
+Integration is on both default branches: [ComfyUI-Cloud-Offload `220273f`](https://github.com/jethac/ComfyUI-Cloud-Offload/commit/220273f4f7e2e1fabd9d32743376ff3c55626288) and [cloud-offload `ab8b2d8`](https://github.com/splatterfacegames/cloud-offload/commit/ab8b2d8db615e5ae4a9767eba2720b20b8cd2e51). These are source revisions; no corrected runner image has been published.
 
 The bridge passed separate-process Windows ComfyUI execution with real inference and Blender. Authenticated localhost HTTP staging/retrieval also passed. Linux image execution and live provider provisioning are unverified; see [VALIDATION.md](../VALIDATION.md).
 

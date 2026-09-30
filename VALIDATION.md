@@ -66,6 +66,8 @@ Cloud evidence references coordinator baseline `46de766fcbd0f557adefeac6f740973b
 
 ## Repeat checks
 
+The integration changes are now on the sibling repositories' default branches at the revisions in deploy/README.md. After applying them to those branches, the focused coordinator suite passed 77 tests and the extension suite passed 103 tests. The earlier full-suite counts above describe the original integration baseline.
+
 Use ComfyUI's Python environment and installed test dependencies:
 
 ```sh

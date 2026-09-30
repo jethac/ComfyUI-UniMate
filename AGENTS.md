@@ -33,3 +33,5 @@ Implementation is now authorized. All five nodes must work inside ComfyUI Cloud 
 ## Git and collaboration
 
 Use short direct commit subjects. Do not commit model weights, generated assets, caches, local settings, credentials, or dependency environments. Preserve unrelated user changes. Publishing, provider spending, or messages to others require authorization in the current conversation.
+
+Push authorized completed work directly to the default branch. Do not create pull requests unless the user explicitly asks for one.
