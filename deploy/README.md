@@ -4,8 +4,8 @@ The runner needs ComfyUI, this pack, its dependencies, external Blender, and the
 
 Required integration:
 
-- ComfyUI-Cloud-Offload: trusted `cloud_offload_assets` declarations, `.unimate` discovery, unresolved-file upload, and `3d`/`files` restoration.
-- cloud-offload: artifact HEAD/upload resolution, `__input__` staging under ComfyUI/input, provenance retrieval, and worker file-output return.
+- [ComfyUI-Cloud-Offload node pack](https://github.com/jethac/ComfyUI-Cloud-Offload): trusted `cloud_offload_assets` declarations, `.unimate` discovery, unresolved-file upload, and `3d`/`files` restoration.
+- [cloud-offload coordinator and worker service](https://github.com/jethac/cloud-offload): artifact HEAD/upload resolution, `__input__` staging under ComfyUI/input, provenance retrieval, and worker file-output return.
 - Runner bridge: `CloudPartitionInput` / `CloudPartitionOutput` using `comfy.partition.bundle.v1`, with `COMFY_PARTITION_ROOT` set to a managed job directory.
 
 Integration is on both default branches: [ComfyUI-Cloud-Offload `220273f`](https://github.com/jethac/ComfyUI-Cloud-Offload/commit/220273f4f7e2e1fabd9d32743376ff3c55626288) and [cloud-offload `ab8b2d8`](https://github.com/jethac/cloud-offload/commit/ab8b2d8db615e5ae4a9767eba2720b20b8cd2e51). These are source revisions; no corrected runner image has been published.

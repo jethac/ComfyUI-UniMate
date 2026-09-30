@@ -55,7 +55,7 @@ One skin, one connected skeleton with 5–70 joints, triangle primitives, dense 
 
 ## Cloud Offload
 
-All five nodes can execute in a Cloud Offload partition. All four custom socket values are portable dictionaries containing bytes; the model bundle crosses in full when its loader is outside the box. Transfers include roughly 706 MiB of model data.
+All five nodes can execute in a [ComfyUI-Cloud-Offload](https://github.com/jethac/ComfyUI-Cloud-Offload) partition, using the [cloud-offload coordinator and worker service](https://github.com/jethac/cloud-offload). All four custom socket values are portable dictionaries containing bytes; the model bundle crosses in full when its loader is outside the box. Transfers include roughly 706 MiB of model data.
 
 The runner needs Blender, this pack, its Python dependencies, and the Cloud Offload input-staging/output-retrieval changes described in [deploy/README.md](deploy/README.md). The default runner without those changes is insufficient. [DESIGN.md](DESIGN.md) defines the contracts; [VALIDATION.md](VALIDATION.md) records verification and limits.
 
