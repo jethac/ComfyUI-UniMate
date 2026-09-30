@@ -1,0 +1,91 @@
+{
+  "revision": "5d6aabedd947297b5ba6706d8e9113e68c0c3e4f",
+  "repository": "https://github.com/Friedrich-M/UniMate",
+  "files": {
+    "denoiser/base.py": {
+      "source": "unimate/models/denoiser/base.py",
+      "sha256": "d8e8fcf4740a2b4e4cbc96af255554ea94f45083b3cad4fd3add25d4e77da474",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/full_adaln.py": {
+      "source": "unimate/models/denoiser/full_adaln.py",
+      "sha256": "4c759a245c27d300b70da393979cc6186d85df0adf8fb0e21b9999fd26a41518",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/full_cross_attn.py": {
+      "source": "unimate/models/denoiser/full_cross_attn.py",
+      "sha256": "94e75c79ef0a2a324b1ba4b7082a1a62e48ed2d0a301b68be7fc911e46e1a0d3",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/graph_adaln.py": {
+      "source": "unimate/models/denoiser/graph_adaln.py",
+      "sha256": "71111d8af77c748b797cc5f2ad23d225960c104928ee353dcc1df676457b74df",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/graph_cross_attn.py": {
+      "source": "unimate/models/denoiser/graph_cross_attn.py",
+      "sha256": "50dd11f32c5394e52d834f805e9d0370c9bd4cbf086c5c56756c3e0f7c7903f8",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/rope.py": {
+      "source": "unimate/models/denoiser/rope.py",
+      "sha256": "7c95ebe769abb0adb01622dd2d92858536d79a77201d1e392a855d1cacdf13ed",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/__init__.py": {
+      "source": "unimate/models/denoiser/__init__.py",
+      "sha256": "bcecf5e107066ec4aef71997a8edd2cca4507d16e9fda51001fab9e6fac9c472",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/blocks/common.py": {
+      "source": "unimate/models/denoiser/blocks/common.py",
+      "sha256": "cc4877922a76d9c33ebc8fd5fe95a7b67d0d20f23fb5fdf638b71dcf24141699",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/blocks/cross.py": {
+      "source": "unimate/models/denoiser/blocks/cross.py",
+      "sha256": "261071a36632b0af6bbfa08b6c1ec5d7c9ec21cf80fc1ef91949a2b456836e07",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/blocks/graph.py": {
+      "source": "unimate/models/denoiser/blocks/graph.py",
+      "sha256": "f50ed8141b5fcee91a406e3e31eb7dc571befeb0412911bec9788f462d214669",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "denoiser/blocks/__init__.py": {
+      "source": "unimate/models/denoiser/blocks/__init__.py",
+      "sha256": "cd6ff7ebc300ca63973b6145cded3a646dc6f093655a9a24ad0358728bbcd383",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "collate.py": {
+      "source": "unimate/dataset/mixture/collate.py",
+      "sha256": "7cb7672ba97572282ec7a3153abd21aeb4917ecf7f77bf7d3079e13a9f888eb2",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "transforms.py": {
+      "source": "unimate/dataset/transforms.py",
+      "sha256": "0c16cd112fb5df83778d245df06dbeaa040546fda56611421286340ae0fe231a",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "topology_utils.py": {
+      "source": "unimate/utils/topology_utils.py",
+      "sha256": "96ba6f69536de7bca48c1f2710754bd82b3c7dff831c977696bbd2e998a77dfd",
+      "changes": "Imports made package-relative; line endings normalized."
+    },
+    "rig_topology.py": {
+      "source": "data_process/utils/topology.py",
+      "sha256": "d39b471e4811217dcba76ca094890ea30eaf68fe0969a416e7c5c5588aaf9ea7",
+      "changes": "Only vocabulary import made package-relative in rig_names.py; other source unchanged."
+    },
+    "rig_names.py": {
+      "source": "data_process/joint_annotation/names_clean_rule.py",
+      "sha256": "97899df0a4119e9f982553db749e0fb11a99930c960674f91afe785aa58def4c",
+      "changes": "Only vocabulary import made package-relative in rig_names.py; other source unchanged."
+    },
+    "rig_vocab.py": {
+      "source": "data_process/joint_annotation/vocab.py",
+      "sha256": "1668d2e2369bec63deb2f4955b1f13801047ce63d01b177a060b25015dd51917",
+      "changes": "Only vocabulary import made package-relative in rig_names.py; other source unchanged."
+    }
+  }
+}

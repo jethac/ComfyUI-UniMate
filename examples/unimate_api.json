@@ -1,0 +1,7 @@
+{
+  "1": {"class_type": "UniMateLoadRig", "inputs": {"asset": "unimate/synthetic_chain.glb"}},
+  "2": {"class_type": "UniMatePrepareRig", "inputs": {"asset": ["1", 0], "facing": "+Z", "left_joint": "", "right_joint": ""}},
+  "3": {"class_type": "UniMateModelLoader", "inputs": {"bundle": "unimate-v2.unimate"}},
+  "4": {"class_type": "UniMateGenerateMotion", "inputs": {"model": ["3", 0], "rig": ["2", 0], "prompt": "A character walks forward.", "seed": 0, "guidance": 3.0, "normalization": "objaverse"}},
+  "5": {"class_type": "UniMateExportGLB", "inputs": {"rig": ["2", 0], "motion": ["4", 0], "filename_prefix": "unimate/animation"}}
+}

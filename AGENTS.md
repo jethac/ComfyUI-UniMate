@@ -2,9 +2,9 @@
 
 ## Project scope
 
-Build a focused ComfyUI custom node pack for UniMate skeletal motion generation. DESIGN.md defines the proposed behavior and release gates. The repository is currently documentation only; do not present planned nodes as implemented. Implement only the scope requested in the current task.
+Build a focused ComfyUI custom node pack for UniMate skeletal motion generation. DESIGN.md defines behavior and release gates. Implement only the scope requested in the current task; distinguish verified behavior from pending validation.
 
-The user has explicitly deferred implementation. Until they request implementation, limit work to repository setup, documentation, and design review; do not add node code, install product dependencies, or download model weights.
+Implementation is now authorized. All five nodes must work inside ComfyUI Cloud Offload partitions, including input/model staging and animated output retrieval. Keep portable values free of local paths and live model objects.
 
 ## Engineering rules
 
@@ -28,6 +28,7 @@ The user has explicitly deferred implementation. Until they request implementati
 - Exercise cancellation, invalid rigs, missing models, paths with spaces, and memory unload behavior before release.
 - Do not claim support for hardware or operating systems that have not passed the documented checks. Do not invent latency or VRAM figures.
 - Update README.md when implemented scope or prerequisites change. Keep design decisions and deviations in DESIGN.md; avoid duplicating the specification elsewhere.
+- All READMEs must be terse and precise. No self-congratulatory language, marketing filler, or claims beyond verified behavior.
 
 ## Git and collaboration
 

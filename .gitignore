@@ -12,3 +12,9 @@ cache/
 *.pt
 *.pth
 *.safetensors
+.runtime/
+.worktrees/
+*.unimate
+*.egg-info/
+build/
+dist/

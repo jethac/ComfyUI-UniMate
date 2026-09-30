@@ -1,0 +1,25 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pip install '.[test]'
+      - name: Install Blender 5.1.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-6 libxi6 libxxf86vm1 libxfixes3 libxrender1 libsm6 libegl1 libgl1 libgomp1
+          curl --fail --location --retry 3 https://download.blender.org/release/Blender5.1/blender-5.1.1-linux-x64.tar.xz --output /tmp/blender.tar.xz
+          echo '6f9fff89fef154ef7974d1a1c4b916ab4bc1f5618bcb48d5befee1bd0a7c7f2a  /tmp/blender.tar.xz' | sha256sum --check
+          mkdir /tmp/blender
+          tar --extract --xz --file /tmp/blender.tar.xz --directory /tmp/blender --strip-components=1
+          echo 'UNIMATE_BLENDER=/tmp/blender/blender' >> "$GITHUB_ENV"
+      - run: python -m pytest -m 'not blender and not integration and not gpu'
+      - run: python -m pytest tests/test_blender_integration.py
+      - run: python -m ruff check --exclude unimate_pack/_vendor .

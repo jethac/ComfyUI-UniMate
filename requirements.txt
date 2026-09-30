@@ -1,0 +1,8 @@
+numpy>=1.26
+scipy>=1.11
+einops>=0.8
+torch-geometric>=2.7,<3
+torchdiffeq>=0.2.5,<0.3
+transformers>=5.8,<6
+sentencepiece>=0.2
+safetensors>=0.4

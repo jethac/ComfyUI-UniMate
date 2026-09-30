@@ -1,6 +1,6 @@
 # ComfyUI-UniMate design
 
-Date: 2026-09-30. Status: proposed; implementation has not started.
+Date: 2026-09-30. Status: implemented; release verification remains incomplete. See [VALIDATION.md](VALIDATION.md).
 
 ## Purpose and success criteria
 
@@ -8,11 +8,11 @@ Give ComfyUI users a reproducible route from an already-rigged character and a m
 
 The first release succeeds when a supported rest-only GLB can be prepared, animated, and exported without a training dataset or existing animation clip. The exported character must retain its appearance, skinning, rest pose, and source coordinate frame. A second rig with a different topology must pass the same workflow without per-rig training.
 
-User-requested deliverables are a new MIT repository, README.md, AGENTS.md, and this design. The assumptions below define a proposed first release, not a commitment that support already exists.
+Implementation was authorized on 2026-09-30, including mandatory Cloud Offload partitions. The constraints below describe the implemented architecture and remaining release gates.
 
 ## Approach
 
-Use a custom node pack with in-process inference and an external Blender adapter. Keep typed rig and motion values separate from ordinary ComfyUI MESH values.
+Use a custom node pack with in-process inference and an external Blender adapter. Keep portable versioned rig and motion dictionaries separate from ordinary ComfyUI MESH values.
 
 Alternatives considered:
 
@@ -26,7 +26,7 @@ Use the CLI pipeline as a reference during development, not as the shipping node
 
 ## Source baseline and evidence
 
-Inspect and pin UniMate commit `5d6aabedd947297b5ba6706d8e9113e68c0c3e4f`. Record the exact dependency revision in the implemented package; do not install a floating main branch.
+UniMate source is pinned to `5d6aabedd947297b5ba6706d8e9113e68c0c3e4f`. Narrow MIT inference/topology/name utilities retain source hashes and notices. The full training environment and third-party Motion package are not distributed. The official v2 model revision is `387a344c3031299bc25fcbef35d36bd186d5afe7`; FLAN-T5-base is `7bcac572ce56db69c1ea7c8af255c5d7c9672fc2`.
 
 Relevant sources:
 
@@ -36,13 +36,13 @@ Relevant sources:
 - [Mesh animation](https://github.com/Friedrich-M/UniMate/blob/5d6aabedd947297b5ba6706d8e9113e68c0c3e4f/data_process/mesh_animation/animate_motion.py): feature decoding and driving a rigged asset.
 - [Model card](https://huggingface.co/Linzhan/UniMate): released model variants, feature format, and limits. Pin the Hub revision of each installed artifact during implementation.
 
-The model card says a new rig needs an animation clip. The inspected code includes a rest-only fallback that retains the full armature. Treat rest-only preparation as a code-backed capability requiring verification. Do not prune bones based on fabricated motion.
+The rest-only path retains the full armature. Synthetic five- and seven-joint fixtures passed pinned numeric comparisons and real ComfyUI generation/export without source clips. No bones are pruned. Real character quality and the full upstream preprocessing CLI remain unverified.
 
 The v2 model emits 60 frames at 30 fps with 12 features per joint. Its training range is 5–70 joints; the documented sampler ceiling can differ by one. For the first release enforce 5–70 prepared joints and reject larger rigs with an actionable message. Supporting a technical ceiling above the training range is a later decision.
 
 ## First-release boundaries
 
-Support one self-contained GLB with one skin and one connected deforming skeleton; multiple mesh primitives attached to that skin are allowed. Support triangle primitives, linear-blend skinning, standard PBR materials, and embedded textures. Preserve non-joint transform ancestors in the asset mapping.
+Support one self-contained GLB with one skin and one connected deforming skeleton; multiple mesh primitives attached to that skin are allowed. Support triangle primitives, dense accessors, up to four linear-blend skin influences, standard PBR materials, and embedded PNG/JPEG textures. Preserve non-joint transform ancestors in the asset mapping. Sparse accessors, unskinned scene meshes, all glTF extensions, and nonuniform scale on any node are additionally rejected. GLBs are limited to 256 MiB; bounded image-header checks do not establish full codec conformance.
 
 Reject multiple skins, disconnected skeletons, unsupported extensions, morph targets, compressed geometry, joint shear, negative joint scale, and animated or nonuniform joint scale. Do not silently drop unsupported content. Static scene transforms are supported only when they can be represented and reversed by the adapter. The preparation gate must reject assets outside that proven subset.
 
@@ -52,41 +52,41 @@ FBX, automatic rigging, multi-character scenes, retargeting, foot-contact cleanu
 
 ## Nodes and sockets
 
-Use ComfyUI's current `ComfyExtension`/`io.ComfyNode` API after verifying the target checkout. IDs below are stable public contracts; display names may be clearer than IDs. Category: `3D/UniMate`.
+The nodes use ComfyUI's current `ComfyExtension`/`io.ComfyNode` API, verified through the installed core loader. IDs below are stable public contracts. Category: `3D/UniMate`.
 
 | ID / display name | Inputs | Outputs and behavior |
 | --- | --- | --- |
 | `UniMateLoadRig` / Load Rigged GLB | `asset`: GLB selected from permitted input files | `UNIMATE_ASSET`; inspect and validate a rigged source asset without loading a model |
 | `UniMatePrepareRig` / Prepare UniMate Rig | `asset`; `facing`: enum; optional `left_joint`, `right_joint` required only for pair mode | `UNIMATE_RIG`; canonical conditioning, original-to-prepared mapping, and source asset reference |
 | `UniMateModelLoader` / Load UniMate Model | `bundle`: installed bundle selection | `UNIMATE_MODEL`; selected denoiser, EMA weights, normalization, config, tokenizer and text encoder |
-| `UniMateGenerateMotion` / Generate UniMate Motion | `model`, `rig`, `prompt`: multiline string; `seed`: unsigned 64-bit integer; `guidance`: float, default 3.0, range 1.0–10.0 | `UNIMATE_MOTION`; one fixed 60-frame clip at 30 fps |
+| `UniMateGenerateMotion` / Generate UniMate Motion | `model`, `rig`, `prompt`: multiline string; `seed`: unsigned 64-bit integer; `guidance`: float, default 3.0, range 1.0–10.0; `normalization`: `objaverse` (default), `mixamo`, or `truebones` | `UNIMATE_MOTION`; one fixed 60-frame clip at 30 fps |
 | `UniMateExportGLB` / Export UniMate GLB | `rig`, `motion`; `filename_prefix`: default `unimate/animation` | Output node writes an animated GLB and provenance JSON in ComfyUI output; returns file metadata through the verified output API |
 
-Do not expose a steps control until its exact correspondence to the upstream ODE solver is verified. First-release sampling uses the selected bundle's recorded solver settings. No arbitrary duration, fps, batch, or rig-pruning controls in the first version. A generation node generates motion only; it does not re-emit its inputs.
+Sampling uses the bundle's recorded solver settings: `dopri5`, 50 recorded time points, `atol=1e-6`, `rtol=1e-3`. Normalization statistics differ by family and between root/local features. Guidance 1 is unconditional, matching upstream. There are no steps, duration, fps, batch, or rig-pruning controls. Generation emits motion only.
 
 ## Data contracts
 
-In-memory values are immutable records; persisted payloads use versioned JSON manifests and numeric NPZ files with `allow_pickle=False`. Arrays use explicit shapes, dtypes, and coordinate conventions. Values are not interchangeable with generic MESH sockets.
+Every socket value is a plain versioned dictionary. No local paths, live model objects, NumPy arrays, credentials, or custom Python classes cross a boundary. Callers treat values as immutable. Binary payloads are bytes; numeric/string arrays are NPZ loaded with `allow_pickle=False`. Arrays use explicit shapes, dtypes, and coordinate conventions. Values are not interchangeable with generic MESH sockets.
 
 ### UNIMATE_ASSET v1
 
-Contains the managed source path, SHA-256 content digest, scene/skin selection, joint node indices, original joint names, and a validated capability report. Embedded buffers and textures stay associated with the source. Source digest changes invalidate downstream caches. Do not accept arbitrary absolute paths from a prompt.
+Fields: `schema="unimate.asset.v1"`, original `glb` bytes, `sha256`, and portable basename `name`. The GLB is validated before construction. Original buffers/textures remain embedded. File-content fingerprints invalidate downstream ComfyUI caches. Managed paths exist only at loader execution and are not stored in the value.
 
 ### UNIMATE_RIG v1
 
-Contains the source digest; original joint/node identity and parent mapping; rest local transforms and inverse bind matrices; breadth-first prepared ordering and inverse permutation; canonical joint names; canonical rest positions and rotations; topology conditioning; and the reversible source/canonical coordinate and scale mapping. Record explicit quaternion component order at every adapter boundary.
+Fields: `schema="unimate.rig.v1"`, `asset`, `rig_id`, NPZ bytes `conditioning`, and JSON `mapping`. They retain original joint/node identity and parents, prepared ordering/inverse permutation, canonical names/rest transforms/topology, and reversible source/canonical coordinates and scale. Source inverse binds remain in the original asset. Conditioning quaternion order is explicit; GLB uses xyzw.
 
-Compute `rig_id` from source digest, conditioning arrays, mapping, facing choice, adapter version, and pinned upstream revision. Include the original transform hierarchy needed to reconstruct the asset. No bone pruning in the first release. Derive normalization and topology fields using the upstream reference; do not guess their values.
+`rig_id` hashes the exact source asset digest, conditioning bytes, and canonical JSON mapping. Mapping includes facing, adapter version, pinned upstream revision, and original transform hierarchy. No bones are pruned. Topology and normalization use pinned upstream functions.
 
-The Blender adapter may create a canonical intermediate, but that intermediate is not the final output. Validate any rebinding by comparing deformed vertices before and after preparation. Retain the mapping required to apply motion to the original asset in its original frame.
+Blender extracts rest transforms from a private rest-only copy. Preparation does not rebind or export the source geometry. A checked source/canonical similarity maps generated motion back to the original frame. Spectral features run in the server NumPy runtime because Blender/server LAPACK showed eigenvector-sign differences; arbitrary LAPACK parity is unclaimed.
 
 ### UNIMATE_MODEL v1
 
-Contains a lazy managed model handle, config, normalization statistics, selected checkpoint digest, EMA selection, text encoder/tokenizer identities, solver settings, and supported shape limits. No provider credentials or user workflow state. A bundle manifest identifies all files and their hashes; conflicting config/statistics/checkpoint combinations fail before sampling.
+Fields: `schema="unimate.model.v1"`, complete ZIP `bundle` bytes, `sha256`, and portable basename `name`. The bundle includes manifest/config JSON, numeric normalization statistics, EMA denoiser safetensors, local encoder/tokenizer, and licenses/notices. Inventory, sizes, hashes, architecture, pins, and solver settings are checked before extraction. No live model handle is transported; runtime objects and extraction paths remain private. Bundle size limit: 4 GiB.
 
 ### UNIMATE_MOTION v1
 
-Contains unnormalized float32 features `[60, J, 12]` in upstream canonical convention, `rig_id`, fps 30, prompt, seed, guidance, solver settings, model/text encoder digests, and adapter revision. Validate finite values and joint count. Root features have distinct semantics from non-root joint features; decode them through the pinned upstream recovery functions.
+Fields: `schema="unimate.motion.v1"`, `rig_id`, NPZ bytes `features`, `fps=30`, and JSON `metadata`. Features are unnormalized float32 `[60, J, 12]`. Metadata includes prompt, seed, guidance, normalization, solver, model/text identities, and runtime versions. Finite values, joint count, and exact rig identity are checked. Root features have distinct semantics; reference-compared adapters recover rotations and displacement.
 
 ## Runtime architecture
 
@@ -103,17 +103,20 @@ flowchart LR
     E --> O[Animated GLB and provenance]
 ```
 
-Suggested implementation layout, created only when implementation is requested:
+Implemented layout:
 
 ```text
 __init__.py                 ComfyUI extension registration
 nodes.py                    Node schemas and delegation
-unimate_pack/contracts.py   Typed asset, rig, model, and motion records
+unimate_pack/contracts.py   Portable asset, rig, model, and motion dictionaries
 unimate_pack/assets.py      Managed paths and asset validation
 unimate_pack/blender.py     Subprocess lifecycle and checked request/response files
 unimate_pack/blender_job.py Blender-side preparation and export entry point
 unimate_pack/inference.py   Model management, conditioning, sampling, and cancellation
 unimate_pack/upstream.py    Narrow pinned upstream adapter
+unimate_pack/rig_math.py    Reference-compared canonicalization and GLB animation
+unimate_pack/bundle.py      Bounded safe inference bundle validation
+tools/build_bundle.py      Explicit trusted local conversion
 tests/                     Contract, reference, Blender, and GPU integration checks
 ```
 
@@ -121,37 +124,37 @@ This layout expresses ownership; split files further only when needed. Avoid a g
 
 ### Rig preparation and export
 
-Configure an explicit Blender executable once in local pack settings; resolve an existing executable without running a shell command. Launch with background mode, factory settings, and automatic Python execution disabled. Pass a generated job JSON path as an argument. Never pass user text as executable Python.
+`UNIMATE_BLENDER` selects an existing executable. Launch uses an argument array, background/factory settings, and disabled automatic script execution. A generated job JSON is passed as data; user text is never executable Python.
 
-Use separate working directories per job under ComfyUI's managed temporary directory. The worker imports the GLB, builds the same canonical conditioning as upstream's rest-only path, and returns safe numeric arrays plus mapping metadata. Convert legacy object-based upstream data inside this trusted process; do not expose a pickled conditioning file as a user input.
+Jobs use separate ComfyUI-managed temporary directories. Source clips are removed from a private GLB before import, avoiding evaluated ancestor transforms retained after clearing actions. The worker extracts rest transforms and evaluates skinned geometry, returning safe arrays/mapping. Implementation conditioning never uses pickle.
 
-Export checks motion/rig identity, decodes rotations and root motion using upstream math, reverses preparation transforms, and animates the original hierarchy. The final GLB keeps rest transforms, inverse bind matrices, joint names, weights, textures, and materials. If Blender changes representation, prove semantic equivalence rather than requiring identical bytes.
+Export checks motion/rig identity, recovers root motion/rotations, and reverses canonical transforms. It appends animation to the original GLB without Blender geometry export. Original binary bytes, weights, inverse binds, joint IDs, topology, materials, texture references, and images remain intact. Matrix-encoded animated joints become equivalent TRS because glTF requires TRS animation targets. The worker reloads output, evaluates all 60 frames, and checks rest geometry after disabling animation.
 
 First-release rotation export uses quaternions with hemisphere continuity and linear glTF interpolation; translation uses linear interpolation. Store 60 sample keys at times `i / 30`, for `i=0..59`. There is no synthesized loop-closing frame or claim of seamless looping. Preserve root displacement rather than silently forcing motion in place.
 
 ### Inference and dependency handling
 
-The upstream requirements combine training, captioning, rendering, Blender, and inference. Do not install that file wholesale. Identify the inference-only import closure and make any upstream packaging adjustments explicit and reviewable. Audit licenses of transitive animation utilities before vendoring or installing them.
+Dependencies cover the inference closure; upstream's full training requirements are not installed. Vendored MIT code retains notices. Local-only Motion reference files are not redistributed.
 
-Use a local bundle under a registered `models/unimate` folder and a local text encoder. Loading validates all artifacts and chooses EMA deliberately. Restricted checkpoint loading must succeed or an explicit trusted conversion step must produce a safe inference bundle. Do not deserialize arbitrary uploaded checkpoints or silently use unsafe loading.
+`models/unimate` is a registered category. `tools/build_bundle.py` manually converts selected artifacts using `torch.load(weights_only=True)` and explicit EMA tensors, with no raw fallback. Legacy statistics require `--trust-legacy-stats` and the pinned official digest before deserializing the authenticated snapshot. Runtime loads safetensors/numeric NPZ only and never downloads.
 
-Let ComfyUI select execution devices and unload/offload models. Validate that the denoiser and text encoder can participate in the target checkout's model management before freezing dependencies. Prefer float32 for reference correctness first; add lower precision only with numeric and output comparisons. CUDA is the first required accelerated backend; CPU is a correctness target with no speed promise. Other devices remain unclaimed until tested.
+ComfyUI selects execution/offload devices and manages both networks through ModelPatcher. An encoder wrapper handles Transformers' read-only device property; detach callbacks clear upstream's unregistered lazy rotary GPU tensors. Float32 Windows CUDA inference/unload was verified. Complete CPU generation, lower precision, other GPUs, and other operating systems remain unclaimed.
 
-Text and joint-name encoding must run locally. Adapt the upstream sampler to accept prepared conditioning directly rather than constructing a training dataset directory. Reproduce upstream normalization, masks, topology features, and guidance. Cache embeddings by text, joint vocabulary, tokenizer/encoder identity, and normalization behavior.
+Text/joint encoding is local. Prepared conditioning goes directly to the pinned sampler without a dataset directory. Normalization, masks, topology, and guidance are reference-compared. Embeddings are cached on CPU; runtime objects are keyed by complete bundle identity.
 
 Report progress and check interruption between solver evaluations and preprocessing stages. Cancel and reap Blender processes, release owned tensors, and clean temporary files after failure. Use a local RNG for seed isolation; reproducibility is within a recorded runtime, not across every device and torch release.
 
 ## Caching, paths, and failures
 
-Cache prepared rigs by `rig_id`; cache model handles by complete bundle identity. Never key file caches only by a filename. Keep GPU tensors out of persisted rig caches. Reuse valid prepared data after a restart; write caches atomically.
+Node file fingerprints hash contents. Portable prepared values carry identity for ordinary ComfyUI caching; no independent persistent rig cache is implemented. Model runtimes are privately cached by bundle identity; GPU tensors stay out of portable values.
 
-Resolve filenames with ComfyUI's current path helpers, reject traversal and escapes, and generate unique output names. A successful export publishes both GLB and provenance only after validation; partial files stay temporary. Provenance contains generation settings and content digests, without absolute local paths, secrets, or machine identity.
+Resolve filenames through ComfyUI permitted paths; reject absolute paths, traversal, symlink escapes, wrong extensions, and missing selections. Export stages GLB/provenance in a unique output directory, fsyncs both, checks interruption, and atomically renames the directory. Failure leaves no published pair. Provenance contains generation settings/digests without local paths or secrets.
 
 Errors identify the failed stage and a concrete remedy: missing Blender, missing local text encoder, unsupported rig scale, excess joints, corrupt bundle, mismatched motion, or failed export. Bound diagnostic output; keep full process logs local. Do not swallow a failed generation and return an empty clip.
 
 ## Verification and release gates
 
-1. **Reference feasibility:** run the pinned upstream rest-only path on two redistributable GLBs of different topology. Produce conditioning and animate them without a training dataset. Compare the proposed inference-only adapter to an upstream reference run. A failure blocks advertising arbitrary new-rig input.
+1. **Reference feasibility:** run the pinned upstream rest-only path on two redistributable GLBs of different topology. Produce conditioning and animate them without a training dataset. Compare the implemented inference adapter to the upstream reference. Synthetic checks passed; real characters and the complete upstream preprocessing CLI remain unverified.
 2. **Rig round trip:** synthetic two-joint math fixtures test ordering and transforms independently of model limits; supported 5+ joint fixtures test preparation. Identity motion must preserve rest geometry and skinning. Check translated/scaled scene roots, facing choices, and a nonidentity bind pose. Unsupported scale/shear must fail explicitly.
 3. **Motion parity:** compare topology fields, normalization, text/joint embeddings, sampled features, and recovered FK against the pinned reference at fixed seed and float32. Record tolerances appropriate to each operation before declaring parity. Check root trajectories and bone lengths, not just tensor shapes.
 4. **Export playback:** load the exported GLB in Blender and an independent glTF viewer. Inspect all frames, joint hierarchy, root displacement, material/texture appearance, and skinned vertex positions. Verify key timestamps and quaternion continuity. A same-rig identity hash mismatch must fail before writing.
@@ -162,13 +165,13 @@ Reject corrupt buffers, invalid skin indices, nonfinite values, cyclic parents, 
 
 ## Implementation sequence
 
-Each milestone is independently reviewable and ends with the evidence described above. This is a roadmap, not an approved code implementation plan.
+The implementation sequence is retained as the release checklist. Nodes, contracts, inference, Blender adapters, and Cloud transport changes exist; [VALIDATION.md](VALIDATION.md) distinguishes passed checks from remaining work.
 
-1. Prove rest-only preparation and export against upstream; pin dependency versions and record fixture licenses. This resolves the primary feasibility risk before node work.
-2. Implement safe contracts and the Blender adapter. Deliver identity-motion round trips and malformed-input rejection.
-3. Implement managed model loading and direct-conditioning inference. Deliver reference parity, offline operation, cancellation, and unload evidence.
-4. Register the five nodes and wire managed paths, caching, progress, and atomic outputs. Deliver a working ComfyUI workflow.
-5. Validate playback and quality on two topologies, document hardware evidence, and publish the first usable release.
+1. Rest-only preparation/export and inference reference comparisons are implemented on original synthetic fixtures; pinned sources and fixture licenses are recorded.
+2. Contracts and external Blender adapters are implemented with identity-motion round trips and malformed-input rejection.
+3. Managed loading/direct-conditioning inference passed official-model, offline, cancellation, and unload checks on the recorded Windows CUDA runtime.
+4. All five nodes registered and completed real ComfyUI workflows, including all four partition boundary types and output retrieval.
+5. Real-character quality, graphical viewer appearance, Linux/container/provider execution, and measured performance remain release work. Publication is separate from these local checks.
 
 If importing a new rig requires rebuilding the entire dataset, or export cannot reverse canonicalization accurately, stop and revise the adapter design. Do not hide those failures behind an installation guide.
 
@@ -176,4 +179,12 @@ If importing a new rig requires rebuilding the entire dataset, or export cannot 
 
 Motion preview can render an IMAGE batch or add a frontend viewer once its cost and animation support are understood. Motion import plus frame/joint constraints can expose upstream in-betweening and editing. Expansion can chain fixed windows while preserving root continuity. These need separate contracts and acceptance tests.
 
-Cloud Offload support is deferred. The sibling pack's protocol would need safe versioned rig/motion transport and installed Blender/model capabilities on the runner. Do not assume static mesh bundles preserve skins or animations. Native core integration should be considered only after these contracts prove useful beyond this pack.
+## Cloud Offload implementation
+
+Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries all four sockets unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.
+
+Trusted loaded node classes declare selected files via `cloud_offload_assets(inputs)`: GLBs use `__input__`; bundles use `unimate`. Exact declarations override generic discovery at their uniquely matching input. Preflight checks local file identities and uploads only unresolved declared artifacts. Workers stage inputs under ComfyUI/input and bundles under registered model paths. Missing runner requirements fail instead of falling back to local execution.
+
+Export returns core `3d` GLB and `files` JSON metadata. Executor retrieval and gateway restoration preserve distinct output pairs under validated job/subfolder paths. [deploy/README.md](deploy/README.md) lists required sibling changes and the prepared runner recipe. Actual Windows bridge/inference execution and localhost HTTP staging passed; Linux/container execution and live providers remain unverified.
+
+Native core integration and transport optimization remain later decisions.
