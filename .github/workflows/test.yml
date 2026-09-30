@@ -11,6 +11,13 @@ jobs:
           cache: pip
       - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - run: python -m pip install '.[test]'
+      - name: Install pinned ComfyUI
+        run: |
+          git clone https://github.com/Comfy-Org/ComfyUI.git "$RUNNER_TEMP/ComfyUI"
+          git -C "$RUNNER_TEMP/ComfyUI" checkout 84ba85773925f071c516f0208184773802b4d44a
+          python -m pip install torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r "$RUNNER_TEMP/ComfyUI/requirements.txt"
+          echo "COMFYUI_ROOT=$RUNNER_TEMP/ComfyUI" >> "$GITHUB_ENV"
       - name: Install Blender 5.1.1
         run: |
           sudo apt-get update

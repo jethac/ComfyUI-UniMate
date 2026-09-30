@@ -15,7 +15,14 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 COMFY_ROOT = Path(os.environ.get("COMFYUI_ROOT", ROOT.parent / "ComfyUI"))
+if not (COMFY_ROOT / "comfy_api" / "latest").is_dir():
+    raise unittest.SkipTest("Set COMFYUI_ROOT to a ComfyUI checkout for node tests")
 sys.path.insert(0, str(COMFY_ROOT))
+comfy_args = importlib.import_module("comfy.cli_args").args
+torch = importlib.import_module("torch")
+
+if not torch.cuda.is_available():
+    comfy_args.cpu = True
 spec = importlib.util.spec_from_file_location(
     "unimate_node_test", ROOT / "__init__.py", submodule_search_locations=[str(ROOT)]
 )
