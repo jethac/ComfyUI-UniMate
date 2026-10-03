@@ -14,6 +14,7 @@ from .training_loss import create_flow_schedule
 from .training_model import model_options
 from .training_session import session_options
 from .training_text import validate_text_cache
+from .training_initialization import inspect_initialization,validate_initialization
 from .training_transforms import _check,_integer
 
 FIELDS={'schema','upstream_revision','model','optimizer','paradigm','loss','sample',
@@ -26,7 +27,7 @@ def job_identity(value):
     return hashlib.sha256(manifest_bytes({k:v for k,v in value.items() if k!='sha256'})).hexdigest()
 
 
-def make_training_job(dataset,statistics,cache,options=None,*,cancel=None,
+def make_training_job(dataset,statistics,cache,options=None,*,initialization=None,cancel=None,
         max_workspace_bytes=512*1024*1024):
     """Bind a prepared dataset, which may contain multiple source dataset labels.
 
@@ -37,7 +38,7 @@ def make_training_job(dataset,statistics,cache,options=None,*,cancel=None,
     _integer(max_workspace_bytes,'max_workspace_bytes',1)
     options={} if options is None else options
     if type(options) is not dict or options.keys()-{
-        'model','optimizer','paradigm','loss','sample','sampling','batch_size','drop_last','seed'}:
+        'model','optimizer','paradigm','loss','sample','sampling','batch_size','drop_last','seed','initialization'}:
         raise ValueError('Invalid training job options')
     _json_value(options)
     options=deepcopy(options)
@@ -51,6 +52,18 @@ def make_training_job(dataset,statistics,cache,options=None,*,cancel=None,
     model=options.get('model',{})
     if type(model) is not dict:
         raise ValueError('Invalid training architecture')
+    selection=options.get('initialization')
+    if selection is not None:
+        validate_initialization(selection)
+    derived=None
+    if initialization is not None:
+        descriptor,derived,_=inspect_initialization(initialization,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
+        if selection is not None and not _exact(selection,descriptor):
+            raise ValueError('Training initialization identity mismatch')
+        selection=descriptor
+        if any(not _exact(value,derived[key]) for key,value in model.items() if key in derived):
+            raise ValueError('Selected initialization architecture differs from options')
+        model={**derived,**model}
     dimension=arrays['tokens'].shape[1]
     if 'text_dim' in model and model['text_dim']!=dimension:
         raise ValueError('Model text dimension differs from validated cache')
@@ -123,18 +136,22 @@ def make_training_job(dataset,statistics,cache,options=None,*,cancel=None,
         model=model,optimizer=optimizer,paradigm=paradigm,loss=loss,sample=sample,sampling=sampling,
         batch_size=batch_size,drop_last=drop_last,seed=seed,datasets=[dict(dataset_sha256=identity,
         statistics_sha256=statistics_identity(statistics),text_cache_sha256=text_cache_identity(cache))])
+    if selection is not None:
+        value['initialization']=selection
     value['sha256']=job_identity(value)
     _check(cancel)
     return value
 
 
 def validate_training_job(value,dataset,statistics,cache,*,cancel=None,max_workspace_bytes=512*1024*1024):
-    _fields(value,FIELDS)
+    _fields(value,FIELDS|({'initialization'} if type(value) is dict and 'initialization' in value else set()))
     _json_value(value)
     _digest(value['sha256'],'training job')
     if job_identity(value)!=value['sha256']:
         raise ValueError('Training job digest mismatch')
     options={k:value[k] for k in ('model','optimizer','paradigm','loss','sample','sampling','batch_size','drop_last','seed')}
+    if 'initialization' in value:
+        options['initialization']=value['initialization']
     expected=make_training_job(dataset,statistics,cache,options,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
     if not _exact(value,expected):
         raise ValueError('Training job artifact binding or canonical configuration mismatch')

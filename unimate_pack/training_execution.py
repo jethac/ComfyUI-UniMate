@@ -12,6 +12,8 @@ from .training_job import validate_training_job,plan_training_epoch
 from .training_model import create_training_model
 from .training_session import TrainingSession
 from .training_transforms import _check,_integer
+from .training_initialization import inspect_initialization,apply_initialization
+from .training_checkpoint import _exact
 
 
 def _sample_seed(seed,epoch,batch,index,stream):
@@ -49,14 +51,14 @@ def _activation_bytes(config,batch_size):
     return layers*(saved+attention)+pooling
 
 
-def run_training_job(job,dataset,statistics,cache,*,residency,updates=1,checkpoint=None,
+def run_training_job(job,dataset,statistics,cache,*,residency,updates=1,checkpoint=None,initialization=None,
         cancel=None,progress=None,max_workspace_bytes=8*1024**3):
     """Execute complete optimizer groups and return portable state and progress.
 
-    residency is a caller-owned context manager loading the CPU scratch model
+    residency is a caller-owned context manager loading the CPU model
     onto its selected device and releasing only that model at exit. Nothing live
-    is returned. Installed-weight initialization and distributed execution remain
-    separate requirements; this path currently executes scratch single-process jobs.
+    is returned. Selected weights initialize a fresh optimizer/EMA session;
+    checkpoint resume restores complete state. Execution is single-process.
     """
     _check(cancel)
     _integer(updates,'updates',1)
@@ -64,6 +66,16 @@ def run_training_job(job,dataset,statistics,cache,*,residency,updates=1,checkpoi
     if updates>10000 or not callable(residency):
         raise ValueError('Invalid training chunk or residency owner')
     job=validate_training_job(job,dataset,statistics,cache,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
+    initial_payload=None
+    if job.get('initialization') is not None:
+        if initialization is None:
+            raise ValueError('Training job requires its selected initialization model')
+        descriptor,options,initial_payload=inspect_initialization(initialization,cancel=cancel,
+            max_workspace_bytes=max_workspace_bytes)
+        if not _exact(descriptor,job['initialization']) or not _exact(options,job['model']):
+            raise ValueError('Training initialization artifact or architecture mismatch')
+    elif initialization is not None:
+        raise ValueError('Scratch training job does not bind an initialization model')
     if job['paradigm']=='diffusion' and job['loss'].get('learn_sigma',False):
         raise ValueError('Learned variance requires a variance-output backbone integration')
     epoch,batch,consumed=0,0,0
@@ -94,6 +106,9 @@ def run_training_job(job,dataset,statistics,cache,*,residency,updates=1,checkpoi
     metrics=[]
     with _LOCK,torch.inference_mode(False),torch.enable_grad():
         model=create_training_model(cfg,seed=job['seed'],cancel=cancel,max_model_bytes=max_workspace_bytes//8)
+        if initial_payload is not None:
+            apply_initialization(model,initial_payload,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
+            del initial_payload
         with residency(model) as resident:
             if resident is not model:
                 raise ValueError('Residency must preserve the owned training model')
@@ -103,7 +118,7 @@ def run_training_job(job,dataset,statistics,cache,*,residency,updates=1,checkpoi
                 session=TrainingSession(model,paradigm=job['paradigm'],loss_options=job['loss'],
                     options=job['optimizer'],seed=job['seed'])
                 binding=dict(architecture=dict(class_name=model_class_identity(model),
-                    config=job,initial_weights_sha256=None),datasets=job['datasets'],
+                    config=job,initial_weights_sha256=job.get('initialization',{}).get('denoiser_sha256')),datasets=job['datasets'],
                     sampling=dict(**job['sampling'],job_sha256=job['sha256']))
                 if checkpoint is not None:
                     restore_training_checkpoint(session,checkpoint,binding,expected_position=expected,

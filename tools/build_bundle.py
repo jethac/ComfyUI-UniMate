@@ -1,4 +1,4 @@
-"""Explicit local conversion of pinned UniMate EMA and FLAN-T5 artifacts.
+"""Explicit local conversion of pinned UniMate raw/EMA and FLAN-T5 artifacts.
 
 No downloads. Checkpoints use torch.load(weights_only=True). The optional legacy
 stats conversion accepts ONLY the pinned official file with its known SHA-256.
@@ -67,6 +67,7 @@ def build_bundle(
     model_revision: str,
     text_revision: str,
     trust_legacy_stats: bool = False,
+    weights: str = 'ema',
 ) -> None:
     import numpy as np
     import torch
@@ -78,25 +79,10 @@ def build_bundle(
     validate_config(config)
     stats = load_stats(stats_path, trust_legacy_stats)
     model = create_denoiser(config)
+    from unimate_pack.training_initialization import select_checkpoint_weights
     checkpoint_data = torch.load(checkpoint, map_location="cpu", weights_only=True)
-    if (
-        "ema_state_dict" not in checkpoint_data
-        or "model_state_dict" not in checkpoint_data
-    ):
-        raise ValueError(
-            "Selected checkpoint must contain model_state_dict and EMA; no raw fallback"
-        )
-    model.load_state_dict(checkpoint_data["model_state_dict"], strict=True)
-    shadows = checkpoint_data["ema_state_dict"].get("shadow_params")
-    parameters = list(model.parameters())
-    if not isinstance(shadows, list) or len(shadows) != len(parameters):
-        raise ValueError("EMA parameter inventory mismatch")
-    with torch.no_grad():
-        for parameter, shadow in zip(parameters, shadows):
-            if shadow.shape != parameter.shape or not torch.isfinite(shadow).all():
-                raise ValueError("Invalid EMA parameter shape or values")
-            parameter.copy_(shadow)
-    del checkpoint_data, shadows
+    select_checkpoint_weights(model, checkpoint_data, weights)
+    del checkpoint_data
     if output.suffix.lower() != ".unimate":
         raise ValueError("Output must use the .unimate extension")
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -119,7 +105,7 @@ def build_bundle(
             },
             str(root / "denoiser.safetensors"),
         )
-        del model, parameters
+        del model
         encoder, loading = T5EncoderModel.from_pretrained(
             str(encoder_dir),
             local_files_only=True,
@@ -172,7 +158,7 @@ def build_bundle(
         manifest = dict(
             schema="unimate.bundle.v1",
             upstream_revision=UPSTREAM_REVISION,
-            weights="ema",
+            weights=weights,
             model_revision=model_revision,
             text_encoder={"id": "google/flan-t5-base", "revision": text_revision},
             solver=SOLVER,
@@ -196,6 +182,7 @@ def main():
     parser.add_argument("--model-revision", required=True)
     parser.add_argument("--text-revision", required=True)
     parser.add_argument("--trust-legacy-stats", action="store_true")
+    parser.add_argument("--weights", choices=['raw', 'ema'], default='ema')
     args = parser.parse_args()
     build_bundle(
         args.checkpoint,
@@ -206,6 +193,7 @@ def main():
         args.model_revision,
         args.text_revision,
         args.trust_legacy_stats,
+        args.weights,
     )
     print(f"Created {args.output.name}")
 

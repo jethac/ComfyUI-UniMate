@@ -80,12 +80,12 @@ def inspect_bundle(payload: bytes) -> dict:
             manifest = _json(archive.read("manifest.json"))
             if (
                 manifest.get("schema") != "unimate.bundle.v1"
-                or manifest.get("weights") != "ema"
+                or manifest.get("weights") not in ("raw", "ema")
                 or manifest.get("upstream_revision") != UPSTREAM_REVISION
                 or manifest.get("solver") != SOLVER
             ):
                 raise ValueError(
-                    "Incompatible UniMate bundle revision, EMA selection, or solver"
+                    "Incompatible UniMate bundle revision, weight selection, or solver"
                 )
             encoder = manifest.get("text_encoder", {})
             if (

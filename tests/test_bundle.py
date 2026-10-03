@@ -47,6 +47,10 @@ def test_manifest_integrity():
     assert inspect_bundle(archive())["weights"] == "ema"
 
 
+def test_explicit_raw_selection():
+    assert inspect_bundle(archive(manifest_update={'weights':'raw'}))['weights']=='raw'
+
+
 @pytest.mark.parametrize(
     "name",
     [
@@ -66,7 +70,7 @@ def test_reject_unsafe_members(name):
 @pytest.mark.parametrize(
     "update",
     [
-        {"weights": "raw"},
+        {"weights": "fallback"},
         {"upstream_revision": "a" * 40},
         {"solver": {"method": "euler"}},
     ],

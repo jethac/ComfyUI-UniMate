@@ -45,11 +45,11 @@ class UniMateTrain(io.ComfyNode):
             inputs=[TrainingJob.Input('job'),Dataset.Input('dataset'),Statistics.Input('statistics'),
                 TextCache.Input('text_cache'),io.Int.Input('updates',default=1,min=1,max=10000),
                 io.Int.Input('workspace_mib',default=8192,min=1,max=65536),
-                TrainingCheckpoint.Input('checkpoint',optional=True)],
+                TrainingCheckpoint.Input('checkpoint',optional=True),Model.Input('initialization',optional=True)],
             outputs=[TrainingCheckpoint.Output(),io.String.Output(display_name='training progress')])
 
     @classmethod
-    def execute(cls,job,dataset,statistics,text_cache,updates=1,workspace_mib=8192,checkpoint=None):
+    def execute(cls,job,dataset,statistics,text_cache,updates=1,workspace_mib=8192,checkpoint=None,initialization=None):
         from functools import partial
         from comfy.utils import ProgressBar
         from .unimate_pack.training_execution import run_training_job
@@ -60,7 +60,7 @@ class UniMateTrain(io.ComfyNode):
             raise ValueError('Invalid training chunk size')
         bar=ProgressBar(updates)
         value,report=run_training_job(job,dataset,statistics,text_cache,updates=updates,
-            checkpoint=checkpoint,residency=partial(managed_training_residency,cancel=_cancel),
+            checkpoint=checkpoint,initialization=initialization,residency=partial(managed_training_residency,cancel=_cancel),
             cancel=_cancel,progress=lambda _:bar.update(1),max_workspace_bytes=workspace_mib*1024*1024)
         return io.NodeOutput(value,json.dumps(report,ensure_ascii=False,allow_nan=False))
 
@@ -71,11 +71,11 @@ class UniMateTrainingJob(io.ComfyNode):
         return io.Schema(node_id=cls.__name__,display_name='Configure UniMate Training',category=CATEGORY,
             inputs=[Dataset.Input('dataset'),Statistics.Input('statistics'),TextCache.Input('text_cache'),
                 io.String.Input('options',default='{}',multiline=True),
-                io.Int.Input('workspace_mib',default=512,min=1,max=65536)],
+                io.Int.Input('workspace_mib',default=512,min=1,max=65536),Model.Input('initialization',optional=True)],
             outputs=[TrainingJob.Output(),io.String.Output(display_name='job configuration')])
 
     @classmethod
-    def execute(cls,dataset,statistics,text_cache,options='{}',workspace_mib=512):
+    def execute(cls,dataset,statistics,text_cache,options='{}',workspace_mib=512,initialization=None):
         from .unimate_pack.bundle import _json
         from .unimate_pack.contracts import MAX_JSON_BYTES
         from .unimate_pack.training_job import make_training_job
@@ -84,7 +84,7 @@ class UniMateTrainingJob(io.ComfyNode):
         if type(workspace_mib) is not int or not 1<=workspace_mib<=65536:
             raise ValueError('Invalid workspace budget')
         value=make_training_job(dataset,statistics,text_cache,_json(options.encode('utf-8')),
-            cancel=_cancel,max_workspace_bytes=workspace_mib*1024*1024)
+            initialization=initialization,cancel=_cancel,max_workspace_bytes=workspace_mib*1024*1024)
         return io.NodeOutput(value,json.dumps(value,ensure_ascii=False,allow_nan=False))
 
 

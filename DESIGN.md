@@ -388,7 +388,17 @@ removes the staged file. Unit evidence covers that cancellation boundary.
 Windows and headless stadia CPU server/handler checks passed scratch graph/AdaLN
 flow training, socket/file resume and client artifact retrieval. They compare
 complete checkpoint values with uninterrupted training within each runtime.
-Unbalanced/distributed loaders, selected-weight initialization, learned-variance
+Configure Training optionally binds an installed model's bundle digest, denoiser
+digest and explicit raw/EMA selection. The architecture comes from its validated
+released config, and conflicting overrides are rejected. Scratch v1 job values
+remain unchanged. Train requires the matching model socket for initialized jobs,
+including resume; initialized parameters precede fresh optimizer/EMA creation.
+Header inventory, shapes, dtypes and shared aliases are compared with a meta-device
+architecture before real model allocation. Numeric finite checks precede copying
+into the private CPU model. Restricted checkpoint conversion selects raw or EMA
+explicitly; absent EMA cannot trigger a raw fallback.
+
+Unbalanced/distributed loaders, learned-variance
 backbone output, exported inference state, injected server cancellation and the
 full server/worker training matrix remain open.
 

@@ -35,7 +35,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Prepare UniMate Training Sample | Bind a training clip, statistics and text cache; augment, crop and normalize |
 | Collate UniMate Training Samples | Collect a sample list into a portable batch with source masks and padding |
 | Configure UniMate Training | Bind architecture, losses, optimizer and epoch sampling to prepared artifacts |
-| Train UniMate | Run scratch-training optimizer groups; return a resumable checkpoint and progress |
+| Train UniMate | Run optimizer groups from scratch or selected installed weights; return checkpoint and progress |
 | Load UniMate Training Checkpoint | Load a numeric `.unimatetrain` checkpoint from managed inputs |
 | Save UniMate Training Checkpoint | Save a numeric checkpoint to managed outputs |
 
@@ -70,7 +70,7 @@ hf download google/flan-t5-base --revision 7bcac572ce56db69c1ea7c8af255c5d7c9672
 python tools/build_bundle.py --checkpoint models/source/unimate/unimate_uniml3d_f60_v2/checkpoints/checkpoint_step_100000.pt --config models/source/unimate/unimate_uniml3d_f60_v2/config.json --stats models/source/unimate/unimate_uniml3d_f60_v2/dataset_stats.npy --text-encoder models/source/flan-t5-base --output models/unimate-v2.unimate --model-revision 387a344c3031299bc25fcbef35d36bd186d5afe7 --text-revision 7bcac572ce56db69c1ea7c8af255c5d7c9672fc2 --trust-legacy-stats
 ```
 
-Copy the resulting bundle to `ComfyUI/models/unimate/`. Conversion selects EMA weights, validates the known legacy statistics, and writes safetensors plus numeric statistics. Runtime loading does not use pickle. The bundle includes the local tokenizer and encoder; inference works offline.
+Copy the resulting bundle to `ComfyUI/models/unimate/`. Conversion selects EMA weights by default; `--weights raw` selects raw weights explicitly. It validates the known legacy statistics and writes safetensors plus numeric statistics. Runtime loading does not use pickle. The bundle includes the local tokenizer and encoder; inference works offline.
 
 For the other families, select their matching config, statistics and checkpoint from model revision `971da7cfc1c8d99c2af6c00be9d2ed5700f99073`. Mixamo has 22 joint slots and depth capacity 7; preview has 61 slots; v2 variants have 71. Skeletons must fit the checkpoint capacity and the current 70-joint rig contract. Mixamo requires `mixamo` normalization. Conversion rejects unrecognized legacy statistics and incompatible checkpoint inventories.
 
@@ -148,9 +148,17 @@ value as `.unimatetrain`, using JSON and safetensors. Windows and headless stadi
 CPU server/partition-handler checks verified socket resume, file staging and
 resume, and client checkpoint retrieval against uninterrupted training in each
 runtime. See [checkpoint validation](docs/2026-10-03-training-checkpoint-io-validation.md).
-Current execution is single-process,
-from scratch, using balanced epoch sampling. Installed-weight initialization,
-distributed/unbalanced loaders, learned-variance backbone output, exported
+Connect an installed Model Loader value to `initialization` on both Configure
+Training and Train to start from that bundle's explicit raw/EMA weights. Configure
+derives the architecture and rejects conflicting options; resume requires the
+same initialization bundle. Use a sufficient workspace on both nodes; the v2
+installed-model checks use 32,768 MiB. Optimizer and EMA state start fresh unless
+a training checkpoint is connected. The converter's `--weights raw` selects raw
+weights; its default is `--weights ema`, with no fallback.
+Installed v2 raw/EMA training, socket/file resume and client retrieval passed
+Windows and stadia CPU server/handler checks; see [initialization validation](docs/2026-10-03-training-initialization-validation.md).
+Current execution is single-process, using balanced epoch sampling.
+Distributed/unbalanced loaders, learned-variance backbone output, exported
 inference state and the full server/worker training matrix remain open.
 Raw-data curation remains open.
 

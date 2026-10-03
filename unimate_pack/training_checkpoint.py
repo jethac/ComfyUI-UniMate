@@ -223,7 +223,7 @@ def _decode_tree(tree,tensors):
     return result
 
 
-def _header(payload,workspace):
+def _header(payload,workspace,*,named=False):
     if type(payload) is not bytes or not 8<len(payload)<=MAX_BYTES:
         raise ValueError('Invalid checkpoint tensor payload')
     if len(payload)*8>workspace:
@@ -241,7 +241,10 @@ def _header(payload,workspace):
     intervals=[]
     data_size=len(payload)-8-length
     for name,entry in header.items():
-        if type(name) is not str or len(name)!=7 or name[0]!='t' or not name[1:].isascii() or not name[1:].isdecimal():
+        valid=(type(name) is str and 0<len(name)<=1024 and name.isascii() and
+            all(c.isalnum() or c in '._' for c in name)) if named else (
+            type(name) is str and len(name)==7 and name[0]=='t' and name[1:].isascii() and name[1:].isdecimal())
+        if not valid:
             raise ValueError('Invalid safetensors tensor name')
         _fields(entry,{'dtype','shape','data_offsets'})
         dtype=entry['dtype']

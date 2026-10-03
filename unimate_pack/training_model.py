@@ -45,6 +45,41 @@ def model_options(options=None):
     return result
 
 
+def _constructor(config):
+    cls=getattr(denoiser,'UniMate'+config['attention'].title()+
+        ('AdaLN' if config['text_cond']=='adaln' else 'CrossAttn'))
+    kwargs={key:value for key,value in config.items() if key not in
+        ('attention','text_cond','use_graph_attn_bias','share_graph_attn_bias','gradient_checkpointing')}
+    if config['attention']=='graph':
+        kwargs.update(share_graph_attn_bias=config['share_graph_attn_bias'],
+            gradient_checkpointing=config['gradient_checkpointing'])
+        if config['text_cond']=='adaln':
+            kwargs['use_graph_attn_bias']=config['use_graph_attn_bias']
+    return cls,kwargs
+
+
+def training_model_layout(options,*,cancel=None,max_model_bytes=2*1024**3):
+    config=model_options(options)
+    if type(max_model_bytes) is not int or max_model_bytes<=0:
+        raise ValueError('Invalid model budget')
+    if cancel:
+        cancel()
+    cls,kwargs=_constructor(config)
+    with _LOCK,torch.random.fork_rng(devices=[]),torch.device('meta'):
+        probe=cls(**kwargs)
+    size=sum(t.numel()*t.element_size() for t in (*probe.parameters(),*probe.buffers()))
+    if size>max_model_bytes:
+        raise ValueError('Training model exceeds budget')
+    state=probe.state_dict(keep_vars=True)
+    groups={}
+    for name,tensor in state.items():
+        groups.setdefault(id(tensor),[]).append(name)
+    layout={name:(tuple(tensor.shape),tensor.dtype) for name,tensor in state.items()}
+    if cancel:
+        cancel()
+    return layout,[names for names in groups.values() if len(names)>1]
+
+
 def create_training_model(options=None,*,seed=0,cancel=None,max_model_bytes=2*1024**3):
     """Create a CPU float32 model without consuming process RNG streams.
 
@@ -62,15 +97,7 @@ def create_training_model(options=None,*,seed=0,cancel=None,max_model_bytes=2*10
         raise ValueError('Invalid model budget')
     if cancel:
         cancel()
-    cls=getattr(denoiser,'UniMate'+config['attention'].title()+
-        ('AdaLN' if config['text_cond']=='adaln' else 'CrossAttn'))
-    kwargs={key:value for key,value in config.items() if key not in
-        ('attention','text_cond','use_graph_attn_bias','share_graph_attn_bias','gradient_checkpointing')}
-    if config['attention']=='graph':
-        kwargs.update(share_graph_attn_bias=config['share_graph_attn_bias'],
-            gradient_checkpointing=config['gradient_checkpointing'])
-        if config['text_cond']=='adaln':
-            kwargs['use_graph_attn_bias']=config['use_graph_attn_bias']
+    cls,kwargs=_constructor(config)
     with _LOCK,torch.random.fork_rng(devices=[]):
         with torch.device('meta'):
             probe=cls(**kwargs)

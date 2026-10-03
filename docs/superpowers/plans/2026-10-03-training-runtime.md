@@ -165,12 +165,36 @@ Independent review: no Critical/Important findings. Minor deferred: patch the
 imported load_tensors alias in the no-allocation test; add BF16/BOOL and corruption
 beyond the four-MiB scan boundary. Envelope validation does not replace full
 session restore validation.
-Remaining Task 5: selected installed raw/EMA initialization; trained inference
+Remaining Task 5 after checkpoint IO: selected installed raw/EMA initialization; trained inference
 export; the full server/handler family/paradigm/precision matrix; injected server
 cancellation and cleanup. Distributed/unbalanced loaders and learned-variance
 model output remain required full-goal work.
 
 ### Subsequent required tasks
+
+Selected initialization increment: permit explicitly marked raw bundles alongside
+EMA bundles; the converter must select one without fallback. Configure Training
+accepts an optional installed model, derives its architecture and binds bundle,
+denoiser and selection identities. Scratch v1 jobs remain byte-compatible. Train
+requires that same selected model for initialized jobs, validates weights against
+the owned model before mutation, then creates fresh optimizer/EMA state. Resume
+keeps its existing complete-state restoration and initialization binding. Compare
+raw/EMA conversion and alias inventories; test mismatches and budget/cancellation
+before allocation. Run an actual installed-weight update locally and headlessly.
+Inference export remains a separate required increment, not satisfied by this.
+
+Initialization result: missing module/interface RED → GREEN. Review's Important
+pre-allocation inventory finding reproduced and fixed with meta-device shape,
+dtype and alias preflight. Final full suite: 1,190 passed, 50 skipped, six
+subtests; headless focused: 90 passed, 10 skipped. Official raw conversion matches
+all 443 source tensors. Windows/stadia raw and EMA actual server/handler runs each
+passed three jobs, three retrieved files and exact uninterrupted/resume comparisons
+within the runtime. EMA runs preceded the final validation-only preflight change;
+raw runs and a separate actual EMA preflight use final code. No new deferred review
+findings. Evidence: docs/2026-10-03-training-initialization-validation.md.
+Remaining Task 5: trained inference export; other installed-family and full
+server/handler training matrices; injected server cancellation/cleanup. Distributed
+and unbalanced loaders and learned-variance output remain full-goal requirements.
 
 - [x] Diffusion schedule/loss kernel and reference comparisons.
 - [x] Single-process optimizer session, internal resume, accumulation and precision foundation.

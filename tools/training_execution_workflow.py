@@ -13,7 +13,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 
 
-def workflow_graph(mode):
+def workflow_graph(mode,initialized=False):
     if mode not in ('build','restore','reload'):
         raise ValueError('Unknown training execution mode')
     graph,inputs={},[]
@@ -27,10 +27,16 @@ def workflow_graph(mode):
         max_motion_length=8,max_joints=16,max_depth=32,cond_mode='text',dropout=.1,cond_mask_prob=.1),
         optimizer=dict(num_steps=4,gradient_accumulation_steps=2),
         loss=dict(lambda_geo=0.,lambda_smooth=0.),seed=17,batch_size=1)
+    if initialized:
+        options.pop('model')
+        boundary('initialization','UNIMATE_MODEL')
     graph['job']=dict(class_type='UniMateTrainingJob',inputs=dict(dataset=['in_dataset',0],
         statistics=['in_statistics',0],text_cache=['in_cache',0],options=json.dumps(options),workspace_mib=512))
     train=dict(job=['job',0],dataset=['in_dataset',0],statistics=['in_statistics',0],
         text_cache=['in_cache',0],updates=1 if mode=='build' else 2,workspace_mib=8192)
+    if initialized:
+        graph['job']['inputs'].update(initialization=['in_initialization',0],workspace_mib=32768)
+        train.update(initialization=['in_initialization',0],workspace_mib=32768)
     if mode=='restore':
         boundary('checkpoint','UNIMATE_TRAINING_CHECKPOINT')
         train['checkpoint']=['in_checkpoint',0]
@@ -71,6 +77,10 @@ def run_checks(base,args,workspace):
         assert len(items)==1
         return items[0]
     source={key:read(args.source_dir/('direct-'+key+'.part')) for key in ('dataset','statistics','cache')}
+    initialized=getattr(args,'initialization_bundle',None) is not None
+    if initialized:
+        from unimate_pack.inference import load_model_bundle
+        source['initialization']=load_model_bundle(args.initialization_bundle)
     validate_text_cache(source['cache'])
     config=CloudConfig(storage_path=str(workspace/'worker-store'),queue_db_path=str(workspace/'worker-queue.db'))
     worker=Worker.__new__(Worker)
@@ -82,7 +92,7 @@ def run_checks(base,args,workspace):
         codec.dump_bundle(codec.pack_execution_values([value]),path)
         artifacts[key]=worker._upload_partition_artifact(path)['artifact_id']
     def direct(updates,label):
-        graph,_,outputs=workflow_graph('build')
+        graph,_,outputs=workflow_graph('build',initialized)
         graph['train']['inputs']['updates']=updates
         graph['save']['inputs']['filename_prefix']='training/direct-'+label
         for key in source:
@@ -102,7 +112,7 @@ def run_checks(base,args,workspace):
     try:
         initial=None
         for mode in ('build','restore','reload'):
-            graph,inputs,outputs=workflow_graph(mode)
+            graph,inputs,outputs=workflow_graph(mode,initialized)
             boundary=dict(artifacts)
             if mode=='restore':
                 boundary['checkpoint']=initial['output_artifacts']['checkpoint']
@@ -141,8 +151,14 @@ def run_checks(base,args,workspace):
                 assert path.read_bytes()==data
             jobs.append(dict(job_id=queued.id,prompt_id=result['prompt_id'],mode=mode,
                 files_restored=1,checkpoint_sha256=expected['identity_sha256'],progress=progress))
+        from unimate_pack.bundle import inspect_bundle
+        selection=dict(bundle_sha256=source['initialization']['sha256'],
+            weights=inspect_bundle(source['initialization']['bundle'])['weights']) if initialized else None
         return dict(direct_status=direct_status,jobs=jobs,cache_encoder=source['cache']['encoder'],
-            cache_sha256=source['cache']['sha256'],scope='Actual CPU ComfyUI server, prepared-data scratch flow training, checkpoint socket/file resume, declared input staging and actual partition handler/client artifact retrieval. No provider/container/live coordinator deployment, installed-weight update, trained inference export, distributed/unbalanced loader or injected server cancellation.')
+            cache_sha256=source['cache']['sha256'],initialization=selection,
+            scope=('Actual CPU ComfyUI server, prepared-data '+('installed-weight' if initialized else 'scratch')+
+                ' flow training, checkpoint socket/file resume, declared input staging and actual partition handler/client artifact retrieval. '+
+                'No provider/container/live coordinator deployment, trained inference export, distributed/unbalanced loader or injected server cancellation.'))
     finally:
         folder_paths.set_output_directory(previous)
 
@@ -164,4 +180,5 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('comfy-root','cloud-root','client-root','python','source-dir','workdir'):
         parser.add_argument('--'+name,type=Path,required=True)
+    parser.add_argument('--initialization-bundle',type=Path)
     verify(parser.parse_args())
