@@ -132,8 +132,9 @@ stadia partition-handler capture/restore, model staging and file retrieval.
 Collate Training Samples collects execution-list values into a portable batch.
 Numeric restoration matches the pinned source collator, including variable joint
 counts, caption lengths and spectral widths. Client/runner codec round trips
-passed. Batch server/headless workflows, training execution and raw-data curation
-remain open.
+passed. Windows and headless stadia server/partition-handler workflows collected
+18 samples into one batch, restored it and preserved reversed sample ordering.
+Training execution and raw-data curation remain open.
 
 ## Cloud Offload
 

@@ -315,8 +315,8 @@ dataset/clip/statistics/cache provenance. Build Text Cache and Prepare Training
 Sample expose the prepared-feature path as V3 nodes. The sample node uses
 independent augmentation/crop seeds and supports all released augmentation
 choices plus explicit neutral FK insertion. It changes rest grounding only;
-raw motion feature extraction remains separate. Additional encoders, portable
-batch server workflows and training consumption are still required. Windows and headless stadia
+raw motion feature extraction remains separate. Additional encoders and training
+consumption are still required. Windows and headless stadia
 server/partition-handler workflows now cover all seven augmentation choices in
 both conditioning modes, neutral FK insertion, cached production and portable
 sample reload. Model staging and six returned archives passed on each platform.
@@ -334,7 +334,11 @@ contents of unavailable source samples. Archives are capped at 256 MiB; a
 configurable workspace estimate bounds aggregate decoding before allocation.
 Validation and source collation are cancellation boundaries; source bulk tensor
 operations are not internally cancellable. Numeric source comparisons and codec
-round trips establish the contract, not server, headless or training execution.
+round trips establish the contract. Windows and headless stadia now execute
+18-sample list collection, portable batch restoration and reversed-order
+collection through actual server/partition handlers. Each platform retrieves
+three batch artifacts, preserving all tensor fields and sample identities.
+No training execution is established by these workflows.
 
 ## Cloud Offload implementation
 

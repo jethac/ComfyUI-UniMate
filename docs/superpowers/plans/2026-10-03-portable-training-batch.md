@@ -34,7 +34,7 @@ Interface: `UniMateCollateTrainingSamples`, list input `UNIMATE_TRAINING_SAMPLE`
 - [x] Observe missing-node/schema test failure; implement registration and list collection.
 - [x] Check actual client/runner codec round trips and source tensor restoration.
 - [x] Run regression checks, review, document precise evidence.
-- [ ] Commit and push.
+- [x] Commit and push (`7cc37f4`).
 - [x] Track server/headless batch workflows and actual training consumption as open until executed.
 
 Ruling: pack topology into two numeric arrays plus per-sample parent dtype metadata,
@@ -46,3 +46,7 @@ Evidence: 16 contract tests; full suite 903 passed, 50 skipped, six subtests.
 Review found no actionable findings. Full-suite failures in the initial run were
 the stale expected node inventory and a temporary inventory cache leaked by the
 test fixture; both corrected before the successful run.
+
+Follow-up: Windows and headless stadia batch workflows now pass direct collection
+and three actual partition-handler jobs using 18 model-encoded samples. Restored
+batch tensors and reversed order match; training consumption remains open.

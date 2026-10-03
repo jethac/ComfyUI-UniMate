@@ -854,3 +854,43 @@ Skipped checks remain outside this run's evidence. The first full run exposed
 an outdated expected inventory and leaked temporary-path inventory cache in the
 node test fixture (901 passed, two failed, 50 skipped). Updated inventory and
 fixture-owned cache restoration corrected both before the successful run.
+
+## Batch server and worker workflows (2026-10-03)
+
+`tools/training_batch_workflow.py` passed on Windows and headless stadia-testbed.
+Actual CPU ComfyUI execution collects 18 model-encoded sample values into one
+`(18,16,12,60)` batch. Joint counts span 6–8; valid lengths alternate 60/59, with
+caption masks `(18,6)`. Direct execution and three actual worker jobs per platform
+cover collection, portable batch restoration and reversed sample collection.
+All output values match expected portable bytes within their runtime. Restored
+motion/conditioning tensors match direct source collation; ordered sample
+identities match the input order, including its reversal. Each platform retrieves
+three batch artifacts and round-trips them through the real client codec. These
+jobs emit no export files.
+
+Reports: `.runtime/training-batch-worker-check-3/report.json` and
+`.runtime/stadia-training-batch-worker/report.json`; remote original:
+`/home/jethac/workspaces/comfy-unimate-e2e-20261001/run-training-batch-worker-20261003-3/report.json`.
+Reports record base pack `7cc37f4b16b7f781057e4770886d2d59750d4bb4`, with this
+commit's harness in the worktree. ComfyUI remains Windows
+`e2f44d7fe65e270ac111237366b03e396b94dcea` / stadia
+`84ba85773925f071c516f0208184773802b4d44a`; runner
+`43bd1a0d998ffcba2568de2289cd3131f271aaa6`, client
+`4a7a9376d8e20cc3decfba26cd1e626bd198ab7a`.
+Windows uses Python 3.11.9 and Torch 2.11.0+cu128 on CPU; stadia uses Python
+3.11.15 and Torch 2.14.1+cpu. The reports include all input partition digests,
+sample identities, encoder identity and batch identities. Samples come from the
+preceding model-encoded sample workflows; this run does not execute the encoder.
+No cross-platform byte equality is claimed.
+
+Two initial harness attempts failed on each platform: comparison against the
+cache's array digest instead of its full identity, then mismatched parent-worker
+and server partition roots. Regression checks failed before each fix, then passed.
+Managed-root containment remained enforced. Terminal failures were confirmed
+before new work directories were used. The successful third runs passed all jobs.
+Independent review found no actionable issues; three harness tests passed.
+
+Full suite: 906 passed, 50 skipped, six subtests, 25.94s; two existing Torch JIT
+warnings. Changed-file Ruff and whitespace checks passed. Training, live provider
+dispatch, deployed containers, coordinator discovery and injected worker
+cancellation remain open.
