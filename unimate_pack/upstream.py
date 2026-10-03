@@ -17,17 +17,12 @@ def validate_config(config: dict) -> None:
     expected_data = dict(
         feature_len=12,
         max_motion_length=60,
-        max_joints=71,
-        max_depth=19,
         topology_condition_type="tpos",
         motion_repr="unimate",
     )
     expected_model = dict(
-        attention="graph",
-        text_cond="adaln",
         latent_dim=512,
         ff_size=2048,
-        num_layers=10,
         num_heads=8,
         dropout=0.0,
         use_spectral_rope=True,
@@ -50,17 +45,21 @@ def validate_config(config: dict) -> None:
     if (
         any(dataset.get(k) != v for k, v in expected_data.items())
         or any(model.get(k) != v for k, v in expected_model.items())
+        or (dataset.get("max_joints"), dataset.get("max_depth"),
+            model.get("num_layers"), model.get("attention"), model.get("text_cond"))
+        not in {(22, 7, 6, "graph", "adaln"), (61, 19, 10, "graph", "adaln"),
+                (71, 19, 10, "graph", "adaln"), (71, 19, 10, "full", "cross_attn")}
         or config.get("training", {}).get("diff_model") != "flow"
         or config.get("training", {}).get("use_ema") is not True
     ):
         raise ValueError(
-            "This adapter requires the UniMate uniml3d_f60_v2 graph/AdaLN EMA configuration"
+            "This adapter requires a released UniMate f60 EMA configuration"
         )
 
 
 def create_denoiser(config: dict):
     validate_config(config)
-    from ._vendor.denoiser import UniMateGraphAdaLN
+    from ._vendor import denoiser
 
     dataset = config["dataset"]
     keys = (
@@ -84,7 +83,12 @@ def create_denoiser(config: dict):
         "share_graph_attn_bias",
         "gradient_checkpointing",
     )
-    return UniMateGraphAdaLN(
+    constructor = (denoiser.UniMateGraphAdaLN if config["model"]["attention"] == "graph"
+                   else denoiser.UniMateFullCrossAttn)
+    if config["model"]["attention"] == "full":
+        keys = tuple(k for k in keys if k not in (
+            "use_graph_attn_bias", "share_graph_attn_bias", "gradient_checkpointing"))
+    return constructor(
         **{k: config["model"][k] for k in keys},
         text_dim=768,
         **{
