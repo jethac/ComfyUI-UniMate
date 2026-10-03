@@ -42,6 +42,14 @@ def validate_output(filename, data):
             raise ValueError("Unexpected export metadata schema")
 
 
+def validate_batch_cases(cases, prompts, repetitions):
+    expected = [(i, prompt, 60) for i, prompt in enumerate(
+        prompt for prompt in prompts for _ in range(repetitions))]
+    actual = sorted((case["seed"], case["prompt"], case["frames"]) for case in cases)
+    if actual != expected:
+        raise ValueError("Batch export provenance does not match the requested cases")
+
+
 def bundle_inventory(path):
     """Compare restored artifacts without loading multi-GB model bytes again."""
     with zipfile.ZipFile(path) as archive:
@@ -152,6 +160,13 @@ def verify(args):
     graph["1"]["inputs"]["asset"] = "rig with spaces.glb"
     graph["3"]["inputs"]["bundle"] = bundle.name
     graph["5"]["inputs"]["filename_prefix"] = "verified/local"
+    if getattr(args, "batch", False):
+        if args.cloud_root or getattr(args, "extended", False):
+            raise ValueError("Run batch verification separately from bridge or expanded verification")
+        graph["4"] = {"class_type": "UniMateGenerateBatch", "inputs": {
+            "model": ["3", 0], "rig": ["2", 0], "seed": 0, "guidance": 3.0,
+            "normalization": "objaverse", "repetitions": 2,
+            "prompts": json.dumps(["A character stands still.", "A character walks forward."])}}
     if getattr(args, "extended", False):
         for mode, selection in (("inbetween", "0,-1"), ("edit", "Joint_1")):
             graph[mode] = {
@@ -352,14 +367,22 @@ def verify(args):
             )
             entries = [entry]
         exports = []
+        batch_cases = []
         for entry in entries:
             for output in entry["outputs"].values():
                 for key in ("3d", "files"):
                     for file in output.get(key, []):
                         data = request(base, "/view?" + urllib.parse.urlencode(file))
                         validate_output(file["filename"], data)
+                        if getattr(args, "batch", False) and file["filename"].endswith(".json"):
+                            batch_cases.append(json.loads(data)["generation"])
                         exports.append({**file, "bytes": len(data)})
         assert len(exports) >= 2
+        if getattr(args, "batch", False):
+            assert sum(f["filename"].endswith(".glb") for f in exports) == 4
+            assert len(exports) == 8
+            validate_batch_cases(batch_cases, json.loads(graph["4"]["inputs"]["prompts"]), 2)
+            report["batch_cases_verified"] = batch_cases
         report["retrieved_outputs"] = exports
         report["status"] = "passed"
         (workspace / "report.json").write_text(
@@ -392,6 +415,7 @@ def main():
     )
     parser.add_argument("--branching", action="store_true")
     parser.add_argument("--extended", action="store_true", help="Exercise constrained modes, expansion and numeric saving")
+    parser.add_argument("--batch", action="store_true", help="Exercise typed motion-list export for four cases")
     parser.add_argument("--cpu", action="store_true", help="Run ComfyUI on CPU")
     args = parser.parse_args()
     print(json.dumps(verify(args), indent=2))
