@@ -155,6 +155,10 @@ def prepare_document(
     doc, facing, left_joint="", right_joint="", name="character", blender_rest=None,
     *, left_shoulder="", right_shoulder="", body_axis=False,
 ):
+    if type(body_axis) is not bool:
+        raise ValueError("Body-axis selection must be boolean")
+    if facing != "joint_pair" and (left_shoulder or right_shoulder or body_axis):
+        raise ValueError("Shoulder and body-axis options require joint_pair facing")
     worlds, local, node_parents = world_matrices(doc)
     joints = list(doc["skins"][0]["joints"])
     names = [doc["nodes"][j].get("name", f"joint_{j}") for j in joints]

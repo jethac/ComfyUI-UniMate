@@ -58,6 +58,8 @@ Put a rigged GLB under `ComfyUI/input/`, then connect Load Rigged GLB → Prepar
 
 Choose the source facing direction explicitly. Joint-pair facing requires raw left/right joint names. Generate exposes prompt, seed, guidance, and normalization family (`objaverse`, `mixamo`, `truebones`). Guidance 1 is unconditional, matching upstream. Solver settings follow the pinned model. A clip has 60 keys at `i/30` seconds and is not automatically looped.
 
+With `joint_pair`, optional left/right shoulder names add a second lateral pair. Set `body_axis` for a head-to-tail pair instead of a lateral pair. The selected mode is retained for source-motion extraction. Four-joint and body-axis preparation passed external Blender rest-preservation checks; server/cloud checks for these options remain pending.
+
 ## Supported assets
 
 Save UniMate Motion writes `.npz` archives. Copy an archive into ComfyUI input and select it in Load UniMate Motion to reuse it as a reference. In-betweening accepts comma-separated frame indices (`0,-1` preserves the first and last frame); editing accepts original or cleaned joint names. Reference clips must belong to the same prepared rig and fit the current 60-frame model window. Both modes require guidance greater than 1.

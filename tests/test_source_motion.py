@@ -22,6 +22,12 @@ def test_prepare_four_joint_facing_retains_extraction_mode(body_axis):
     assert rig["mapping"]["body_axis"] == body_axis
 
 
+def test_facing_options_cannot_be_silently_ignored():
+    document, _ = parse_glb(synthetic_glb(True))
+    with pytest.raises(ValueError, match="joint_pair"):
+        prepare_document(document, "+Z", body_axis=True)
+
+
 def test_joint_pair_extraction_facing_matches_upstream():
     import importlib.util
     import os

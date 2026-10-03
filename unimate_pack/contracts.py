@@ -297,6 +297,8 @@ def _rig_mapping(mapping, asset_metadata):
         raise ValueError("Unsupported rig quaternion conventions")
     if mapping["facing"] not in ("+Z", "-Z", "+X", "-X", "joint_pair"):
         raise ValueError("Rig mapping has unsupported facing direction")
+    if "body_axis" in mapping and type(mapping["body_axis"]) is not bool:
+        raise ValueError("Rig body_axis must be boolean")
     if mapping["facing"] == "joint_pair":
         left, right = mapping.get("left_joint"), mapping.get("right_joint")
         names = {
@@ -437,7 +439,7 @@ def validate_rig(value: dict) -> None:
         if (
             face.shape not in ((2,), (4,))
             or face.dtype.kind not in "iu"
-            or not (np.all(face == -1) or np.all((face >= 0) & (face < joint_count)))
+            or not ((face.shape == (2,) and np.all(face == -1)) or np.all((face >= 0) & (face < joint_count)))
         ):
             raise ValueError(
                 "Rig face_joint_idxs requires two or four valid indices or -1 sentinel"

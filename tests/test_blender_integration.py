@@ -18,6 +18,22 @@ from unimate_pack.blender import (
 from unimate_pack.contracts import make_asset, make_motion, encode_arrays, decode_arrays
 
 
+@pytest.mark.skipif(not os.environ.get("UNIMATE_BLENDER"), reason="Requires external Blender")
+@pytest.mark.parametrize("body_axis", [False, True])
+def test_blender_prepares_four_joint_facing_and_preserves_rest(body_axis):
+    source = synthetic_glb(True)
+    rig = prepare_rig(make_asset(source, "four-facing.glb"), "joint_pair", "Joint_2", "Joint_1",
+        left_shoulder="Joint_4", right_shoulder="Joint_3", body_axis=body_axis)
+    cond = decode_arrays(rig["conditioning"])
+    assert cond["face_joint_idxs"].shape == (4,)
+    assert rig["mapping"]["body_axis"] == body_axis
+    features = np.zeros((7, 7, 12), np.float32)
+    features[..., 3] = features[..., 7] = 1
+    features[:, 0, 1] = cond["tpos_first_frame"][0, 1]
+    output = export_glb(rig, make_motion(rig["rig_id"], encode_arrays(features=features), {}))
+    np.testing.assert_allclose(evaluated_vertices(output, 0), evaluated_vertices(source), atol=2e-6)
+
+
 @pytest.mark.skipif(
     not os.environ.get("UNIMATE_BLENDER"),
     reason="Set UNIMATE_BLENDER for external Blender integration",
