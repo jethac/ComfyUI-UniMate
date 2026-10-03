@@ -282,7 +282,8 @@ recomputes weights and sampled indices. This is an epoch plan, not a training ru
 Training augmentation has a numeric adapter for released ellipsoid/linear joint
 addition, leaf removal, one-child pooling, bone perturbation and randomized
 selection. It operates after actual joint-name embedding, as upstream does;
-public encoded-sample production, text caches, collation and training remain open.
+Public encoded-sample production and text caches are implemented below; portable
+collation and training execution remain open.
 Local seeded generators preserve global RNG state. Validation and a configurable
 512 MiB estimated workspace budget precede copies; cancellation is checked during
 edits and rejection sampling. Dense topology/eigendecomposition calls are not
@@ -315,8 +316,12 @@ Sample expose the prepared-feature path as V3 nodes. The sample node uses
 independent augmentation/crop seeds and supports all released augmentation
 choices plus explicit neutral FK insertion. It changes rest grounding only;
 raw motion feature extraction remains separate. Additional encoders, portable
-batches and headless/cloud sample workflows are still required; these modules do not establish
-training or Cloud Offload execution coverage.
+batches and training consumption are still required. Windows and headless stadia
+server/partition-handler workflows now cover all seven augmentation choices in
+both conditioning modes, neutral FK insertion, cached production and portable
+sample reload. Model staging and six returned archives passed on each platform.
+These checks do not establish training, coordinator discovery, worker-container
+deployment or injected worker cancellation.
 
 ## Cloud Offload implementation
 

@@ -785,3 +785,44 @@ warnings. Command: preceding 610-test command plus tests/test_training_nodes.py
 and the extended tests/test_training_text.py. Changed-file Ruff and diff check
 passed. Public schemas are unique after registration correction.
 Independent review rechecked registration: 29 unique node IDs, no remaining actionable findings.
+
+## Training sample server and worker workflows (2026-10-03)
+
+`tools/training_workflow.py` passed on Windows and headless stadia-testbed.
+Each run used an actual isolated CPU ComfyUI server, installed FLAN-T5 bundle,
+runner partition handlers and client file restoration. Seven augmentation choices
+crossed both conditioning modes; ellipsoid/linear addition also used `neutral_fk`:
+18 samples per workflow. Direct execution and three worker jobs (build, cached
+producer restore, encoded-value reload) preserved dataset/statistics/cache values
+and byte-exact expected samples within each runtime. The runner staged the model
+by SHA-256. Six returned dataset/statistics archives per platform matched their
+original bytes and loaded values.
+
+Reports: `.runtime/training-worker-check-2/report.json` and
+`.runtime/stadia-training-worker/report.json`; remote original:
+`/home/jethac/workspaces/comfy-unimate-e2e-20261001/run-training-worker-20261003-1/report.json`.
+Reports record base pack `695b6f4a10cb324cd8aef3dceea619344590d819`
+with this commit's harness changes present in the worktree. Windows ComfyUI:
+`e2f44d7fe65e270ac111237366b03e396b94dcea`; stadia ComfyUI:
+`84ba85773925f071c516f0208184773802b4d44a`. Both used runner
+`43bd1a0d998ffcba2568de2289cd3131f271aaa6` and client
+`4a7a9376d8e20cc3decfba26cd1e626bd198ab7a`.
+Windows: Python 3.11.9, Torch 2.11.0+cu128 running CPU.
+Stadia: Python 3.11.15, Torch 2.14.1+cpu running CPU.
+Training reference remains `2c5b384715aa63d8639b1ed7eb74bfe614570c7a`.
+
+Bundle SHA-256:
+`3d4420752e64b873f98c8aec2d6f01edf7be861c704920dfc095bd1d700664b8`.
+Text encoder artifact SHA-256:
+`f79264a13a940769912d95fa9521c1f6c4448e1fe129d1ad4e1cf6a7c4a4259d`.
+Cache digests differ between runtimes; no cross-platform byte parity is claimed.
+The first Windows attempt failed because the harness omitted six required API
+inputs and selected a server environment lacking torch-geometric. Explicit graph
+inputs and the installed pack environment corrected those failures. The graph
+regression failed before the fix and passed afterward.
+
+Combined dataset/training/node checks: 616 passed, six subtests, no skips, 26.67s,
+with two existing Torch JIT warnings. This evidence covers prepared-feature
+samples, not portable batches, training consumption, other encoders, coordinator
+asset discovery, deployed containers, provider dispatch or injected worker
+cancellation. Independent review found no actionable harness or scope findings.

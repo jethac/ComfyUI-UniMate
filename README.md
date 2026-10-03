@@ -121,8 +121,14 @@ object types for Truebones/Objaverse and clips for Mixamo. Its `options` accepts
 `modes` and `explicit_eval_objects` mappings; explicit object lists override the
 ratio and cannot empty a dataset's training set. Plan Sampling returns portable
 weights and indices for one epoch, using only training clips. `two_level` adds
-dataset balancing to object balancing. Training execution, curation and
-augmentation remain open.
+dataset balancing to object balancing.
+
+Build Text Cache encodes captions and joint names using the selected installed
+model. Prepare Training Sample applies augmentation, cropping and normalization
+to a training clip with matching statistics and text-cache provenance. All seven
+augmentation choices and both conditioning modes passed Windows and headless
+stadia partition-handler capture/restore, model staging and file retrieval.
+Portable batches, training execution and raw-data curation remain open.
 
 ## Cloud Offload
 

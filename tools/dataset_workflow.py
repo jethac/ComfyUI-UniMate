@@ -234,13 +234,17 @@ def run_checks(base, args, workspace):
             os.environ['COMFY_PARTITION_ROOT'] = previous_partition
 
 
-def verify(args):
+def verify(args, *, graph_builder=None, check_runner=None, prepare_workspace=None):
     from tools.verify_workflow import install_link, request
     workspace = args.workdir.resolve()
+    graph_builder = graph_builder or workflow_graph
+    check_runner = check_runner or run_checks
     if workspace.exists() and any(workspace.iterdir()):
         raise ValueError('Select a new empty work directory')
     for name in ('input', 'output', 'temp', 'user', 'models', 'custom_nodes', 'partition'):
         (workspace / name).mkdir(parents=True, exist_ok=True)
+    if prepare_workspace is not None:
+        prepare_workspace(workspace)
     install_link(ROOT, workspace / 'custom_nodes/comfy-unimate')
     install_link((args.cloud_root / 'deploy/runtime-profiles/comfyui/ComfyUI-Cloud-Offload-Runtime').resolve(),
                  workspace / 'custom_nodes/cloud-runtime')
@@ -251,7 +255,7 @@ def verify(args):
     base = f'http://127.0.0.1:{port}'
     env = os.environ.copy()
     env.update(COMFY_PARTITION_ROOT=str(workspace / 'partition'), HF_HUB_OFFLINE='1',
-               TRANSFORMERS_OFFLINE='1', PYTHONUNBUFFERED='1',
+               TRANSFORMERS_OFFLINE='1', PYTHONUNBUFFERED='1', OMP_NUM_THREADS='4', MKL_NUM_THREADS='4',
                PYTHONPATH=str(args.cloud_root.resolve()) + os.pathsep + env.get('PYTHONPATH', ''))
     command = [str(args.python.absolute()), str(args.comfy_root.resolve() / 'main.py'),
                '--listen', '127.0.0.1', '--port', str(port), '--base-directory', str(workspace),
@@ -274,9 +278,9 @@ def verify(args):
             else:
                 raise TimeoutError('ComfyUI startup timed out')
             assert all(node['class_type'] in info for mode in ('build', 'restore', 'reload')
-                       for node in workflow_graph(mode)[0].values())
+                       for node in graph_builder(mode)[0].values())
             report = dict(system_stats=json.loads(request(base, '/system_stats')), python=sys.version,
-                          evidence=run_checks(base, args, workspace))
+                          evidence=check_runner(base, args, workspace))
             report['revisions'] = {key: subprocess.run(['git', '-C', str(path), 'rev-parse', 'HEAD'],
                 capture_output=True, text=True, check=True).stdout.strip() for key, path in (
                     ('pack', ROOT), ('comfy', args.comfy_root), ('runner', args.cloud_root), ('client', args.client_root))}
