@@ -274,6 +274,12 @@ def generate_motion(
             prompt_tokens,
             joint_embeddings,
         )
+        if reference_features is not None:
+            frames = len(reference_features)
+            cond["motion_length"] = torch.full_like(cond["motion_length"], frames)
+            cond["lengths_mask"] = (
+                torch.arange(60, device=cond["lengths_mask"].device)[None, :] < frames
+            )
         mm.load_models_gpu([runtime.denoiser], force_full_load=True)
         device = runtime.denoiser.load_device
         cond = {
