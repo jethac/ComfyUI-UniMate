@@ -101,6 +101,34 @@ For a CPU-only host, add `--cpu` to the workflow command or set `UNIMATE_INTEGRA
 
 ## Open gates
 
+### Expanded stadia inference, 2026-10-03
+
+`tools/verify_workflow.py --branching --cpu --extended` passed in workspace
+`/home/jethac/workspaces/comfy-unimate-e2e-20261001/run-expanded-archive-fixed-20261003`.
+The server ran ComfyUI `84ba85773925f071c516f0208184773802b4d44a`, Python 3.11.15,
+PyTorch 2.14.1+cpu and Blender 5.1.1. Inference was offline, float32, with v2 EMA bundle
+SHA-256 `3d4420752e64b873f98c8aec2d6f01edf7be861c704920dfc095bd1d700664b8`,
+upstream `5d6aabedd947297b5ba6706d8e9113e68c0c3e4f` and FLAN-T5-base revision
+`7bcac572ce56db69c1ea7c8af255c5d7c9672fc2`.
+
+Four GLBs, four provenance JSON files and three numeric archives were retrieved through
+ComfyUI. Independent glTF skinning evaluation passed all 290 frames: generation 60,
+in-betweening 60, editing 60 and expansion 110. Vertices were finite and changed over time;
+source meshes, skins, materials, images and textures were unchanged. Archives decoded to
+`(60,7,12)`, `(60,7,12)` and `(110,7,12)`. Local evidence is under
+`.runtime/stadia-expanded-archive-fixed`, including `report.json` and `independent-check.json`.
+Newer nodes and Cloud Offload were not exercised by this graph.
+
+### FBX base-color textures, 2026-10-03
+
+External Blender tests passed seven- and 110-frame branching clips with a textured,
+tinted material. The adapter checks effective base-color baking within 5e-5 linear color,
+embedded pixels within 2e-6 after deleting private sidecars, skeleton names and skinning
+at every frame. `tests/test_fbx.py tests/test_nodes.py`: 23 passed, 6 subtests passed.
+This does not establish fidelity for other PBR material expressions or cloud execution.
+
+### Remaining gates
+
 - Linux GPU inference, worker-container execution, and live provider provisioning.
 - Redistributable real characters, arbitrary-rig motion quality, and the complete upstream preprocessing CLI.
 - Independent graphical glTF viewer playback/appearance review; current independent verification is numeric.

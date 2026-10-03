@@ -79,7 +79,7 @@ Generate UniMate Batch accepts 1–32 JSON prompts and 1–64 repetitions, cappe
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 
-Export UniMate FBX writes binary FBX and provenance JSON. The external Blender job bakes at 30 fps without leaf bones, embeds images, reimports at frame zero and checks bone identity and evaluated skinning for every frame. GLB remains the appearance-preserving export; FBX material/texture fidelity and server/cloud execution are not yet verified. FBX input is not supported.
+Export UniMate FBX writes binary FBX and provenance JSON. The external Blender job bakes at 30 fps without leaf bones, embeds images, reimports at frame zero and checks bone identity and evaluated skinning for every frame. Constant glTF base-color multipliers are folded into 16-bit PNG textures; embedded pixels are checked after reimport. Other material expressions and server/cloud execution remain unverified. FBX input is not supported.
 
 ## Cloud Offload
 

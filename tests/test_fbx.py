@@ -23,4 +23,5 @@ def test_fbx_animation_round_trip_preserves_branching_skin_and_coordinates(tmp_p
     motion = make_motion(rig["rig_id"], encode_arrays(features=features), {})
     output = export_fbx(rig, motion)
     assert output.startswith(b"Kaydara FBX Binary")
+    assert b"\x89PNG\r\n\x1a\n" in output
     (tmp_path / "motion.fbx").write_bytes(output)
