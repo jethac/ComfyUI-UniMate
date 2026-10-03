@@ -5,6 +5,7 @@ import numpy as np
 from .clip_sampling import sample_clip
 from .contracts import validate_rig, decode_arrays, encode_arrays, make_motion
 from .feature_encoding import encode_motion_features, rebase_rotations
+from .facing import facing_rotations
 from .rig_math import parse_glb, world_matrices, rotation_part
 
 
@@ -33,17 +34,7 @@ def extract_motion(rig, clip_index=0, *, check_cancel=lambda: None):
         rest_local[joint] = rest_global[parent].T @ rest_global[joint]
         animated_local[:, joint] = animated_global[:, parent].swapaxes(-1, -2) @ animated_global[:, joint]
     rotations = rebase_rotations(rest_local, animated_local, parents)
-    facing = np.broadcast_to(np.eye(3), (len(times), 3, 3)).copy()
-    indices = conditioning["face_joint_idxs"]
-    if np.all(indices >= 0):
-        across = positions[:, indices[0]] - positions[:, indices[1]]
-        forward = np.cross([0, 1, 0], across)
-        if np.any(np.linalg.norm(forward, axis=-1) < 1e-8):
-            raise ValueError("Source clip has a degenerate facing joint pair")
-        angle = -np.arctan2(forward[:, 0], forward[:, 2])
-        c, s = np.cos(angle), np.sin(angle)
-        facing[:, 0, 0] = facing[:, 2, 2] = c
-        facing[:, 0, 2], facing[:, 2, 0] = s, -s
+    facing = facing_rotations(positions, conditioning["face_joint_idxs"])
     features = encode_motion_features(positions, rotations, parents, facing)
     check_cancel()
     return make_motion(rig["rig_id"], encode_arrays(features=features), dict(
