@@ -76,6 +76,8 @@ The existing five-node tests prove the narrow generation/export path. They do no
 
 ## Execution evidence
 
+2026-10-03: preview's portable EMA/T5 bundle passed conditioned and unconditional free generation, finite 60-frame features, Blender export and independent changing skinning playback (two tests, 205.76 seconds). Outputs are local under `.runtime/preview-free-model-check`. All four released families now have direct free/constrained inference and export evidence. Expanded server/cloud workflows, model-family capacity boundaries and headless coverage remain separate gates. The headless verifier now supports an expanded inference graph and validates retrieved numeric archives and GLB structure; two focused artifact-validation tests and lint passed. Its stadia execution remains active and has not completed artifact retrieval.
+
 2026-10-03: Mixamo's installed EMA/T5 bundle passed conditioned and unconditional free generation, finite 60-frame feature checks, Blender export and independent skinning playback (two tests, 115.98 seconds). Outputs are local under `.runtime/mixamo-free-model-check`. Preview free-generation remains running. The expanded stadia ComfyUI graph registered successfully and is executing on CPU; completion and artifact checks remain unproven.
 
 2026-10-03: the full-cross-attention bundle passed offline free sampling at guidance 1 and 3, local T5 conditioning, finite 60-frame features, Blender export and independent changing skinning playback across all frames (two tests, 169.61 seconds). Outputs are local under `.runtime/full-cross-free-model-check`. Equivalent Mixamo and preview checks are running; server/cloud/stadia coverage remains separate.

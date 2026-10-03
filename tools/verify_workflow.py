@@ -19,12 +19,27 @@ import urllib.request
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 TYPES = {
     "1": "UNIMATE_ASSET",
     "2": "UNIMATE_RIG",
     "3": "UNIMATE_MODEL",
     "4": "UNIMATE_MOTION",
 }
+
+
+def validate_output(filename, data):
+    if not data:
+        raise ValueError("Empty exported artifact")
+    if filename.endswith(".glb"):
+        from unimate_pack.assets import validate_glb
+        validate_glb(data)
+    elif filename.endswith(".npz"):
+        from unimate_pack.motion_io import load_motion
+        load_motion(data)
+    else:
+        if json.loads(data).get("schema") != "unimate.export.v1":
+            raise ValueError("Unexpected export metadata schema")
 
 
 def bundle_inventory(path):
@@ -52,7 +67,7 @@ def request(base, route, payload=None):
         raise RuntimeError(error.read().decode(errors="replace")) from error
 
 
-def submit(base, graph, timeout=1800):
+def submit(base, graph, timeout=7200):
     queued = json.loads(request(base, "/prompt", {"prompt": graph}))
     prompt_id = queued["prompt_id"]
     deadline = time.monotonic() + timeout
@@ -137,6 +152,23 @@ def verify(args):
     graph["1"]["inputs"]["asset"] = "rig with spaces.glb"
     graph["3"]["inputs"]["bundle"] = bundle.name
     graph["5"]["inputs"]["filename_prefix"] = "verified/local"
+    if getattr(args, "extended", False):
+        for mode, selection in (("inbetween", "0,-1"), ("edit", "Joint_1")):
+            graph[mode] = {
+                "class_type": "UniMateInbetweenMotion" if mode == "inbetween" else "UniMateEditMotion",
+                "inputs": {"model": ["3", 0], "rig": ["2", 0], "reference": ["4", 0],
+                    "prompt": "A character walks forward.", "seed": 1, "guidance": 3.0,
+                    "selection": selection, "normalization": "objaverse"},
+            }
+        graph["expand"] = {"class_type": "UniMateExpandMotion", "inputs": {
+            "model": ["3", 0], "rig": ["2", 0], "seed": 2, "guidance": 3.0,
+            "normalization": "objaverse", "overlap": 10,
+            "prompts": json.dumps(["A character stands still.", "A character walks forward."])}}
+        for mode in ("inbetween", "edit", "expand"):
+            graph[mode + "_export"] = {"class_type": "UniMateExportGLB", "inputs": {
+                "rig": ["2", 0], "motion": [mode, 0], "filename_prefix": "verified/" + mode}}
+            graph[mode + "_save"] = {"class_type": "UniMateSaveMotion", "inputs": {
+                "motion": [mode, 0], "filename_prefix": "verified/" + mode}}
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
         port = listener.getsockname()[1]
@@ -325,11 +357,7 @@ def verify(args):
                 for key in ("3d", "files"):
                     for file in output.get(key, []):
                         data = request(base, "/view?" + urllib.parse.urlencode(file))
-                        assert data, "Empty exported artifact"
-                        if file["filename"].endswith(".glb"):
-                            assert data[:4] == b"glTF"
-                        else:
-                            assert json.loads(data)["schema"] == "unimate.export.v1"
+                        validate_output(file["filename"], data)
                         exports.append({**file, "bytes": len(data)})
         assert len(exports) >= 2
         report["retrieved_outputs"] = exports
@@ -363,6 +391,7 @@ def main():
         help="Cloud Offload source checkout with runner bridge nodes",
     )
     parser.add_argument("--branching", action="store_true")
+    parser.add_argument("--extended", action="store_true", help="Exercise constrained modes, expansion and numeric saving")
     parser.add_argument("--cpu", action="store_true", help="Run ComfyUI on CPU")
     args = parser.parse_args()
     print(json.dumps(verify(args), indent=2))
