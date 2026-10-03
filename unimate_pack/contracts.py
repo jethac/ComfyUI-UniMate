@@ -504,7 +504,7 @@ def validate_rig(value: dict) -> None:
         raise ValueError("Prepared rig digest mismatch")
 
 
-def make_model(bundle: bytes, name: str) -> dict:
+def make_model(bundle: bytes, name: str, *, cancel=None, max_workspace_bytes=8*1024**3) -> dict:
     _bytes(bundle, MAX_MODEL_BYTES, "Model bundle")
     value = {
         "schema": "unimate.model.v1",
@@ -512,11 +512,13 @@ def make_model(bundle: bytes, name: str) -> dict:
         "sha256": hashlib.sha256(bundle).hexdigest(),
         "name": name,
     }
-    validate_model(value)
+    validate_model(value,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
     return value
 
 
-def validate_model(value: dict) -> None:
+def validate_model(value: dict, *, cancel=None, max_workspace_bytes=8*1024**3) -> None:
+    if cancel:
+        cancel()
     _record(value, "unimate.model.v1", ("bundle", "sha256", "name"))
     _bytes(value["bundle"], MAX_MODEL_BYTES, "Model bundle")
     _name(value["name"], ".unimate")
@@ -534,6 +536,10 @@ def validate_model(value: dict) -> None:
                 archive.read("manifest.json"), object_pairs_hook=_unique_json_pairs
             )
             _json_bytes(manifest)
+            if type(manifest) is dict and manifest.get('schema')=='unimate.bundle.v2':
+                from .bundle import inspect_bundle
+                inspect_bundle(value['bundle'],cancel=cancel,max_workspace_bytes=max_workspace_bytes)
+                return
             if (
                 type(manifest) is not dict
                 or manifest.get("schema") != "unimate.bundle.v1"
@@ -544,6 +550,8 @@ def validate_model(value: dict) -> None:
             if set(files) != {info.filename for info in infos} - {"manifest.json"}:
                 raise ValueError("Model manifest must identify every bundled file")
             for name, entry in files.items():
+                if cancel:
+                    cancel()
                 basename = name.rsplit("/", 1)[-1]
                 if not (
                     name.lower().endswith(
@@ -569,6 +577,8 @@ def validate_model(value: dict) -> None:
                 hasher = hashlib.sha256()
                 with archive.open(info) as stream:
                     for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                        if cancel:
+                            cancel()
                         hasher.update(chunk)
                 if hasher.hexdigest() != expected:
                     raise ValueError("Model member digest mismatch")

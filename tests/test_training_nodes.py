@@ -11,7 +11,7 @@ from unimate_pack.training_text import build_text_cache
 def test_registered_training_schemas():
     extension=asyncio.run(extension_module.comfy_entrypoint())
     ids=[cls.GET_SCHEMA().node_id for cls in asyncio.run(extension.get_node_list())]
-    assert len(ids)==len(set(ids))==36
+    assert len(ids)==len(set(ids))==37
     assert 'UniMateExportInferenceWeights' in ids
     assert 'UniMateLoadInferenceWeights' in ids
     assert 'UniMateSaveTrainingCheckpoint' in ids

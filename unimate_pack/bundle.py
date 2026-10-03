@@ -48,7 +48,7 @@ def _json(raw: bytes):
     )
 
 
-def inspect_bundle(payload: bytes) -> dict:
+def inspect_bundle(payload: bytes, *, cancel=None, max_workspace_bytes=8*1024**3) -> dict:
     """Validate every member before extraction, including unknown and duplicate files."""
     if not isinstance(payload, bytes) or not 0 < len(payload) <= MAX_BUNDLE_BYTES:
         raise ValueError("Model bundle exceeds the 4 GiB limit or is empty")
@@ -58,8 +58,6 @@ def inspect_bundle(payload: bytes) -> dict:
             names = [entry.filename for entry in members]
             if len(names) != len(set(names)) or not 1 <= len(names) <= 16:
                 raise ValueError("Duplicate or excess bundle members")
-            if set(names) - (ALLOWED | {"manifest.json"}) or not REQUIRED <= set(names):
-                raise ValueError("Unsafe, missing, or unsupported model bundle member")
             total = 0
             for entry in members:
                 mode = entry.external_attr >> 16
@@ -78,17 +76,27 @@ def inspect_bundle(payload: bytes) -> dict:
                 if entry.file_size > limit or total > MAX_BUNDLE_BYTES:
                     raise ValueError("Expanded model bundle exceeds size limit")
             manifest = _json(archive.read("manifest.json"))
+            trained=manifest.get('schema')=='unimate.bundle.v2'
+            if trained:
+                from .trained_bundle import BASE,ENCODER_ALLOWED,_budget
+                _budget(total,max_workspace_bytes)
+                allowed=BASE|ENCODER_ALLOWED
+                required=BASE
+            else:
+                allowed,required=ALLOWED,REQUIRED
+            if set(names)-(allowed|{'manifest.json'}) or not required<=set(names):
+                raise ValueError("Unsafe, missing, or unsupported model bundle member")
             if (
-                manifest.get("schema") != "unimate.bundle.v1"
+                not trained and (manifest.get("schema") != "unimate.bundle.v1"
                 or manifest.get("weights") not in ("raw", "ema")
                 or manifest.get("upstream_revision") != UPSTREAM_REVISION
-                or manifest.get("solver") != SOLVER
+                or manifest.get("solver") != SOLVER)
             ):
                 raise ValueError(
                     "Incompatible UniMate bundle revision, weight selection, or solver"
                 )
             encoder = manifest.get("text_encoder", {})
-            if (
+            if not trained and (
                 encoder.get("id") != "google/flan-t5-base"
                 or not re.fullmatch(r"[0-9a-f]{40}", encoder.get("revision", ""))
                 or not re.fullmatch(r"[0-9a-f]{40}", manifest.get("model_revision", ""))
@@ -102,14 +110,21 @@ def inspect_bundle(payload: bytes) -> dict:
             }:
                 raise ValueError("Manifest file inventory mismatch")
             for name, expected in entries.items():
+                if cancel:
+                    cancel()
                 digest = hashlib.sha256()
                 size = 0
                 with archive.open(name) as source:
                     for chunk in iter(lambda: source.read(1024**2), b""):
+                        if cancel:
+                            cancel()
                         size += len(chunk)
                         digest.update(chunk)
                 if expected != {"sha256": digest.hexdigest(), "size": size}:
                     raise ValueError(f"Model bundle integrity check failed: {name}")
+            if trained:
+                from .trained_bundle import validate_trained_archive
+                validate_trained_archive(manifest,archive,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
             return manifest
     except (
         zipfile.BadZipFile,
@@ -123,8 +138,8 @@ def inspect_bundle(payload: bytes) -> dict:
         raise ValueError("Corrupt UniMate model bundle") from error
 
 
-def extract_bundle(payload: bytes, destination: Path) -> dict:
-    manifest = inspect_bundle(payload)
+def extract_bundle(payload: bytes, destination: Path, *, cancel=None, max_workspace_bytes=8*1024**3) -> dict:
+    manifest = inspect_bundle(payload,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
     # This is a private new TemporaryDirectory, never an input-controlled directory.
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
         for name in manifest["files"]:
@@ -132,5 +147,7 @@ def extract_bundle(payload: bytes, destination: Path) -> dict:
             target.parent.mkdir(parents=True, exist_ok=True)
             with archive.open(name) as source, target.open("xb") as output:
                 for chunk in iter(lambda: source.read(1024**2), b""):
+                    if cancel:
+                        cancel()
                     output.write(chunk)
     return manifest

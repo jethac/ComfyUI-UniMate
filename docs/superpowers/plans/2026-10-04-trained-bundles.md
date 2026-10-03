@@ -39,27 +39,41 @@ from the bundle version; reuse configured conditioning and recorded sampling mat
 
 ## Task 1: complete portable bundle assembly
 
-- [ ] Write missing-interface RED tests for
+- [x] Write missing-interface RED tests for
   `assemble_trained_bundle(weights, statistics, text_cache, encoder_model,
   sampling=None, *, cancel=None, max_workspace_bytes=...) -> UNIMATE_MODEL`.
-- [ ] Specify strict `unimate.bundle.v2` inventory: selected weights archive,
+- [x] Specify strict `unimate.bundle.v2` inventory: selected weights archive,
   portable statistics metadata/arrays, bound cache metadata, encoder assets when
   consumed, manifest with recorded job/source/checkpoint/weight identities,
   sampling options and output fps. Persist no optimizer or text-cache tensor data
   unnecessary for inference.
-- [ ] Reuse existing validated job/weights/statistics/cache identities. Require one
+- [x] Reuse existing validated job/weights/statistics/cache identities. Require one
   recorded dataset binding with both exact statistics and cache identities;
   reject swapped labels/encoder/source or recomputed forged metadata.
-- [ ] Factor the installed encoder identity without changing its existing digest.
+- [x] Factor the installed encoder identity without changing its existing digest.
   Match bundled inventory and encoder identity to the cache and trained text width.
   Encoder omission is valid only when the recorded model consumes neither caption
   nor joint-name embeddings; prove that gating against all actual backbones.
-- [ ] Reject duplicates, paths, links, encryption, unknown members, oversized JSON,
+- [x] Reject duplicates, paths, links, encryption, unknown members, oversized JSON,
   inconsistent digests and corrupt numeric archives before model construction.
   Test budget and cancellation before expensive decode/copy and atomic output.
-- [ ] Add public Assemble UniMate Model node, returned model plus managed `.unimate`
+- [x] Add public Assemble UniMate Model node, returned model plus managed `.unimate`
   file, and actual declared-input Cloud Offload staging/retrieval/reload tests.
-- [ ] Review, run full suite and commit/push verified assembly.
+- [x] Review, run full suite and commit/push verified assembly.
+
+Task 1 ledger: missing-interface RED, invalid-payload/final-cancel/clock RED and
+review's workspace-propagation RED were fixed. First actual headless server run
+reproduced legacy reload breakage (required workspace widget); optional-input
+metadata RED also reproduced it. Fixed with an optional workspace input. Final
+Windows full suite: 1,368 passed, 50 skipped, six subtests. Final headless focused:
+88 passed, six subtests. Actual server/handler rerun: two direct baselines,
+three jobs, two retrieved files and declared model reload; exact component and
+bundle byte equality. Review: no remaining Important findings. Evidence:
+[bundle validation](../../2026-10-04-trained-bundle-validation.md).
+Ruling: store selected weights as separate JSON/safetensors members rather than
+a nested UMWEIGHT file — reuse strict numeric validation and existing safe file
+types, avoid an unnecessary nested archive. No tensor identity or job binding
+changes. Trained runtime remains Task 2.
 
 ## Task 2: Comfy-managed trained generation
 
@@ -103,3 +117,5 @@ axis; fixture predictor coverage does not satisfy this. Other released encoders,
 precision paths, SDE/reverse/likelihood and distributed/data-processing capabilities
 remain explicit inventory gaps until implemented and validated. Complete registry
 publication and installation only with accurate implemented-scope descriptions.
+Warm-start training from complete trained bundles also requires reconstruction
+through the recorded factory; released-only initialization is not sufficient.

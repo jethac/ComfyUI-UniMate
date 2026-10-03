@@ -20,6 +20,27 @@ def _weight_workspace(value):
     return value*1024*1024
 
 
+class UniMateAssembleModel(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__,display_name='Assemble UniMate Model',category=CATEGORY,
+            inputs=[InferenceWeights.Input('weights'),Statistics.Input('statistics'),TextCache.Input('text_cache'),
+                Model.Input('encoder_model',optional=True),
+                io.String.Input('sampling',default='{}',multiline=True),
+                io.String.Input('filename_prefix',default='unimate/trained-model'),
+                io.Int.Input('workspace_mib',default=32768,min=1,max=65536)],
+            outputs=[Model.Output()],is_output_node=True)
+
+    @classmethod
+    def execute(cls,weights,statistics,text_cache,encoder_model=None,sampling='{}',
+        filename_prefix='unimate/trained-model',workspace_mib=32768):
+        from .unimate_pack.trained_bundle import assemble_trained_bundle
+        from .unimate_pack.bundle import _json
+        value=assemble_trained_bundle(weights,statistics,text_cache,encoder_model,_json(sampling),
+            cancel=_cancel,max_workspace_bytes=_weight_workspace(workspace_mib))
+        return _save_archive(value,filename_prefix,'.unimate',lambda item:item['bundle'])
+
+
 class UniMateExportInferenceWeights(io.ComfyNode):
     @classmethod
     def define_schema(cls):

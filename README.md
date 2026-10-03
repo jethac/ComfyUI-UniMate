@@ -40,6 +40,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Save UniMate Training Checkpoint | Save a numeric checkpoint to managed outputs |
 | Export UniMate Inference Weights | Select raw or EMA denoiser weights from a training checkpoint and save `.unimateweights` |
 | Load UniMate Inference Weights | Load `.unimateweights` from managed inputs |
+| Assemble UniMate Model | Bind trained weights, statistics, cache identity and encoder assets into `.unimate` |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -166,8 +167,14 @@ Export Inference Weights takes a training checkpoint and an explicit `raw` or
 optimizer, scaler or RNG state. Load Inference Weights reads this file from
 managed inputs. Both nodes require sufficient workspace (32,768 MiB for the
 installed v2 checks). `.unimateweights` is an intermediate artifact: Model Loader
-does not accept it. Assembly with normalization statistics and a text encoder,
-and generation from these artifacts remain open. Selected-weight export,
+does not accept it. Assemble Model combines it with the exact statistics and
+text cache used by the training job, plus an installed model containing the
+matching encoder. The encoder input is optional only when the trained model
+uses neither captions nor joint-name embeddings. It returns a portable model
+and saves `.unimate`; Model Loader accepts that bundle. Trained generation,
+constraints and playback integration remain open. Assembly and reload passed
+headless server/worker staging and retrieval; see [bundle validation](docs/2026-10-04-trained-bundle-validation.md).
+Selected-weight export,
 declared-input reload and client retrieval passed headless stadia server/worker
 checks; see [selected-weight validation](docs/2026-10-03-inference-weights-validation.md).
 Distributed/unbalanced loaders, learned-variance backbone output and the full

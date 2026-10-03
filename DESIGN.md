@@ -500,8 +500,8 @@ a larger budget. Cancellation is cooperative around heavy stages; model
 activation memory is outside this conditioning budget.
 
 This is an internal trained-inference dependency. The current public generation
-runtime still uses released configurations; complete trained-bundle assembly,
-runtime schedule dispatch and configured-window constraints remain open. Motion
+runtime still uses released configurations; trained runtime schedule dispatch
+and configured-window constraints remain open. Motion
 provenance now takes raw/EMA selection from the loaded manifest.
 
 The internal trained sampler reconstructs the recorded flow path/prediction or
@@ -525,10 +525,25 @@ values are validated before decoding checkpoint tensors. EMA never falls back
 to raw weights. The known model factory reconstructs private frozen CPU models
 for verification; live models are not portable socket values.
 
-These files are a dependency for complete trained-model bundles, not accepted
-Model Loader inputs. Bundle assembly with exact statistics/text encoding,
-generalized sampling and exported playback remain required. Full optimizer
-history validation belongs to resume, not selected-weight extraction.
+Selected-weight files are not Model Loader inputs. Assemble Model produces
+`unimate.bundle.v2` with selected denoiser safetensors/metadata, portable statistics,
+cache identity metadata and matching licensed encoder assets. It binds the full
+statistics/cache pair to one recorded job dataset; preserves source checkpoint,
+job and raw/EMA identities; and records canonical sampling options and 30 fps.
+Encoder omission is permitted only for models consuming neither caption nor
+joint-name embeddings. Current encoder-bearing assembly supports the installed
+FLAN-T5-base artifact; other released encoders remain required work.
+
+The trained inventory is strictly bounded and hashed before numeric validation.
+ZIP members use fixed timestamps/permissions and sorted order for deterministic
+bundle bytes. Assembly returns a portable model and atomically saves a managed
+`.unimate` file. Model Loader accepts it and preserves the selected workspace
+and cancellation callback through inspection. Defaults: 32,768 MiB at public
+assembly/load nodes, 8 GiB at internal helpers. Insufficient loader budgets reject
+before file reading. No optimizer or cached text tensors enter the bundle.
+Comfy-managed trained runtime, generalized sampling, constraints and exported
+playback remain required. Full optimizer history validation belongs to resume,
+not selected-weight extraction.
 
 ## Cloud Offload implementation
 

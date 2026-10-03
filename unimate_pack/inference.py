@@ -25,17 +25,24 @@ def _release_rope_cache(patcher, unpatch_all):
                     delattr(rope, key)
 
 
-def load_model_bundle(path: str | Path) -> dict:
+def load_model_bundle(path: str | Path, *, cancel=None, max_workspace_bytes=8*1024**3) -> dict:
     from .contracts import make_model
 
     path = Path(path)
+    if cancel:
+        cancel()
     if path.suffix.lower() != ".unimate" or not path.is_file():
         raise ValueError("Select an installed .unimate model bundle")
     if path.stat().st_size > MAX_BUNDLE_BYTES:
         raise ValueError("Model bundle exceeds the 4 GiB limit")
+    from .trained_bundle import _budget
+    _budget(path.stat().st_size,max_workspace_bytes)
     payload = path.read_bytes()
-    inspect_bundle(payload)
-    return make_model(payload, path.name)
+    inspect_bundle(payload,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
+    value=make_model(payload,path.name,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
+    if cancel:
+        cancel()
+    return value
 
 
 class _Runtime:

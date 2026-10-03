@@ -106,6 +106,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateLoadTrainingCheckpoint",
                 "UniMateSaveTrainingCheckpoint",
                 "UniMateExportInferenceWeights",
+                "UniMateAssembleModel",
                 "UniMateLoadInferenceWeights",
                 "UniMateCollateTrainingSamples",
                 "UniMatePrepareTrainingSample",
@@ -357,7 +358,7 @@ class NodeTests(unittest.TestCase):
             ),
             self.fake_module(
                 "inference",
-                load_model_bundle=lambda path: {"loaded": path.read_bytes()},
+                load_model_bundle=lambda path,**kwargs: {"loaded": path.read_bytes()},
             ),
             self.fake_module("contracts", validate_model=lambda value: None),
         ):
@@ -397,7 +398,7 @@ class NodeTests(unittest.TestCase):
         with (
             self.fake_module(
                 "inference",
-                load_model_bundle=lambda path: calls.append(path) or model,
+                load_model_bundle=lambda path,**kwargs: calls.append(path) or model,
                 generate_motion=lambda *args, **kwargs: calls.append((args, kwargs))
                 or motion,
             ),

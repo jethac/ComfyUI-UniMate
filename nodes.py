@@ -26,6 +26,7 @@ from .dataset_nodes import (
 )
 
 from .training_nodes import (
+    UniMateAssembleModel as UniMateAssembleModel,
     UniMateTrainingJob as UniMateTrainingJob,
     UniMateTrain as UniMateTrain,
     UniMateLoadTrainingCheckpoint as UniMateLoadTrainingCheckpoint,
@@ -302,22 +303,22 @@ class UniMateModelLoader(io.ComfyNode):
             node_id="UniMateModelLoader",
             display_name="Load UniMate Model",
             category=CATEGORY,
-            inputs=[io.Combo.Input("bundle", options=bundles)],
+            inputs=[io.Combo.Input("bundle", options=bundles),
+                io.Int.Input('workspace_mib',default=32768,min=1,max=65536,optional=True)],
             outputs=[Model.Output()],
         )
 
     @classmethod
-    def execute(cls, bundle) -> io.NodeOutput:
+    def execute(cls, bundle, workspace_mib=32768) -> io.NodeOutput:
         path = _model_path(bundle)
         from .unimate_pack.inference import load_model_bundle
-        from .unimate_pack.contracts import validate_model
-
-        model = load_model_bundle(path)
-        validate_model(model)
+        from .training_nodes import _weight_workspace
+        from .dataset_nodes import _cancel
+        model = load_model_bundle(path,cancel=_cancel,max_workspace_bytes=_weight_workspace(workspace_mib))
         return io.NodeOutput(model)
 
     @classmethod
-    def validate_inputs(cls, bundle):
+    def validate_inputs(cls, bundle, workspace_mib=32768):
         try:
             _model_path(bundle)
         except (ValueError, OSError) as error:
@@ -325,7 +326,7 @@ class UniMateModelLoader(io.ComfyNode):
         return True
 
     @classmethod
-    def fingerprint_inputs(cls, bundle):
+    def fingerprint_inputs(cls, bundle, workspace_mib=32768):
         return _fingerprint(_model_path(bundle))
 
     @classmethod

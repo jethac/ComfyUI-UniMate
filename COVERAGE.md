@@ -2,13 +2,24 @@
 
 Audit date: 2026-10-03. This is a capability inventory, not a claim of complete support.
 
+2026-10-04: Assemble Model binds selected trained weights to the exact portable
+statistics/cache metadata and installed encoder inventory in a numeric
+`unimate.bundle.v2`. Public assembly saves a managed `.unimate` and Model Loader
+accepts it. Encoder-free gating passed actual forwards on all four backbone axes;
+required caption/joint-name encoders must match cache identity and text width.
+Trained runtime/generation, constraints, expansion and playback remain open.
+Headless assembly passed two direct baselines, three actual handler jobs,
+two retrieved bundle files and declared model reload. Final suites: 1,368 Windows
+tests and 88 headless focused tests, plus six subtests in each run.
+See [bundle validation](docs/2026-10-04-trained-bundle-validation.md).
+
 2026-10-04: internal trained sampling reconstructs recorded flow/diffusion
 schedules. Euler/dopri5 comparisons cover all three flow paths and prediction
 types with CFG; ancestral/DDIM checks cover respacing and variance options.
 One adaptive VP/noise fixture also fails in the pinned source; the pack rejects
 nonfinite output. All four small trained backbone axes generate from raw and EMA
 weights in both paradigms. See [validation](docs/2026-10-04-trained-sampling-validation.md).
-Public trained bundles, runtime dispatch, constraints, expansion, export/playback,
+Trained runtime dispatch, constraints, expansion, export/playback,
 SDE/reverse/likelihood and learned-variance backbone integration remain open.
 
 Trained conditioning now follows configured window, joint/depth capacity,
@@ -18,7 +29,7 @@ pinned pipeline. Workspace and cancellation preflight precede topology work,
 and float32 overflow is rejected. Generated motion weight provenance now uses
 the bundle's raw/EMA selection. See [validation](docs/2026-10-03-trained-conditioning-validation.md).
 This helper is not yet connected to a public trained-generation runtime;
-complete trained bundles and flow/diffusion sampling/export/playback remain open.
+trained runtime and public flow/diffusion sampling/export/playback remain open.
 
 Selected trained weights: Export/Load Inference Weights now expose explicit raw
 or EMA extraction and managed `.unimateweights` IO. All four backbone axes and
@@ -26,8 +37,9 @@ both training paradigms passed exact selected-state/forward checks. Headless
 stadia passed actual server/worker export, declared-input reload and client
 retrieval; both real v2 selections matched all 443 checkpoint/source-EMA tensors.
 See [validation](docs/2026-10-03-inference-weights-validation.md). This intermediate
-artifact is not a complete Model Loader bundle. Assembly, generalized trained
-sampling/export/playback, Windows server export and injected cancellation remain
+artifact is not a complete Model Loader bundle. Subsequent assembly above wraps
+it into one; generalized trained sampling/export/playback, Windows server export
+and injected server cancellation remain
 open; full training and full UniMate coverage are not achieved.
 
 ## Evidence baseline
