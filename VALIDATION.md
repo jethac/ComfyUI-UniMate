@@ -543,3 +543,23 @@ caches, crop/normalization/collation, augmentation nodes, training execution and
 their Linux/headless/cloud workflows remain open. The configured workspace
 estimate is not measured process peak memory; bulk NumPy topology/eigen calls
 are not internally interruptible.
+
+## Training sample transform foundation (2026-10-03)
+
+training_transforms.py matches unchanged pinned dataset/transforms.py (revision
+2c5b384715aa63d8639b1ed7eb74bfe614570c7a, SHA-256
+0c16cd112fb5df83778d245df06dbeaa040546fda56611421286340ae0fe231a).
+38 tests compare both crop/condition modes, random and explicit starts, short
+tails, float16/32/64 normalization, padding dtype and parent-copy features.
+Single-frame first_frame extraction yields empty motion with valid length zero;
+its regression failed before the validation correction and passes after it.
+Invalid options/statistics/parents, pre-allocation padding budget and cancellation
+are checked. RNG state remains unchanged. Source padding promotes to float64.
+
+Combined dataset/augmentation/transforms/transport/V3 suite: 469 passed, six
+subtests, no skips, 17.39s; two existing Torch JIT deprecation warnings. Command
+is the preceding augmentation suite plus tests/test_training_transforms.py in
+the same pinned environment. Changed-file Ruff and git diff --check passed.
+Source MIT lineage is retained. This does not prove facing realignment, encoded
+sample assembly, portable sample/cache values, collation or public sample nodes;
+those remain open, as do their headless and Cloud Offload workflow checks.

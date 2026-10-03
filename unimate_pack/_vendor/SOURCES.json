@@ -89,6 +89,13 @@
     }
   },
   "adapters": {
+    "training_transforms.py": {
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "source": "unimate/dataset/transforms.py",
+      "sha256": "0c16cd112fb5df83778d245df06dbeaa040546fda56611421286340ae0fe231a",
+      "license": "MIT; LICENSE-UniMate",
+      "changes": "Numeric crop, condition extraction, normalization, padding and parent-copy arithmetic adapted with input validation, local seeded cropping, cancellation and padding workspace checks. Source padding precision promotion and zero valid-length first-frame tails retained."
+    },
     "training_augmentation.py": {
       "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
       "source": "unimate/dataset/mixture/augmentations.py",
