@@ -28,5 +28,3 @@ collation and thin public nodes. Python/NumPy/Torch and existing V3 runtime.
 All tasks require malformed input, budgets and cancellation checks, evidence in
 VALIDATION.md and accurate COVERAGE.md. No fake embeddings or pickle. Preserve
 full GOAL.md, including training runtime and all released encoder/model families.
-
-

@@ -323,4 +323,3 @@ def test_crop_realign_matches_released_quaternions(reference,dtype,branching):
     np.testing.assert_array_equal(clip,before)
     np.testing.assert_array_equal(actual[...,:3],before[...,:3])
     np.testing.assert_array_equal(actual[...,9:],before[...,9:])
-
