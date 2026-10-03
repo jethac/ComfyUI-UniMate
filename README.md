@@ -10,7 +10,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Generate UniMate Motion | Sample 60 frames at 30 fps |
 | Export UniMate GLB | Add animation to the original GLB; save provenance JSON |
 
-Automatic rigging and retargeting are outside this pack. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Existing source clips are ignored and replaced by one generated clip.
+The intended workflow is generated mesh → automatic rigging → UniMate motion → animated GLB. Automatic rigging and direct mesh connections are not implemented yet; the current nodes require a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Existing source clips are ignored and replaced by one generated clip.
 
 ## Install
 

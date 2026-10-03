@@ -4,7 +4,7 @@ Date: 2026-09-30. Status: implemented; release verification remains incomplete. 
 
 ## Purpose and success criteria
 
-Give ComfyUI users a reproducible route from an already-rigged character and a motion prompt to an animated GLB usable in Blender and a glTF viewer. This complements mesh generation and texturing; automatic rigging remains a separate step.
+Give ComfyUI users a connected workflow from an unrigged generated mesh and a motion prompt through automatic skeleton generation and skinning to an animated GLB usable in Blender and a glTF viewer. The implemented rigged-GLB path is one part of this workflow. Automatic rigging and direct mesh connections remain required work; see [RIGGING.md](RIGGING.md).
 
 The first release succeeds when a supported rest-only GLB can be prepared, animated, and exported without a training dataset or existing animation clip. The exported character must retain its appearance, skinning, rest pose, and source coordinate frame. A second rig with a different topology must pass the same workflow without per-rig training.
 
@@ -48,7 +48,7 @@ Reject multiple skins, disconnected skeletons, unsupported extensions, morph tar
 
 Source animation is ignored for generation and omitted from the output; export contains one newly generated clip. Preparation uses the bind/rest pose, not the currently evaluated pose or first animation frame. Users explicitly choose a facing direction: source +Z, source -Z, source +X, source -X, or a left/right joint pair. Do not infer anatomical orientation through a network service.
 
-FBX, automatic rigging, multi-character scenes, retargeting, foot-contact cleanup, physics, mesh previews, and motion editing are deferred. Output motion can be imperfect; avoid claims of production-ready animation quality.
+Automatic rigging is required for the complete workflow and is not implemented yet. FBX, multi-character scenes, transfer of existing motion between skeletons, foot-contact cleanup, physics, mesh previews, and motion editing remain unimplemented. UniMate generation targets the prepared skeleton directly. Output motion can be imperfect; avoid claims of production-ready animation quality.
 
 ## Nodes and sockets
 
