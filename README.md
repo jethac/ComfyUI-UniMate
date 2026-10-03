@@ -17,7 +17,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Extract UniMate Motion | Resample a source GLB clip into the prepared rig's motion features |
 | Generate UniMate Batch | Generate prompt/repetition cases as a typed motion list |
 
-The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction; their constrained inference and Blender export passed on synthetic rigs. Full free-generation checks for the additional families, expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
+The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
 ## Install
 
@@ -66,7 +66,7 @@ Extract UniMate Motion selects a zero-based animation clip from the prepared rig
 
 Expand UniMate Motion accepts a JSON array of prompts in segment order. Each segment has 60 frames; overlap must be 1–59 frames. With N prompts and overlap O, the result has `60 + (60 - O) * (N - 1)` frames. Seeds increment per segment modulo uint64. Later segments preserve the preceding tail; duplicated overlap frames are omitted from the output. Expansion requires guidance greater than 1.
 
-Generate UniMate Batch accepts 1–32 JSON prompts and 1–64 repetitions, capped at 256 cases. Cases run in prompt order, then repetition order; seeds increment modulo uint64. Its typed motion list feeds ComfyUI's normal list execution, including export and numeric saving. Sampling runs one case at a time. Batch server execution and Cloud Offload list transport still require validation.
+Generate UniMate Batch accepts 1–32 JSON prompts and 1–64 repetitions, capped at 256 cases. Cases run in prompt order, then repetition order; seeds increment modulo uint64. Its typed motion list feeds ComfyUI's normal list execution, including export and numeric saving. Sampling runs one case at a time. A four-case batch passed ComfyUI server execution, export, artifact retrieval, provenance and independent playback checks. Cloud Offload list transport still requires validation.
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 
