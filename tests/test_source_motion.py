@@ -11,6 +11,38 @@ from unimate_pack.contracts import make_asset, make_rig, encode_arrays, decode_a
 from unimate_pack.source_motion import extract_motion
 
 
+def test_joint_pair_extraction_facing_matches_upstream():
+    import importlib.util
+    import os
+    from scipy.spatial.transform import Rotation
+    from unimate_pack.clip_sampling import sample_clip
+    root = os.environ.get("UNIMATE_REFERENCE")
+    motion_reference = os.environ.get("UNIMATE_MOTION_REFERENCE")
+    if not root or not motion_reference:
+        pytest.skip("Requires pinned upstream and local Motion reference")
+    sys.path.insert(0, motion_reference)
+    spec = importlib.util.spec_from_file_location("source_facing_reference",
+        Path(root) / "data_process/utils/skeleton.py")
+    upstream = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(upstream)
+    source = synthetic_glb(True)
+    document, _ = parse_glb(source)
+    cond, mapping = prepare_document(document, "joint_pair", "Joint_2", "Joint_1")
+    features = np.zeros((17, 7, 12), np.float32)
+    features[..., 3] = features[..., 7] = 1
+    features[:, 0, 1] = cond["tpos_first_frame"][0, 1]
+    heading = Rotation.from_euler("y", np.linspace(0, 0.8, 17)[:, None]).as_matrix()
+    features[:, 0, 3:9] = heading[..., :2].swapaxes(-1, -2).reshape(17, 6)
+    animated = animate_document(source, cond, mapping, features)
+    rig = make_rig(make_asset(animated, "turn.glb"), encode_arrays(**cond), mapping)
+    extracted = decode_arrays(extract_motion(rig)["features"])["features"]
+    _, worlds, _ = sample_clip(animated)
+    transform = np.asarray(mapping["source_to_canonical"])
+    positions = worlds[:, mapping["joint_indices"]][..., :3, 3] @ transform[:3, :3].T + transform[:3, 3]
+    expected = upstream.get_root_facing_quat(positions, cond["face_joint_idxs"])
+    np.testing.assert_allclose(extracted[:, 0, 3:9], expected.rotation_matrix(cont6d=True)[:-1], atol=2e-6)
+
+
 @pytest.mark.parametrize("facing", ["+Z", "+X"])
 def test_extract_source_animation_preserves_reference_root_trajectory(facing):
     source = synthetic_glb(True)

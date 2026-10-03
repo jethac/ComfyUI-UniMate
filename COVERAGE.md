@@ -76,6 +76,8 @@ The existing five-node tests prove the narrow generation/export path. They do no
 
 ## Execution evidence
 
+2026-10-03: source extraction's joint-pair facing was compared numerically with pinned `data_process/utils/skeleton.py:get_root_facing_quat` over a 17-pose turning branching clip. Extracted root 6D rotations matched within 2e−6; all four source-motion tests passed with references enabled. The Motion dependency remains local and test-only. Four-joint/body-axis facing and source extraction through ComfyUI/Cloud Offload remain unverified.
+
 2026-10-03: preview's portable EMA/T5 bundle passed conditioned and unconditional free generation, finite 60-frame features, Blender export and independent changing skinning playback (two tests, 205.76 seconds). Outputs are local under `.runtime/preview-free-model-check`. All four released families now have direct free/constrained inference and export evidence. Expanded server/cloud workflows, model-family capacity boundaries and headless coverage remain separate gates. The headless verifier now supports an expanded inference graph and validates retrieved numeric archives and GLB structure; two focused artifact-validation tests and lint passed. Its stadia execution remains active and has not completed artifact retrieval.
 
 2026-10-03: Mixamo's installed EMA/T5 bundle passed conditioned and unconditional free generation, finite 60-frame feature checks, Blender export and independent skinning playback (two tests, 115.98 seconds). Outputs are local under `.runtime/mixamo-free-model-check`. Preview free-generation remains running. The expanded stadia ComfyUI graph registered successfully and is executing on CPU; completion and artifact checks remain unproven.
