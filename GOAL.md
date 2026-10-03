@@ -25,11 +25,16 @@ For each capability, COVERAGE.md must identify its source, public node or workfl
 
 Completion gates:
 
+- Audit the pinned paper, released source, configurations and model artifacts into a complete capability inventory. Record the upstream revision and account for every entry; a percentage based on a partial inventory is not full coverage.
 - Every released and paper-described capability has a usable node or documented node workflow; no capability is excluded merely because its upstream integration is difficult.
+- Cover dataset preparation, augmentation, text encoding, training losses, optimization, EMA, checkpoint export, resume and inference from trained checkpoints. Internal helpers alone do not satisfy public workflow coverage.
+- Account explicitly for rig preparation, motion transfer and retargeting, and any automatic rigging capability established by the source audit. Resolve necessary workflow dependencies rather than declaring them outside the pack.
 - Every released model family and applicable normalization has passed reference comparisons and workflow execution.
 - Local ComfyUI and Cloud Offload workflows cover all applicable node paths, including staging, portable values, cancellation and artifact retrieval.
 - Headless stadia-testbed runs pass, with exported motion and appearance checked independently.
 - Required tests pass; README.md, DESIGN.md, COVERAGE.md and validation records describe the verified implementation accurately.
 - Completed work is committed and pushed to jethac/ComfyUI-UniMate's default branch.
+
+Keep the goal active until every gate passes. Report partial progress as partial progress; unavailable upstream implementations, missing artifacts and untested workflows remain open work.
 
 This goal supersedes the earlier generated-mesh/automatic-rigging objective at the user's instruction.
