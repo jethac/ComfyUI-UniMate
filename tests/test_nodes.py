@@ -79,6 +79,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateSaveMotion",
                 "UniMateExpandMotion",
                 "UniMateExtractMotion",
+                "UniMateGenerateBatch",
             ],
         )
         for cls in classes:
@@ -94,6 +95,17 @@ class NodeTests(unittest.TestCase):
         with self.fake_module("source_motion", extract_motion=lambda rig, clip_index, **kwargs: {"rig_id": rig["rig_id"], "clip_index": clip_index}):
             output = nodes.UniMateExtractMotion.execute({"rig_id": "a" * 64}, 2)
             self.assertEqual(output.result[0], {"rig_id": "a" * 64, "clip_index": 2})
+
+    def test_batch_node_emits_typed_list_and_preserves_prompt_order(self):
+        calls = []
+        def batch(*args):
+            calls.append(args)
+            return [{"seed": 0}, {"seed": 1}]
+        with self.fake_module("batch", generate_batch=batch):
+            output = nodes.UniMateGenerateBatch.execute({}, {"rig_id": "rig"}, '["walk", "sit"]', 2, 0, 3)
+        self.assertEqual(output.result[0], [{"seed": 0}, {"seed": 1}])
+        self.assertEqual(calls[0][1:4], ([{"rig_id": "rig"}], ["walk", "sit"], 2))
+        self.assertEqual(nodes.UniMateGenerateBatch.GET_NODE_INFO_V1()["output_is_list"], [True])
 
     def test_expansion_node_parses_prompt_array_without_reordering(self):
         calls = []

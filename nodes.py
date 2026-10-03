@@ -417,6 +417,30 @@ class UniMateEditMotion(UniMateInbetweenMotion):
     MODE = "edit"
 
 
+class UniMateGenerateBatch(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name="Generate UniMate Batch", category=CATEGORY,
+            inputs=[Model.Input("model"), Rig.Input("rig"),
+                io.String.Input("prompts", default='["A character walks forward."]', multiline=True),
+                io.Int.Input("repetitions", default=1, min=1, max=64),
+                io.Int.Input("seed", default=0, min=0, max=2**64-1),
+                io.Float.Input("guidance", default=3.0, min=1.0, max=10.0),
+                io.Combo.Input("normalization", options=NORMALIZATION, default="objaverse")],
+            outputs=[Motion.Output(is_output_list=True)])
+
+    @classmethod
+    def execute(cls, model, rig, prompts, repetitions, seed, guidance, normalization="objaverse"):
+        from .unimate_pack.batch import generate_batch
+        if not isinstance(prompts, str) or len(prompts) > 512 * 1024:
+            raise ValueError("Prompts must be a bounded JSON array")
+        try:
+            sequence = json.loads(prompts)
+        except json.JSONDecodeError as error:
+            raise ValueError("Prompts must be a JSON array") from error
+        return io.NodeOutput(generate_batch(model, [rig], sequence, repetitions, seed, guidance, normalization))
+
+
 class UniMateExtractMotion(io.ComfyNode):
     @classmethod
     def define_schema(cls):

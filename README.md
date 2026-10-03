@@ -15,6 +15,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Save UniMate Motion | Save a numeric motion archive for later reuse |
 | Expand UniMate Motion | Generate an ordered prompt chain with constrained segment overlaps |
 | Extract UniMate Motion | Resample a source GLB clip into the prepared rig's motion features |
+| Generate UniMate Batch | Generate prompt/repetition cases as a typed motion list |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction; their constrained inference and Blender export passed on synthetic rigs. Full free-generation checks for the additional families, expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -64,6 +65,8 @@ Save UniMate Motion writes `.npz` archives. Copy an archive into ComfyUI input a
 Extract UniMate Motion selects a zero-based animation clip from the prepared rig's source GLB. It resamples at 30 fps and produces F−1 feature frames from F poses, following upstream velocity encoding. LINEAR, STEP and CUBICSPLINE channels are supported. Animated bone lengths must match the prepared skeleton. The motion retains its initial canonical XZ position for export.
 
 Expand UniMate Motion accepts a JSON array of prompts in segment order. Each segment has 60 frames; overlap must be 1–59 frames. With N prompts and overlap O, the result has `60 + (60 - O) * (N - 1)` frames. Seeds increment per segment modulo uint64. Later segments preserve the preceding tail; duplicated overlap frames are omitted from the output. Expansion requires guidance greater than 1.
+
+Generate UniMate Batch accepts 1–32 JSON prompts and 1–64 repetitions, capped at 256 cases. Cases run in prompt order, then repetition order; seeds increment modulo uint64. Its typed motion list feeds ComfyUI's normal list execution, including export and numeric saving. Sampling runs one case at a time. Batch server execution and Cloud Offload list transport still require validation.
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 
