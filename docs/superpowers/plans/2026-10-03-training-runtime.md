@@ -27,6 +27,12 @@ the next dependencies; this increment does not close Task 5/full training.
 
 ## Review focus
 
+2026-10-04: normalized trained sampling dependency is implemented. Recorded flow
+and diffusion schedules, scoped RNG, workspace/cancellation/finite checks and
+owned final-result storage have independent source comparisons. Complete public
+bundle/runtime/export execution is specified in
+[trained bundles](2026-10-04-trained-bundles.md); this does not close Task 5.
+
 Next trained-inference dependencies (inline execution):
 
 1. Factor the released conditioning arithmetic behind validated capacities,

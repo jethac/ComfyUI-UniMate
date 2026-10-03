@@ -2,6 +2,15 @@
 
 Audit date: 2026-10-03. This is a capability inventory, not a claim of complete support.
 
+2026-10-04: internal trained sampling reconstructs recorded flow/diffusion
+schedules. Euler/dopri5 comparisons cover all three flow paths and prediction
+types with CFG; ancestral/DDIM checks cover respacing and variance options.
+One adaptive VP/noise fixture also fails in the pinned source; the pack rejects
+nonfinite output. All four small trained backbone axes generate from raw and EMA
+weights in both paradigms. See [validation](docs/2026-10-04-trained-sampling-validation.md).
+Public trained bundles, runtime dispatch, constraints, expansion, export/playback,
+SDE/reverse/likelihood and learned-variance backbone integration remain open.
+
 Trained conditioning now follows configured window, joint/depth capacity,
 text width, spectral width and a selected portable statistics row. Actual
 forwards cover all four backbone axes; complete numeric conditions match the

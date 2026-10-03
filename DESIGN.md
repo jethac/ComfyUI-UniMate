@@ -501,8 +501,19 @@ activation memory is outside this conditioning budget.
 
 This is an internal trained-inference dependency. The current public generation
 runtime still uses released configurations; complete trained-bundle assembly,
-schedule dispatch and configured-window constraints remain open. Motion
+runtime schedule dispatch and configured-window constraints remain open. Motion
 provenance now takes raw/EMA selection from the loaded manifest.
+
+The internal trained sampler reconstructs the recorded flow path/prediction or
+diffusion schedule. It supports installed ODE solvers, ancestral diffusion and
+DDIM, explicit CFG, scoped CPU/caller-selected CUDA RNG, float32 finite checks,
+workspace preflight and cooperative cancellation. Returned motions own their
+storage rather than retaining the ODE trajectory. The workspace estimate covers
+solver/condition tensors, not model activations. Numeric checks cover Euler and
+dopri5 plus diffusion respacing/variance options; one adaptive VP/noise fixture
+reproduces nonfinite pinned-source behavior and is rejected. This helper is not
+yet a public trained-generation workflow. SDE/reverse/likelihood paths and actual
+learned-variance backbone output remain required work.
 
 Export/Load Inference Weights use `UNIMATE_INFERENCE_WEIGHTS` portable values
 and `.unimateweights` files. The `UMWEIGHT` header contains a little-endian
