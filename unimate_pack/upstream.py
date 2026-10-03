@@ -1,4 +1,4 @@
-"""Narrow adapters for UniMate 5d6aabe (v2 graph/AdaLN, float32).
+"""Adapters for released UniMate f60 models using 5d6aabe math, float32.
 
 Topology, collate, normalization and denoiser operations use pinned MIT sources.
 The flow sampler is the upstream velocity/Linear ODE specialization; no training

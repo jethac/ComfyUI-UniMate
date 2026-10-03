@@ -13,6 +13,34 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.mark.parametrize("guidance", [1, 3])
+def test_real_model_free_generation_exports_playable_motion(tmp_path, guidance):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ComfyUI"))
+    sys.path.insert(0, str(Path(__file__).parent / "fixtures"))
+    from rig_generator import synthetic_glb
+    from test_blender_math import evaluated_vertices
+    import torch
+    from comfy.cli_args import args
+    if not torch.cuda.is_available():
+        args.cpu = True
+    torch.set_num_threads(4)
+    from unimate_pack.blender import prepare_rig, export_glb
+    from unimate_pack.contracts import make_asset, decode_arrays
+    from unimate_pack.inference import load_model_bundle, generate_motion
+    rig = prepare_rig(make_asset(synthetic_glb(True), "branching.glb"), "+Z")
+    model = load_model_bundle(os.environ["UNIMATE_TEST_BUNDLE"])
+    motion = generate_motion(model, rig, "A character walks forward.", 42, guidance,
+        normalization=os.environ.get("UNIMATE_TEST_NORMALIZATION", "objaverse"))
+    features = decode_arrays(motion["features"])["features"]
+    assert features.shape == (60, 7, 12)
+    assert np.isfinite(features).all()
+    output = export_glb(rig, motion)
+    vertices = np.stack([evaluated_vertices(output, frame) for frame in range(60)])
+    assert np.isfinite(vertices).all()
+    assert np.any(vertices[1:] != vertices[0])
+    (tmp_path / f"guidance-{guidance}.glb").write_bytes(output)
+
+
 @pytest.mark.parametrize("frames", [7, 60])
 def test_real_model_edit_and_inbetween_preserve_constraints_and_export(tmp_path, frames):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ComfyUI"))
