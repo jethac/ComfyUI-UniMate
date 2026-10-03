@@ -17,6 +17,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Extract UniMate Motion | Resample a source GLB clip into the prepared rig's motion features |
 | Generate UniMate Batch | Generate prompt/repetition cases as a typed motion list |
 | Canonical UniMate Asset | Apply prepared coordinates to the original asset without rewriting skin or mesh data |
+| UniMate Rig Conditioning | Expose numeric topology conditioning, its hash and canonical rig identity |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -63,6 +64,8 @@ With `joint_pair`, optional left/right shoulder names add a second lateral pair.
 
 Canonical UniMate Asset returns a portable asset in the prepared coordinate system. A scene-parent transform preserves the source binary, skin, materials and textures. It has a new asset identity; prepare it again before generating motion for it. Independent coordinate and skinning checks passed. Server/cloud execution remains pending.
 
+UniMate Rig Conditioning returns `UNIMATE_CONDITIONING`: a versioned dictionary with numeric archive bytes, their SHA-256, rig identity and coordinate mapping. It exposes the prepared topology data without the source GLB or live model objects. Server/cloud execution remains pending.
+
 ## Supported assets
 
 Save UniMate Motion writes `.npz` archives. Copy an archive into ComfyUI input and select it in Load UniMate Motion to reuse it as a reference. In-betweening accepts comma-separated frame indices (`0,-1` preserves the first and last frame); editing accepts original or cleaned joint names. Reference clips must belong to the same prepared rig and fit the current 60-frame model window. Both modes require guidance greater than 1.
@@ -77,7 +80,7 @@ One skin, one connected skeleton with 5–70 joints, triangle primitives, dense 
 
 ## Cloud Offload
 
-The original five-node generation workflow passed execution in a [ComfyUI-Cloud-Offload](https://github.com/jethac/ComfyUI-Cloud-Offload) partition, using the [cloud-offload coordinator and worker service](https://github.com/jethac/cloud-offload). Expanded node workflows still require verification. All four custom socket values are portable dictionaries containing bytes; the model bundle crosses in full when its loader is outside the box. Transfers include roughly 706 MiB of model data.
+The original five-node generation workflow passed execution in a [ComfyUI-Cloud-Offload](https://github.com/jethac/ComfyUI-Cloud-Offload) partition, using the [cloud-offload coordinator and worker service](https://github.com/jethac/cloud-offload). Expanded node workflows still require verification. Custom socket values are portable dictionaries containing bytes; the model bundle crosses in full when its loader is outside the box. Transfers include roughly 706 MiB of model data.
 
 The runner needs Blender, this pack, its Python dependencies, and the Cloud Offload input-staging/output-retrieval changes described in [deploy/README.md](deploy/README.md). The default runner without those changes is insufficient. [DESIGN.md](DESIGN.md) defines the contracts; [VALIDATION.md](VALIDATION.md) records verification and limits.
 

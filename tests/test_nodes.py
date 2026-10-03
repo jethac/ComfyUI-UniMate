@@ -81,6 +81,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateExtractMotion",
                 "UniMateGenerateBatch",
                 "UniMateCanonicalAsset",
+                "UniMateRigConditioning",
             ],
         )
         for cls in classes:

@@ -19,6 +19,7 @@ Asset = io.Custom("UNIMATE_ASSET")
 Rig = io.Custom("UNIMATE_RIG")
 Model = io.Custom("UNIMATE_MODEL")
 Motion = io.Custom("UNIMATE_MOTION")
+Conditioning = io.Custom("UNIMATE_CONDITIONING")
 CATEGORY = "3D/UniMate"
 FACING = ["+Z", "-Z", "+X", "-X", "joint_pair"]
 NORMALIZATION = ["objaverse", "mixamo", "truebones"]
@@ -422,6 +423,18 @@ class UniMateInbetweenMotion(io.ComfyNode):
 
 class UniMateEditMotion(UniMateInbetweenMotion):
     MODE = "edit"
+
+
+class UniMateRigConditioning(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name="UniMate Rig Conditioning", category=CATEGORY,
+            inputs=[Rig.Input("rig")], outputs=[Conditioning.Output()])
+
+    @classmethod
+    def execute(cls, rig):
+        from .unimate_pack.conditioning_output import extract_conditioning
+        return io.NodeOutput(extract_conditioning(rig))
 
 
 class UniMateCanonicalAsset(io.ComfyNode):
