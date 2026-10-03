@@ -417,6 +417,31 @@ class UniMateEditMotion(UniMateInbetweenMotion):
     MODE = "edit"
 
 
+class UniMateExpandMotion(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name="Expand UniMate Motion", category=CATEGORY,
+            inputs=[Model.Input("model"), Rig.Input("rig"),
+                io.String.Input("prompts", default='["A character stands.", "A character walks forward."]', multiline=True,
+                    tooltip="JSON array of prompts in segment order."),
+                io.Int.Input("seed", default=0, min=0, max=2**64-1),
+                io.Float.Input("guidance", default=3.0, min=1.1, max=10.0),
+                io.Int.Input("overlap", default=10, min=1, max=59),
+                io.Combo.Input("normalization", options=NORMALIZATION, default="objaverse")],
+            outputs=[Motion.Output()])
+
+    @classmethod
+    def execute(cls, model, rig, prompts, seed, guidance, overlap=10, normalization="objaverse"):
+        from .unimate_pack.expansion import expand_motion
+        if not isinstance(prompts, str) or len(prompts) > 512 * 1024:
+            raise ValueError("Prompt sequence must be a bounded JSON array")
+        try:
+            sequence = json.loads(prompts)
+        except json.JSONDecodeError as error:
+            raise ValueError("Prompt sequence must be a JSON array") from error
+        return io.NodeOutput(expand_motion(model, rig, sequence, seed, guidance, normalization, overlap))
+
+
 class UniMateExportGLB(io.ComfyNode):
     @classmethod
     def define_schema(cls):

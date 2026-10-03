@@ -77,6 +77,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateEditMotion",
                 "UniMateLoadMotion",
                 "UniMateSaveMotion",
+                "UniMateExpandMotion",
             ],
         )
         for cls in classes:
@@ -87,6 +88,17 @@ class NodeTests(unittest.TestCase):
             ["objaverse", "mixamo", "truebones"],
         )
         self.assertTrue(nodes.UniMateExportGLB.OUTPUT_NODE)
+
+    def test_expansion_node_parses_prompt_array_without_reordering(self):
+        calls = []
+        def expand(*args, **kwargs):
+            calls.append(args)
+            return {"prompts": args[2]}
+        with self.fake_module("expansion", expand_motion=expand):
+            output = nodes.UniMateExpandMotion.execute({}, {}, '["stand", "walk"]', 0, 3, 10)
+            self.assertEqual(output.result[0]["prompts"], ["stand", "walk"])
+            with self.assertRaises(ValueError):
+                nodes.UniMateExpandMotion.execute({}, {}, '{broken}', 0, 3, 10)
 
     def test_motion_archive_nodes_round_trip_and_confine_paths(self):
         import numpy as np

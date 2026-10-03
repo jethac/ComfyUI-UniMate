@@ -50,3 +50,40 @@ def test_real_model_edit_and_inbetween_preserve_constraints_and_export(tmp_path)
         for sampler in doc["animations"][0]["samplers"]:
             assert doc["accessors"][sampler["output"]]["count"] == 60
         (tmp_path / f"{mode}.glb").write_bytes(output)
+
+
+def test_real_model_expansion_exports_all_frames_and_preserves_source(tmp_path):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ComfyUI"))
+    sys.path.insert(0, str(Path(__file__).parent / "fixtures"))
+    from rig_generator import synthetic_glb
+    from test_blender_math import evaluated_vertices
+    import torch
+    from comfy.cli_args import args
+    if not torch.cuda.is_available():
+        args.cpu = True
+    torch.set_num_threads(4)
+    from unimate_pack.blender import prepare_rig, export_glb
+    from unimate_pack.contracts import make_asset, decode_arrays
+    from unimate_pack.inference import load_model_bundle
+    from unimate_pack.expansion import expand_motion
+    from unimate_pack.rig_math import parse_glb
+    source = synthetic_glb(True)
+    rig = prepare_rig(make_asset(source, "branching.glb"), "+Z")
+    model = load_model_bundle(os.environ["UNIMATE_TEST_BUNDLE"])
+    motion = expand_motion(model, rig,
+        ["A character stands still.", "A character walks forward."], 0, 3, overlap=10)
+    features = decode_arrays(motion["features"])["features"]
+    assert features.shape == (110, 7, 12)
+    assert np.isfinite(features).all()
+    output = export_glb(rig, motion)
+    doc, binary = parse_glb(output)
+    original, body = parse_glb(source)
+    assert binary[:len(body)] == body
+    for name in ("meshes", "skins", "materials", "images", "textures"):
+        assert doc[name] == original[name]
+    for sampler in doc["animations"][0]["samplers"]:
+        assert doc["accessors"][sampler["output"]]["count"] == 110
+    vertices = np.stack([evaluated_vertices(output, frame) for frame in range(110)])
+    assert np.isfinite(vertices).all()
+    assert np.any(vertices[1:] != vertices[0])
+    (tmp_path / "expansion.glb").write_bytes(output)

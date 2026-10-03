@@ -13,8 +13,9 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Edit UniMate Motion | Preserve selected joints and regenerate the remaining motion |
 | Load UniMate Motion | Load a numeric motion archive with canonical rig identity |
 | Save UniMate Motion | Save a numeric motion archive for later reuse |
+| Expand UniMate Motion | Generate an ordered prompt chain with constrained segment overlaps |
 
-The target is complete UniMate capability coverage. The pack implements one model path, with generation, in-betweening and editing nodes. The constrained paths passed offline real-model inference and Blender export on a synthetic rig; expanded ComfyUI server and Cloud Offload checks remain pending. Expansion and other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Existing source clips are ignored and replaced by one generated clip.
+The target is complete UniMate capability coverage. The pack implements one model path, with generation, in-betweening, editing and expansion nodes. These paths passed offline real-model inference and Blender export on synthetic rigs; expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Existing source clips are ignored and replaced by one generated clip.
 
 ## Install
 
@@ -56,6 +57,8 @@ Choose the source facing direction explicitly. Joint-pair facing requires raw le
 ## Supported assets
 
 Save UniMate Motion writes `.npz` archives. Copy an archive into ComfyUI input and select it in Load UniMate Motion to reuse it as a reference. In-betweening accepts comma-separated frame indices (`0,-1` preserves the first and last frame); editing accepts original or cleaned joint names. Reference clips must belong to the same prepared rig and fit the current 60-frame model window. Both modes require guidance greater than 1.
+
+Expand UniMate Motion accepts a JSON array of prompts in segment order. Each segment has 60 frames; overlap must be 1–59 frames. With N prompts and overlap O, the result has `60 + (60 - O) * (N - 1)` frames. Seeds increment per segment modulo uint64. Later segments preserve the preceding tail; duplicated overlap frames are omitted from the output. Expansion requires guidance greater than 1.
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 
