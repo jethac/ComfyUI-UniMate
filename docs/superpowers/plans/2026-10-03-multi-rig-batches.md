@@ -26,4 +26,3 @@ lists and reference the exact client/runtime envelope revisions.
 - [ ] Review and push completed changes directly to main.
 
 All other full-goal capabilities and gates remain in scope.
-
