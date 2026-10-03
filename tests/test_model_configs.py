@@ -49,3 +49,23 @@ def test_conditioning_uses_released_capacity_and_retains_text_tokens(path):
     assert cond["joint_mask"].shape == (1, 1, 1, capacity)
     np.testing.assert_array_equal(cond["caption_tokens"][0].numpy(), tokens)
     assert cond["caption_mask"].all()
+
+
+@pytest.mark.parametrize("path", sorted((Path(__file__).parent / "fixtures/model_configs").glob("*.json")))
+def test_model_capacity_boundary_accepts_full_capacity_and_rejects_overflow(path):
+    config = json.loads(path.read_text(encoding="utf-8-sig"))
+    capacity = config["dataset"]["max_joints"]
+    stats = {f"{family}_{kind}_{part}": np.ones(12)
+             for family in ("mixamo", "objaverse", "truebones")
+             for kind in ("mean", "std") for part in ("root", "local")}
+    for joints in (capacity, capacity + 1):
+        arrays = dict(parents=np.array([-1] + [0] * (joints - 1)),
+                      tpos_first_frame=np.arange(joints * 3).reshape(joints, 3) / 10)
+        def condition():
+            return build_condition(arrays, config, stats, "mixamo",
+                                   np.ones((3, 768), np.float32), np.ones((joints, 768), np.float32))
+        if joints > capacity:
+            with pytest.raises(ValueError, match="capacity"):
+                condition()
+        else:
+            assert condition()["joint_mask"].sum().item() == joints

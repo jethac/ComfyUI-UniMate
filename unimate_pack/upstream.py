@@ -140,7 +140,7 @@ def build_condition(
     joints = len(parents)
     if (
         parents.shape != (joints,)
-        or not 5 <= joints < config["dataset"]["max_joints"]
+        or not 5 <= joints <= config["dataset"]["max_joints"]
         or parents[0] != -1
         or any(not 0 <= parents[j] < j for j in range(1, joints))
     ):

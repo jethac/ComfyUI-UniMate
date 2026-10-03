@@ -50,7 +50,7 @@ python tools/build_bundle.py --checkpoint models/source/unimate/unimate_uniml3d_
 
 Copy the resulting bundle to `ComfyUI/models/unimate/`. Conversion selects EMA weights, validates the known legacy statistics, and writes safetensors plus numeric statistics. Runtime loading does not use pickle. The bundle includes the local tokenizer and encoder; inference works offline.
 
-For the other families, select their matching config, statistics and checkpoint from model revision `971da7cfc1c8d99c2af6c00be9d2ed5700f99073`. Mixamo has 22 padded joint slots and depth capacity 7; preview has 61 slots; v2 variants have 71. Actual skeletons must have fewer joints than the padded capacity. Mixamo requires `mixamo` normalization. Conversion rejects unrecognized legacy statistics and incompatible checkpoint inventories.
+For the other families, select their matching config, statistics and checkpoint from model revision `971da7cfc1c8d99c2af6c00be9d2ed5700f99073`. Mixamo has 22 joint slots and depth capacity 7; preview has 61 slots; v2 variants have 71. Skeletons must fit the checkpoint capacity and the current 70-joint rig contract. Mixamo requires `mixamo` normalization. Conversion rejects unrecognized legacy statistics and incompatible checkpoint inventories.
 
 ## Use
 
