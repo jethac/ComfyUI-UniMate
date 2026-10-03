@@ -14,6 +14,14 @@ import uuid
 import folder_paths
 from comfy_api.latest import io
 
+from .dataset_nodes import (
+    UniMateBuildDataset as UniMateBuildDataset,
+    UniMateLoadDataset as UniMateLoadDataset,
+    UniMateSaveDataset as UniMateSaveDataset,
+    UniMateDatasetStatistics as UniMateDatasetStatistics,
+    UniMateLoadStatistics as UniMateLoadStatistics,
+    UniMateSaveStatistics as UniMateSaveStatistics,
+)
 
 Asset = io.Custom("UNIMATE_ASSET")
 Rig = io.Custom("UNIMATE_RIG")

@@ -259,8 +259,14 @@ The [shard contract](docs/superpowers/specs/2026-10-03-dataset-contracts.md) def
 aggregate budgets and validation. Statistics extraction selects training clips
 only and shares read-only arrays for repeated payloads. The numeric statistics
 adapter preserves every released pooling/balancing/tying combination. These
-foundations have test evidence; public dataset/statistics sockets and nodes,
-shard collections, cloud adapters and training runtime consumption remain open.
+foundations and six public collection/statistics/save/load nodes have direct V3
+execution evidence. Values use concrete UNIMATE_DATASET and UNIMATE_STATISTICS
+sockets; actual client/runner codec round trips preserve their original bytes.
+Managed loaders declare input archives and saves return core files descriptors.
+Shared conditioning retains per-clip rig provenance even when meshes differ.
+Statistics payload and archive expansion limits are 8 MiB and 16 MiB, checked
+before numeric decoding. Headless staging/retrieval workflows, shard collections
+and training runtime consumption remain open.
 
 ## Cloud Offload implementation
 

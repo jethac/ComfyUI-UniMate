@@ -87,6 +87,12 @@ class NodeTests(unittest.TestCase):
                 "UniMateRecoverSkeleton",
                 "UniMatePreviewSkeleton",
                 "UniMateFootLockMotion",
+                "UniMateBuildDataset",
+                "UniMateLoadDataset",
+                "UniMateSaveDataset",
+                "UniMateDatasetStatistics",
+                "UniMateLoadStatistics",
+                "UniMateSaveStatistics",
             ],
         )
         for cls in classes:
@@ -97,6 +103,67 @@ class NodeTests(unittest.TestCase):
             ["objaverse", "mixamo", "truebones"],
         )
         self.assertTrue(nodes.UniMateExportGLB.OUTPUT_NODE)
+
+    def test_dataset_nodes_build_compute_save_load_and_declare_inputs(self):
+        from test_foot_lock import portable_legged_motion
+        from unimate_pack.dataset_io import load_dataset
+        from unimate_pack.statistics_io import load_statistics
+        rig, motion, _ = portable_legged_motion()
+        result = nodes.UniMateBuildDataset.execute([rig], [motion], ['[]'], ['objaverse'])
+        dataset = result.result[0]
+        statistics = nodes.UniMateDatasetStatistics.execute(dataset, True, False, False).result[0]
+        for save, load, value, read in (
+            (nodes.UniMateSaveDataset, nodes.UniMateLoadDataset, dataset, load_dataset),
+            (nodes.UniMateSaveStatistics, nodes.UniMateLoadStatistics, statistics, load_statistics),
+        ):
+            saved = save.execute(value, 'dataset test/left')
+            descriptor = saved.ui['files'][0]
+            path = self.output / descriptor['subfolder'] / descriptor['filename']
+            self.assertEqual(read(path.read_bytes()), value)
+            target = self.input / path.name
+            target.write_bytes(path.read_bytes())
+            self.assertEqual(load.execute(target.name).result[0], value)
+            self.assertEqual(load.cloud_offload_assets({'archive': target.name}),
+                             [{'category': '__input__', 'filename': target.name}])
+            self.assertEqual(len(load.fingerprint_inputs(target.name)), 64)
+        with self.assertRaises(ValueError):
+            nodes.UniMateBuildDataset.execute([rig], [motion], ['[]', '[]'], ['objaverse'])
+
+    def test_dataset_save_rejects_escape_and_cancellation_leaves_no_artifact(self):
+        from test_dataset_contracts import dataset_parts
+        from unimate_pack.dataset_contracts import make_dataset
+        from comfy import model_management
+        manifest, files = dataset_parts()
+        dataset = make_dataset(manifest, files)
+        with self.assertRaises(ValueError):
+            nodes.UniMateSaveDataset.execute(dataset, '../outside')
+        with patch.object(model_management, 'throw_exception_if_processing_interrupted',
+                          side_effect=InterruptedError('cancelled')):
+            with self.assertRaises(InterruptedError):
+                nodes.UniMateSaveDataset.execute(dataset, 'cancelled/dataset')
+        self.assertFalse(list(self.output.rglob('*.*')))
+
+    def test_dataset_save_cancellation_after_stage_write_cleans_stage(self):
+        from test_dataset_contracts import dataset_parts
+        from unimate_pack.dataset_contracts import make_dataset
+        from comfy import model_management
+        dataset = make_dataset(*dataset_parts())
+        calls = 0
+
+        def cancel():
+            nonlocal calls
+            calls += 1
+            if calls == 3:
+                stages = list(self.output.rglob('.unimate-numeric-*'))
+                self.assertEqual(len(stages), 1)
+                self.assertEqual(stages[0].read_bytes(), b'staged archive')
+                raise InterruptedError('cancelled before publication')
+
+        with self.fake_module('dataset_io', dump_dataset=lambda value, cancel: b'staged archive'):
+            with patch.object(model_management, 'throw_exception_if_processing_interrupted', side_effect=cancel):
+                with self.assertRaises(InterruptedError):
+                    nodes.UniMateSaveDataset.execute(dataset, 'staged/dataset')
+        self.assertFalse(list(self.output.rglob('*.*')))
 
     def test_foot_lock_node_forwards_names_and_returns_portable_motion_and_report(self):
         corrected, report = {"rig_id": "a" * 64}, {"segments": []}

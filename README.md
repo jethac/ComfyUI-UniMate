@@ -23,6 +23,12 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Recover UniMate Skeleton | Recover canonical joint positions through FK or RIC |
 | Render UniMate Skeleton | Render every recovered frame as a ComfyUI IMAGE batch |
 | Foot Lock UniMate Motion | Detect ground contacts, anchor limb chains and return corrected motion/report |
+| Build UniMate Dataset | Collect paired rig/motion lists into a labelled numeric shard |
+| Load UniMate Dataset | Read a `.unimatedata` shard from ComfyUI input |
+| Save UniMate Dataset | Save a portable numeric shard |
+| UniMate Dataset Statistics | Compute training-only normalization and source provenance |
+| Load UniMate Statistics | Read a `.unimatestats` archive from ComfyUI input |
+| Save UniMate Statistics | Save normalization arrays and provenance |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -92,6 +98,18 @@ Export UniMate FBX writes binary FBX and provenance JSON. The external Blender j
 ## Skeleton recovery
 
 Skeleton recovery exposes canonical joint positions, ordered parents and joint names in a portable `UNIMATE_SKELETON` value with the motion's rig identity. `fk` uses rest offsets and recovered rotations; `ric` uses facing-relative position channels. Render UniMate Skeleton returns all frames as an IMAGE batch, with front, side or top projection and fixed bounds across the clip. Connect it to ComfyUI Preview Image or Save Image. Frames remain at 30 fps; the IMAGE socket does not carry timing. Output allocation is capped at 256 MiB; reduce resolution for long clips.
+
+## Datasets
+
+Build Dataset collects equally sized rig/motion lists with exact rig identities.
+Its `labels` accepts `[]` for defaults or one JSON object per pair, with optional
+`id`, `dataset_type`, `object_type`, `caption` and `split` fields. Statistics uses
+only `train` clips; `per_dataset`, `balanced` and `tie_std` expose the released
+normalization options. Saved shards preserve original numeric payloads and labels.
+
+Load Dataset accepts numeric topologies with 2–4096 joints; Build Dataset uses
+the existing mesh adapter's limits. These nodes provide data and normalization;
+training, curation, augmentation and headless dataset workflows remain open.
 
 ## Cloud Offload
 

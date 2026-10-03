@@ -26,6 +26,10 @@ Feature joint count must match the selected topology. FPS is exactly 30. Origin
 is a finite length-three JSON list. Split is `train` or `eval`. IDs are unique
 portable labels within their respective lists; dataset/object labels are portable
 names. Captions are bounded plain text, including punctuation and non-ASCII.
+An optional `source_rig_id` records per-clip prepared-rig provenance. The builder
+always includes it. Older shards without it remain valid. When multiple source
+meshes share identical conditioning, their clips retain individual rig IDs and
+the deduplicated topology's single-source provenance is null.
 
 The archive uses `manifest.json` plus `arrays/<digest>.npz`, with a file schema
 `unimate.dataset.file.v1`. Canonical JSON includes the socket manifest and file

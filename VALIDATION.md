@@ -397,3 +397,30 @@ Runtime: Windows, Python 3.11.9, NumPy 2.4.3, CPU. No ComfyUI node execution is
 claimed by this check. Public dataset/statistics nodes, shard collections for
 larger training data, Cloud Offload registration/staging, training consumption
 and local/stadia integration remain open.
+
+
+## Public dataset/statistics nodes (2026-10-03)
+
+Six V3 nodes collect paired rig/motion lists, compute training-only statistics,
+and load/save numeric dataset and statistics archives. Shared conditioning keeps
+per-clip source rig identity. Archive saves check cancellation before publication
+and clean temporary files. Statistics ZIP preflight rejects expanded payloads
+above 8 MiB (arrays) or 16 MiB (persisted archive) before numeric decoding;
+compressed over-budget fixtures demonstrated RED then GREEN.
+
+Focused foundations/adapters/transport/installed V3 suite: 141 passed, 6 subtests,
+no skips, in 7.92s. Changed-file Ruff passed. Command:
+`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 UNIMATE_DATASET_REFERENCE=<pinned upstream-audit> python -m pytest tests/test_dataset_adapters.py tests/test_dataset_contracts.py tests/test_dataset_io.py tests/test_dataset_stats.py tests/test_dataset_transport.py tests/test_nodes.py -q`.
+Windows Python 3.11.9, NumPy 2.4.3; upstream statistics revision
+`2c5b384715aa63d8639b1ed7eb74bfe614570c7a`. Plugin autoload is disabled because
+an unrelated installed xonsh plugin requires missing prompt_toolkit.
+
+Independent node review found no blockers and ran 53 adapter/transport/V3 tests.
+Its review preceded the final expansion-budget guard; those regression checks
+are included in the 141-test run. Eight-mode pooling/balancing correctness relies
+on the retained pinned-upstream numeric reference suite; the public adapter's
+single-dataset fixture alone cannot distinguish those modes.
+
+Actual sibling client/runner codec tests preserve both portable types. This does
+not prove partition-handler staging or saved archive retrieval. Local/headless
+stadia dataset workflows and training runtime consumption remain open.

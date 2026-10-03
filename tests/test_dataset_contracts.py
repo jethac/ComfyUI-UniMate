@@ -63,6 +63,7 @@ def test_eval_clips_do_not_enter_statistics_and_shared_payloads_are_valid():
     lambda m, f: m['clips'][0].update(caption='bad\0text'),
     lambda m, f: m['clips'][0].update(topology_id='b' * 64),
     lambda m, f: m['topologies'][0].update(source_rig_id='not-a-digest'),
+    lambda m, f: m['clips'][0].update(source_rig_id='not-a-digest'),
     lambda m, f: m['clips'].append(copy.deepcopy(m['clips'][0])),
     lambda m, f: f.update({'c' * 64: b'unreferenced'}),
     lambda m, f: f.update({m['clips'][0]['features']: b'changed'}),

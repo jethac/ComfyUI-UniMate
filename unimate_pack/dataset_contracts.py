@@ -56,7 +56,11 @@ def _manifest(manifest):
         topology_ids.add(entry['id'])
         referenced.add(entry['conditioning'])
     for entry in manifest['clips']:
-        _fields(entry, _CLIP_FIELDS)
+        if type(entry) is not dict:
+            raise ValueError('Invalid dataset clip fields')
+        _fields(entry, _CLIP_FIELDS | ({'source_rig_id'} if 'source_rig_id' in entry else set()))
+        if entry.get('source_rig_id') is not None:
+            _digest(entry['source_rig_id'], 'clip source rig')
         for key in ('id', 'dataset_type', 'object_type'):
             _label(entry[key])
         if entry['id'] in clip_ids:
