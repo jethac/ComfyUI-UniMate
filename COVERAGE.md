@@ -30,6 +30,9 @@ Audit date: 2026-10-03. This is a capability inventory, not a claim of complete 
 | Released model selection | Hub inventory: Mixamo, UniML3D preview, v2 graph/AdaLN, v2 full/cross-attention | All four loaders/checkpoints passed direct tests; server/cloud family matrix remains open | Model Loader, bundle converter |
 | Checkpoint selection | `sample.py --model_path`; Hub includes multiple training steps | Explicit installed bundles and selected EMA conversion supported; full checkpoint inventory validation remains open | Model Loader, bundle converter |
 | Model-dependent dimensions and normalization | Config/schema, dataset statistics, model factory | Config-driven reconstruction across four families passed; joint/depth capacities and all applicable statistics remain open | Model Loader / generation normalization |
+| Training and resume | `training/train.py`, `trainer.py`, `ema.py`, config schema | Source audit records flow/diffusion, optimizer/scheduler, accumulation, distributed behavior, EMA and resume semantics; implementation and execution remain open | Missing |
+| Training datasets and augmentation | `dataset/mixture`, transforms, collate and factory | Statistics reference probe passed; full normalization, balancing, splits, topology augmentation and text caches remain unintegrated | Missing |
+| Dataset preparation and annotation | `data_process/feature_extraction`, motion export, joint annotation and caption utilities | Feature-extraction options inventoried; remaining stages need deeper audit; public workflows and validation remain open | Missing |
 
 ## Sampling details that affect implementation
 
@@ -55,6 +58,11 @@ All four configs use 60-frame, 12-feature windows and FLAN-T5-base. Their capaci
 The released factory implements graph/full attention and AdaLN/cross-attention combinations. The current adapter accepts one exact graph/AdaLN configuration. Supporting the released full/cross-attention model requires token text conditioning and config-driven reconstruction, not relaxing validation alone. Preview and Mixamo bundles must each pass strict loading and numerical checks against their own configs and statistics.
 
 Training is also released: flow/diffusion schedules, EMA, resume, mixed datasets, balanced sampling, topology augmentation, cached text embeddings and architecture ablations. These are not currently represented by nodes. A literal claim of 100% technology coverage must account for them explicitly; an inference-only pack cannot make that claim. Training/job nodes need isolated configuration, dataset input, progress, cancellation and exported checkpoint contracts. Dataset curation includes filtering, canonicalization, rendering and language-assisted annotation; those utilities likewise need a documented interface or an explicit coverage gap.
+
+The [training/dataset audit](docs/2026-10-03-training-dataset-audit.md) records
+the pinned interfaces and verification requirements. It distinguishes the
+released resume behavior from exact random-sequence continuation, and records
+the different grouping keys used by global balanced statistics and sampling.
 
 The paper additionally describes foot-locking with contact detection and inverse kinematics (§E.5), and discusses linear-blend or dual-quaternion mesh deformation (§B.7). Foot Lock Motion independently implements contact postprocessing; numeric, synthetic Blender playback, Windows server and Windows/headless stadia partition-handler checks pass, including independent playback and exact restored skinning. No upstream foot-locking implementation was located in the inspected inference/mesh-animation paths. Dual-quaternion public coverage remains missing. Do not label paper capabilities released-and-integrated on the strength of the paper alone.
 
