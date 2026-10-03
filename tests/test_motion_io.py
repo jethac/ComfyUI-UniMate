@@ -27,3 +27,20 @@ def test_long_expansion_provenance_round_trips_without_unicode_dtype_overflow():
     original = make_motion("a" * 64, encode_arrays(features=np.zeros((110, 5, 12), np.float32)),
                            {"segments": [{"prompt": "歩く" * 2000} for _ in range(4)]})
     assert load_motion(dump_motion(original)) == original
+
+
+def test_existing_v1_unicode_archive_remains_readable():
+    features = np.zeros((7, 5, 12), np.float32)
+    old = encode_arrays(features=features, schema=np.asarray("unimate.motion.file.v1"),
+        rig_id=np.asarray("a" * 64), fps=np.asarray(30, dtype=np.int32),
+        metadata=np.asarray('{"prompt":"walk"}'))
+    expected = make_motion("a" * 64, encode_arrays(features=features), {"prompt": "walk"})
+    assert load_motion(old) == expected
+
+
+def test_v2_metadata_requires_uint8_utf8_vector():
+    bad = encode_arrays(features=np.zeros((7, 5, 12), np.float32),
+        schema=np.asarray("unimate.motion.file.v2"), rig_id=np.asarray("a" * 64),
+        fps=np.asarray(30, dtype=np.int32), metadata=np.asarray("{}"))
+    with pytest.raises(ValueError, match="uint8"):
+        load_motion(bad)
