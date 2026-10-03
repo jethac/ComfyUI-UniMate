@@ -36,6 +36,8 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Collate UniMate Training Samples | Collect a sample list into a portable batch with source masks and padding |
 | Configure UniMate Training | Bind architecture, losses, optimizer and epoch sampling to prepared artifacts |
 | Train UniMate | Run scratch-training optimizer groups; return a resumable checkpoint and progress |
+| Load UniMate Training Checkpoint | Load a numeric `.unimatetrain` checkpoint from managed inputs |
+| Save UniMate Training Checkpoint | Save a numeric checkpoint to managed outputs |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -141,10 +143,15 @@ It derives text dimensions from the cache and records artifact identities. Optio
 include `model`, `optimizer`, `paradigm`, `loss`, `sample`, `sampling`, `batch_size`,
 `drop_last` and `seed`. Train runs a selected number of optimizer updates on
 ComfyUI's CPU/CUDA device. Connect its checkpoint to a subsequent Train node to
-resume with the same job and runtime. Current execution is single-process,
+resume with the same job and runtime. Save/Load Training Checkpoint persists this
+value as `.unimatetrain`, using JSON and safetensors. Windows and headless stadia
+CPU server/partition-handler checks verified socket resume, file staging and
+resume, and client checkpoint retrieval against uninterrupted training in each
+runtime. See [checkpoint validation](docs/2026-10-03-training-checkpoint-io-validation.md).
+Current execution is single-process,
 from scratch, using balanced epoch sampling. Installed-weight initialization,
-distributed/unbalanced loaders, learned-variance backbone output, checkpoint
-file nodes, exported inference state and server/worker workflows remain open.
+distributed/unbalanced loaders, learned-variance backbone output, exported
+inference state and the full server/worker training matrix remain open.
 Raw-data curation remains open.
 
 ## Cloud Offload

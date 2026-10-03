@@ -1,6 +1,8 @@
 # Goal: full UniMate coverage
 
-Implement usable ComfyUI nodes covering UniMate's technology, released code and models, and paper-described capabilities. Use COVERAGE.md as the minimum checklist; audit further source changes without silently reducing scope.
+Achieve 100% coverage of UniMate's technology, released code and models, and paper-described capabilities through usable ComfyUI nodes and end-to-end workflows. Use COVERAGE.md as the minimum checklist; audit further source changes without silently reducing scope.
+
+The active agent goal is `execute GOAL.md`. It remains active until all completion gates below have authoritative evidence. Training checkpoint files and resume workflows are incremental progress, not completion of this goal.
 
 Required coverage:
 

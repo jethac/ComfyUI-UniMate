@@ -3,7 +3,7 @@ import json
 
 from comfy_api.latest import io
 
-from .dataset_nodes import CATEGORY,Dataset,Statistics,_cancel,_one
+from .dataset_nodes import CATEGORY,Dataset,Statistics,_cancel,_one,_LoadArchive,_save_archive
 
 Model=io.Custom('UNIMATE_MODEL')
 TextCache=io.Custom('UNIMATE_TEXT_CACHE')
@@ -11,6 +11,31 @@ TrainingSample=io.Custom('UNIMATE_TRAINING_SAMPLE')
 TrainingBatch=io.Custom('UNIMATE_TRAINING_BATCH')
 TrainingJob=io.Custom('UNIMATE_TRAINING_JOB')
 TrainingCheckpoint=io.Custom('UNIMATE_TRAINING_CHECKPOINT')
+
+
+class UniMateLoadTrainingCheckpoint(_LoadArchive):
+    from .unimate_pack.training_checkpoint_io import MAX_ARCHIVE_BYTES as LIMIT
+    SUFFIX,TYPE,DISPLAY_NAME='.unimatetrain',TrainingCheckpoint,'Load UniMate Training Checkpoint'
+
+    @staticmethod
+    def load(payload):
+        from .unimate_pack.training_checkpoint_io import load_training_checkpoint
+        return load_training_checkpoint(payload,cancel=_cancel)
+
+
+class UniMateSaveTrainingCheckpoint(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__,display_name='Save UniMate Training Checkpoint',category=CATEGORY,
+            inputs=[TrainingCheckpoint.Input('checkpoint'),
+                io.String.Input('filename_prefix',default='unimate/training')],
+            outputs=[TrainingCheckpoint.Output()],is_output_node=True)
+
+    @classmethod
+    def execute(cls,checkpoint,filename_prefix='unimate/training'):
+        from .unimate_pack.training_checkpoint_io import dump_training_checkpoint
+        return _save_archive(checkpoint,filename_prefix,'.unimatetrain',
+            lambda value:dump_training_checkpoint(value,cancel=_cancel))
 
 
 class UniMateTrain(io.ComfyNode):

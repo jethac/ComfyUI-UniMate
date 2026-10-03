@@ -28,6 +28,8 @@ from .dataset_nodes import (
 from .training_nodes import (
     UniMateTrainingJob as UniMateTrainingJob,
     UniMateTrain as UniMateTrain,
+    UniMateLoadTrainingCheckpoint as UniMateLoadTrainingCheckpoint,
+    UniMateSaveTrainingCheckpoint as UniMateSaveTrainingCheckpoint,
     UniMateCollateTrainingSamples as UniMateCollateTrainingSamples,
     UniMateBuildTextCache as UniMateBuildTextCache,
     UniMatePrepareTrainingSample as UniMatePrepareTrainingSample,

@@ -11,7 +11,9 @@ from unimate_pack.training_text import build_text_cache
 def test_registered_training_schemas():
     extension=asyncio.run(extension_module.comfy_entrypoint())
     ids=[cls.GET_SCHEMA().node_id for cls in asyncio.run(extension.get_node_list())]
-    assert len(ids)==len(set(ids))==32
+    assert len(ids)==len(set(ids))==34
+    assert 'UniMateSaveTrainingCheckpoint' in ids
+    assert 'UniMateLoadTrainingCheckpoint' in ids
     assert 'UniMateTrain' in ids
     assert 'UniMateTrainingJob' in ids
     assert 'UniMateBuildTextCache' in ids
@@ -67,6 +69,60 @@ def test_actual_managed_training_node_and_portable_resume():
     assert resumed==full
     assert report['updates']==2
     assert nodes.UniMateTrain.GET_NODE_INFO_V1()['output']==['UNIMATE_TRAINING_CHECKPOINT','STRING']
+
+
+def test_checkpoint_file_nodes_confine_paths_and_declare_input_staging(tmp_path):
+    import folder_paths
+    import pytest
+    from unittest.mock import patch
+    from test_training_checkpoint_io import value
+    checkpoint=value()
+    output=tmp_path/'output'
+    input_root=tmp_path/'input'
+    output.mkdir()
+    input_root.mkdir()
+    with patch.object(folder_paths,'get_output_directory',return_value=str(output)),\
+         patch.object(folder_paths,'get_input_directory',return_value=str(input_root)):
+        result=nodes.UniMateSaveTrainingCheckpoint.execute(checkpoint,'training/state')
+        descriptor=result.ui['files'][0]
+        payload=(output/descriptor['subfolder']/descriptor['filename']).read_bytes()
+        target=input_root/'resume.unimatetrain'
+        target.write_bytes(payload)
+        loaded=nodes.UniMateLoadTrainingCheckpoint.execute(target.name).result[0]
+        assert loaded==checkpoint
+        assert nodes.UniMateLoadTrainingCheckpoint.cloud_offload_assets({'archive':target.name})==[
+            dict(category='__input__',filename=target.name)]
+        assert len(nodes.UniMateLoadTrainingCheckpoint.fingerprint_inputs(target.name))==64
+        for name in ('../resume.unimatetrain','resume.pt','missing.unimatetrain'):
+            with pytest.raises((ValueError,OSError)):
+                nodes.UniMateLoadTrainingCheckpoint.execute(name)
+        with pytest.raises(ValueError):
+            nodes.UniMateSaveTrainingCheckpoint.execute(checkpoint,'../state')
+        assert nodes.UniMateSaveTrainingCheckpoint.GET_SCHEMA().is_output_node
+
+
+def test_checkpoint_save_cancellation_removes_staged_file(tmp_path):
+    import folder_paths
+    import pytest
+    from unittest.mock import patch
+    from comfy import model_management as mm
+    from test_training_checkpoint_io import value
+    checkpoint=value()
+    output=tmp_path/'output'
+    output.mkdir()
+    cancelled=[]
+    def cancel():
+        stages=list(output.rglob('.unimate-numeric-*'))
+        if stages:
+            assert len(stages)==1 and stages[0].read_bytes().startswith(b'UMTRAIN1')
+            cancelled.append(True)
+            raise InterruptedError('cancelled before publication')
+    with patch.object(folder_paths,'get_output_directory',return_value=str(output)),\
+         patch.object(mm,'throw_exception_if_processing_interrupted',side_effect=cancel):
+        with pytest.raises(InterruptedError,match='before publication'):
+            nodes.UniMateSaveTrainingCheckpoint.execute(checkpoint,'cancel/state')
+    assert cancelled==[True]
+    assert not [path for path in output.rglob('*') if path.is_file()]
 
 
 def test_actual_training_sample_node():

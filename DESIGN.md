@@ -374,9 +374,23 @@ memory; the guard is not a hardware peak prediction or a guarantee against OOM.
 Cancellation/failure discards the node-owned session without publishing a new
 checkpoint. Existing input checkpoints remain usable.
 
+Training checkpoint files use `.unimatetrain`: eight-byte `UMTRAIN1` magic,
+little-endian uint64 JSON length, bounded versioned JSON metadata and safetensors
+bytes. File loading validates digests, tensor layout/reference integrity, position
+counters and finite numeric data without allocating Torch state. Its workspace
+guard covers byte copies and bounded metadata/scanning temporaries. Full model,
+optimizer, runtime and artifact compatibility is validated when Train restores
+the checkpoint; envelope loading alone does not establish resume compatibility.
+Managed input paths declare Cloud Offload staging. Saving uses contained output
+paths, temporary staging and atomic publication; cancellation before publication
+removes the staged file. Unit evidence covers that cancellation boundary.
+
+Windows and headless stadia CPU server/handler checks passed scratch graph/AdaLN
+flow training, socket/file resume and client artifact retrieval. They compare
+complete checkpoint values with uninterrupted training within each runtime.
 Unbalanced/distributed loaders, selected-weight initialization, learned-variance
-backbone output, checkpoint I/O, exported inference state and actual server/worker
-execution remain open.
+backbone output, exported inference state, injected server cancellation and the
+full server/worker training matrix remain open.
 
 The flow training kernel consumes portable batches and returns a differentiable
 mean loss plus scalar metrics. The caller owns model mode, device and optimizer.

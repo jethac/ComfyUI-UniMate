@@ -34,6 +34,8 @@ async def comfy_entrypoint():
         UniMateBuildTextCache,
         UniMateTrainingJob,
         UniMateTrain,
+        UniMateLoadTrainingCheckpoint,
+        UniMateSaveTrainingCheckpoint,
         UniMateCollateTrainingSamples,
         UniMatePrepareTrainingSample,
     )
@@ -71,6 +73,8 @@ async def comfy_entrypoint():
                 UniMateBuildTextCache,
                 UniMateTrainingJob,
                 UniMateTrain,
+                UniMateLoadTrainingCheckpoint,
+                UniMateSaveTrainingCheckpoint,
                 UniMateCollateTrainingSamples,
                 UniMatePrepareTrainingSample,
             ]

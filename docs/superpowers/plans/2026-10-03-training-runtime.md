@@ -153,10 +153,22 @@ assuming fused kernels; cost is rejection under a budget that a fused kernel
 might fit, resolved by an explicit larger workspace. Independent sample RNG
 streams are an adapter policy, already required by sample contracts, rather than
 a claim of source DataLoader global-random trajectory equality.
-Remaining Task 5: selected installed raw/EMA initialization; checkpoint file IO;
-trained inference export; actual headless server/partition handler execution,
-artifact retrieval, injected cancellation and cleanup. Distributed/unbalanced
-loaders and learned-variance model output remain required full-goal work.
+Task 5 checkpoint IO increment: missing envelope module, public file nodes and
+worker workflow harness RED → GREEN. Actual Windows/stadia CPU ComfyUI servers
+ran two direct baselines and three partition-handler jobs each; socket and staged
+file resume matched uninterrupted checkpoint values within each runtime. Client
+retrieval restored three checkpoint files per runtime. A node API test verifies
+post-staging/pre-publication cancellation cleanup. Full suite: 1,182 passed,
+50 skipped, six subtests; headless focused tests: 21 passed. Evidence:
+docs/2026-10-03-training-checkpoint-io-validation.md.
+Independent review: no Critical/Important findings. Minor deferred: patch the
+imported load_tensors alias in the no-allocation test; add BF16/BOOL and corruption
+beyond the four-MiB scan boundary. Envelope validation does not replace full
+session restore validation.
+Remaining Task 5: selected installed raw/EMA initialization; trained inference
+export; the full server/handler family/paradigm/precision matrix; injected server
+cancellation and cleanup. Distributed/unbalanced loaders and learned-variance
+model output remain required full-goal work.
 
 ### Subsequent required tasks
 
