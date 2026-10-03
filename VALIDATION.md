@@ -301,5 +301,30 @@ Review found and closed overlapping manual-chain overwrite behavior.
 Windows server verification timed out during core ComfyUI startup before the node
 loaded. A startup trace locates the delay in Transformers 5.8.0 package metadata
 scanning (`importlib.metadata.packages_distributions`). Server, headless stadia and
-actual partition-handler foot-lock execution remain unverified. The separately
-verified multi-rig worker run does not prove foot-lock worker support.
+actual partition-handler execution were unverified at that point. A later run
+reached the node and correctly rejected a fixture label mismatch in rig identity.
+Reference preparation now uses the verifier's exact asset filename and Blender
+joint ordering; the identity check was retained.
+
+Windows server verification subsequently passed at pack `d3333c0`, retrieving
+123 files: corrected NPZ, GLB/provenance and 120 FK/RIC PNGs. The saved archive
+authenticates its source features, contains active contact segments and changed
+motion features, and preserves root channels/origin. Independent channel and
+skinning checks evaluated all 60 frames; maximum canonical joint error was
+1.758e-7 and maximum interior anchor error 6.624e-7. Appearance/binary preservation
+checks pass. Evidence: `.runtime/foot-lock-server-check-3/report.json` and
+`independent-playback.json`.
+
+Headless stadia's actual two-job partition-handler run also passed at `d3333c0`:
+declared GLB/archive staging, portable corrected motion, FK/RIC skeletons/images,
+GLB/FBX exports, source extraction, storage and client restoration. It retrieved
+369 files (two GLBs, two FBXs, four provenance JSONs, one corrected NPZ, 360 PNGs).
+Independent checks evaluated both GLBs / 120 frames and found exact
+original/restored skinning equality and the same joint/anchor bounds as Windows.
+Runtime: Linux, Python 3.11.15, PyTorch 2.14.1+cpu, Blender 5.1.1, CPU device;
+ComfyUI `84ba85773925f071c516f0208184773802b4d44a`, cloud runner `43bd1a0`, client
+`4a7a937`. Evidence: `.runtime/stadia-foot-lock-worker/report.json` and
+`independent-playback.json`. Provider dispatch and deployed containers are outside
+this harness. Windows worker verification stopped before submission at a core
+runner-identity Git wait timeout that escaped through `/system_stats`; it remains
+open pending that fix and a successful run.
