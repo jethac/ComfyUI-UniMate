@@ -714,3 +714,37 @@ creation and validation. Numeric validation still checks the conservative batch
 workspace estimate without allocating source tensors.
 Final suite: 590 passed, six subtests, no skips, 17.40s; two existing warnings. Changed-file Ruff and git diff --check passed.
 Independent review rechecked both fixes: thirteen contract tests pass, no remaining actionable findings.
+
+## Dataset-bound encoded sample producer (2026-10-03)
+
+produce_training_sample selects a captioned training clip from validated
+portable dataset bytes, requires matching statistics dataset identity and text
+coverage, and derives provenance itself. Statistics identity hashes its complete
+metadata/options plus numeric digest; text identity hashes encoder/source/text
+inventory plus arrays digest. Missing/evaluation clips, stale statistics and
+missing/empty captions fail. Aggregate declared numeric archive expansion is
+bounded before input decoding; subsequent augmentation/sample limits apply.
+
+Conditioning uses cleaned names unless blanks require the released raw-name
+fallback, retained in the report. Grounded or original rest positions determine
+identity-rest offsets by parent subtraction; source topology and spectral signs
+are preserved unless requested width requires source eigen recomputation.
+Root/local normalization rows come from selected dataset statistics. Cached and
+fresh pooling policies are explicit. Input feature clips are already prepared:
+this producer never re-extracts or re-grounds motion features. Raw feature
+extraction, collection preprocessing and their grounding semantics remain open.
+
+Augmentation and cropping use independent explicit seeds. Four exact comparison
+cases execute unchanged source model_joint_names, create_condition,
+_precompute_object_type_meta, _get_normalization_stats and __getitem__ for both
+condition modes and both rest-grounding policies. Reference-only Motion computes
+rest offsets. The source no-op wrapper's random.choice([None]) is bypassed in
+this comparison solely to compare the independent crop stream; this is not a
+claim of identical joint RNG streams for the full source constructor/getitem.
+Ten additional production paths span five augmentation operations and both
+modes, plus five invalid cases and predecode budget/cancellation. Twenty focused
+tests pass; actual installed encoder views were validated in the prior text-cache
+check, while these producer fixtures use controlled numeric views.
+Public nodes, portable batches, Windows/stadia/Cloud Offload producer workflows,
+raw dataset processing and training runtime remain required open work.
+Combined suite: 610 passed, six subtests, no skips, 22.56s; two existing warnings. Command: preceding 590-test command plus tests/test_training_dataset_samples.py. Changed-file Ruff and git diff --check passed; independent review has no actionable findings.
