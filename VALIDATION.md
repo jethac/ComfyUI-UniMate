@@ -129,7 +129,13 @@ This does not establish fidelity for other PBR material expressions or cloud exe
 
 ### Remaining gates
 
-- Skeleton recovery/rendering: pinned FK/RIC numerical comparisons and Windows server PNG retrieval passed. Focused tests: 109 passed, 6 subtests passed. Server evidence: `.runtime/skeleton-server-fixture-check/report.json`, with 17 frames per mode and 34 retrieved PNGs. Actual cloud runner and stadia execution remain open. Re-preparing the stadia source asset locally produced a different rig identity, so its archive was correctly rejected; identity stability across environments remains under investigation.
+Skeleton archive/recovery/rendering also passed headlessly on stadia-testbed at pack
+`a0d841a`: 60 generated frames per mode, 120 PNGs retrieved, plus GLB/provenance.
+Remote report: `/home/jethac/workspaces/comfy-unimate-e2e-20261001/run-skeleton-20261003/report.json`.
+Runtime: ComfyUI `84ba85773925f071c516f0208184773802b4d44a`, Python 3.11.15,
+PyTorch 2.14.1+cpu, Blender 5.1.1. Cloud runner execution remains open.
+
+- Skeleton recovery/rendering: pinned FK/RIC numerical comparisons and Windows server PNG retrieval passed. Focused tests: 109 passed, 6 subtests passed. Windows evidence: `.runtime/skeleton-server-fixture-check/report.json`, with 17 frames per mode and 34 retrieved PNGs; stadia evidence is recorded above. Actual cloud runner execution remains open. Re-preparing the stadia source asset locally produced a different rig identity, so its archive was correctly rejected; identity stability across environments remains under investigation.
 
 - Linux GPU inference, worker-container execution, and live provider provisioning.
 - Redistributable real characters, arbitrary-rig motion quality, and the complete upstream preprocessing CLI.

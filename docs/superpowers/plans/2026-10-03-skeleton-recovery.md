@@ -10,10 +10,14 @@ Execute inline with the executing-plans skill.
 
 **Spec:** GOAL.md skeleton previews and FK/RIC recovery requirement.
 
-- [ ] Add numerical reference tests for both modes on rotating branching motion, plus rig identity, invalid mode, cancellation and origin checks; observe failures.
-- [ ] Implement `unimate_pack/skeleton.py`: recovery and validated portable numeric value. Compare FK against upstream `recover_unimate_joint_pos_from_rot` using canonical `tpos_offsets`, and RIC against `recover_unimate_joint_pos_from_ric`.
-- [ ] Add `UniMateRecoverSkeleton` and `UniMatePreviewSkeleton` schemas, node wiring, renderer tests and extension registration. IMAGE batches include every frame and use a fixed projection and clip-wide bounds; enforce allocation limits before rendering.
+- [x] Add numerical reference tests for both modes on rotating branching motion, plus rig identity, invalid mode, cancellation and origin checks; observe failures.
+- [x] Implement `unimate_pack/skeleton.py`: recovery and validated portable numeric value. Compare FK against upstream `recover_unimate_joint_pos_from_rot` using canonical `tpos_offsets`, and RIC against `recover_unimate_joint_pos_from_ric`.
+- [x] Add `UniMateRecoverSkeleton` and `UniMatePreviewSkeleton` schemas, node wiring, renderer tests and extension registration. IMAGE batches include every frame and use a fixed projection and clip-wide bounds; enforce allocation limits before rendering.
 - [ ] Verify node schemas, numerical references, concrete Cloud Offload serialization and server execution; then exercise headless stadia execution and retrieval.
 - [ ] Update current coverage/docs with exact evidence and remaining gaps; commit and push tested changes.
 
 Preserve offline behavior, canonical root origin, 30 fps, variable clip length and exact rig identity. Positions must remain finite. Do not vendor the unlicensed Motion reference used in tests. No new model or asset downloads.
+
+Windows and stadia server execution, reference comparisons and codec round trips passed;
+actual cloud runner execution remains pending. Implementation and evidence are pushed;
+completion of the remaining cloud gate is still required.
