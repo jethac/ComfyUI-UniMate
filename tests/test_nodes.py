@@ -82,6 +82,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateGenerateBatch",
                 "UniMateCanonicalAsset",
                 "UniMateRigConditioning",
+                "UniMateExportFBX",
             ],
         )
         for cls in classes:
@@ -103,6 +104,16 @@ class NodeTests(unittest.TestCase):
         with self.fake_module("canonical_asset", canonical_asset=lambda rig: asset):
             self.assertEqual(nodes.UniMateCanonicalAsset.execute({}).result, (asset,))
         self.assertEqual(nodes.UniMateCanonicalAsset.GET_NODE_INFO_V1()["output"], ["UNIMATE_ASSET"])
+
+    def test_fbx_output_is_retrievable_with_matching_provenance(self):
+        rig = {"rig_id": "rig", "asset": {"sha256": "source"}}
+        motion = {"rig_id": "rig", "features": b"features", "fps": 30, "metadata": {}}
+        with self.export_context(), self.fake_module("blender", export_fbx=lambda *args: b"FBX"):
+            output = nodes.UniMateExportFBX.execute(rig, motion)
+        files = output.ui["files"]
+        self.assertEqual(len(files), 2)
+        manifest = json.loads((self.output / files[1]["subfolder"] / files[1]["filename"]).read_text())
+        self.assertEqual(manifest["fbx_sha256"], hashlib.sha256(b"FBX").hexdigest())
 
     def test_batch_node_emits_typed_list_and_preserves_prompt_order(self):
         calls = []

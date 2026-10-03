@@ -18,6 +18,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Generate UniMate Batch | Generate prompt/repetition cases as a typed motion list |
 | Canonical UniMate Asset | Apply prepared coordinates to the original asset without rewriting skin or mesh data |
 | UniMate Rig Conditioning | Expose numeric topology conditioning, its hash and canonical rig identity |
+| Export UniMate FBX | Bake animation to binary FBX and verify skinning after Blender reimport |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -77,6 +78,8 @@ Expand UniMate Motion accepts a JSON array of prompts in segment order. Each seg
 Generate UniMate Batch accepts 1–32 JSON prompts and 1–64 repetitions, capped at 256 cases. Cases run in prompt order, then repetition order; seeds increment modulo uint64. Its typed motion list feeds ComfyUI's normal list execution, including export and numeric saving. Sampling runs one case at a time. A four-case batch passed ComfyUI server execution, export, artifact retrieval, provenance and independent playback checks. Cloud Offload list transport still requires validation.
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
+
+Export UniMate FBX writes binary FBX and provenance JSON. The external Blender job bakes at 30 fps without leaf bones, embeds images, reimports at frame zero and checks bone identity and evaluated skinning for every frame. GLB remains the appearance-preserving export; FBX material/texture fidelity and server/cloud execution are not yet verified. FBX input is not supported.
 
 ## Cloud Offload
 

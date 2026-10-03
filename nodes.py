@@ -515,11 +515,12 @@ class UniMateExpandMotion(io.ComfyNode):
 
 
 class UniMateExportGLB(io.ComfyNode):
+    FORMAT = "glb"
     @classmethod
     def define_schema(cls):
         return io.Schema(
-            node_id="UniMateExportGLB",
-            display_name="Export UniMate GLB",
+            node_id=cls.__name__,
+            display_name="Export UniMate " + cls.FORMAT.upper(),
             category=CATEGORY,
             inputs=[
                 Rig.Input("rig"),
@@ -543,17 +544,17 @@ class UniMateExportGLB(io.ComfyNode):
         prefix = _relative_name(filename_prefix)
         output_root = Path(folder_paths.get_output_directory()).resolve()
         _contained(output_root / prefix, output_root)
-        from .unimate_pack.blender import export_glb
+        from .unimate_pack import blender
 
-        glb = export_glb(rig, motion)
+        glb = getattr(blender, "export_" + cls.FORMAT)(rig, motion)
         if not isinstance(glb, bytes) or not glb:
-            raise ValueError("UniMate export did not return animated GLB bytes.")
+            raise ValueError("UniMate export did not return animated asset bytes.")
         provenance = {
             "schema": "unimate.export.v1",
             "rig_id": rig["rig_id"],
             "source_sha256": rig["asset"]["sha256"],
             "features_sha256": hashlib.sha256(motion["features"]).hexdigest(),
-            "glb_sha256": hashlib.sha256(glb).hexdigest(),
+            cls.FORMAT + "_sha256": hashlib.sha256(glb).hexdigest(),
             "fps": motion["fps"],
             "generation": motion["metadata"],
         }
@@ -570,7 +571,7 @@ class UniMateExportGLB(io.ComfyNode):
         stage = Path(tempfile.mkdtemp(prefix=".unimate-", dir=parent))
         try:
             for name, payload in (
-                (filename + ".glb", glb),
+                (filename + "." + cls.FORMAT, glb),
                 (filename + ".json", manifest),
             ):
                 with (stage / name).open("xb") as stream:
@@ -586,6 +587,10 @@ class UniMateExportGLB(io.ComfyNode):
             if stage.exists():
                 shutil.rmtree(stage)
         subfolder = final.relative_to(output_root).as_posix()
+        if cls.FORMAT == "fbx":
+            return io.NodeOutput(ui={"files": [
+                {"filename": filename + extension, "subfolder": subfolder, "type": "output"}
+                for extension in (".fbx", ".json")]})
         return io.NodeOutput(
             ui={
                 "3d": [
@@ -604,3 +609,7 @@ class UniMateExportGLB(io.ComfyNode):
                 ],
             }
         )
+
+
+class UniMateExportFBX(UniMateExportGLB):
+    FORMAT = "fbx"

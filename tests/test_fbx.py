@@ -12,10 +12,11 @@ from unimate_pack.contracts import make_asset, make_motion, encode_arrays, decod
 
 
 @pytest.mark.skipif(not os.environ.get("UNIMATE_BLENDER"), reason="Requires external Blender")
-def test_fbx_animation_round_trip_preserves_branching_skin_and_coordinates(tmp_path):
+@pytest.mark.parametrize("frames", [7, 110])
+def test_fbx_animation_round_trip_preserves_branching_skin_and_coordinates(tmp_path, frames):
     rig = prepare_rig(make_asset(synthetic_glb(True), "branch.glb"), "+X")
     cond = decode_arrays(rig["conditioning"])
-    features = np.zeros((7, 7, 12), np.float32)
+    features = np.zeros((frames, 7, 12), np.float32)
     features[..., 3] = features[..., 7] = 1
     features[:, 0, 1] = cond["tpos_first_frame"][0, 1]
     features[:, 0, 9] = 0.01

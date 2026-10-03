@@ -76,6 +76,8 @@ The existing five-node tests prove the narrow generation/export path. They do no
 
 ## Execution evidence
 
+2026-10-03: registered Export FBX with the same rig/motion identity, path confinement, cancellation and atomic provenance publication as Export GLB. Binary FBX and its format-specific SHA-256 metadata are returned as retrievable files. Seven- and 110-frame branching clips passed the worker's per-frame Blender skinning round trip; node/export regression checks passed (23 tests plus 6 subtests), and lint passed. Material/texture fidelity, actual server retrieval and cloud execution remain pending.
+
 2026-10-03: added external Blender binary-FBX conversion after the preserving GLB animation path. The worker bakes at 30 fps without leaf bones, embeds exported images, reimports with zero animation offset, verifies bone identities and compares evaluated skinning at every frame using bidirectional nearest-vertex checks. The seven-frame transformed branching fixture passed (4.79 seconds) after identifying Blender's default FBX import offset. This is adapter evidence only: the public FBX output node, long clips, material/texture fidelity and cloud/server transport remain pending.
 
 2026-10-03: explicit Rig Conditioning output retains the exact validated topology NPZ, SHA-256, canonical rig identity and coordinate mapping. Conditioning and Canonical Asset values both passed concrete boundary-type validation and exact dump/load round trips through the installed `ComfyUI-Cloud-Offload/partition_protocol.py` codec (two tests, 3.50 seconds; lint clean). This proves local serialization only. Actual ComfyUI bridge execution, worker execution, staging/retrieval and expanded cloud workflows remain pending.
