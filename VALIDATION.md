@@ -345,3 +345,28 @@ the Windows process job, output stream and reader during cleanup. Core runner
 identity and endpoint tests passed (23 tests); changed-file Ruff passed. The
 core worktree retains an unrelated untracked launcher, so no clean-worktree
 identity claim is made. Provider dispatch and deployed containers remain open.
+
+## Dataset statistics numeric component — 2026-10-03
+
+`unimate_pack/dataset_stats.py` implements all combinations of per-dataset/global
+pooling, frame-weighted/object-balanced moments and channel-group standard-
+deviation tying. Root/local counts, 1e-8 floors, global object-name grouping and
+per-clip input reduction precision match the inspected release. Input arrays
+remain unchanged; ordinary finite floating arrays are required. Overflow,
+malformed records/options, estimated workspace limits and cancellation fail
+explicitly. The allocation estimate includes balanced group and output arrays;
+it is not a measured peak.
+
+Verification: 41 tests passed, no skips; changed-file Ruff passed. The 24
+reference cases cover eight modes across float16, float32 and float64. Original
+statistics method bodies are executed independently from checkout
+`2c5b384715aa63d8639b1ed7eb74bfe614570c7a`, with both revision and source file
+digest asserted. Review found a masked-NaN validation bypass; the regression
+failed before the fix and passed after rejecting array subclasses.
+
+Command: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`,
+`UNIMATE_DATASET_REFERENCE=.runtime/upstream-audit`, then
+`.runtime/testenv/Scripts/python.exe -m pytest tests/test_dataset_stats.py -q`.
+Runtime: Windows, Python 3.11.9, NumPy 2.4.3, CPU. This validates the numeric
+component only. Public dataset/statistics nodes, persisted/portable contracts,
+training consumption and local/stadia/Cloud Offload execution remain open.
