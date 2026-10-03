@@ -14,7 +14,7 @@ collation and thin public nodes. Python/NumPy/Torch and existing V3 runtime.
 
 ## Task 2: Facing realignment and complete sample assembly
 - [x] Compare nonidentity quaternion realignment with reference-only Motion.
-- [ ] Assemble augmented samples in source order, preserving identities/stats.
+- [x] Assemble augmented samples in source order, preserving identities/stats.
 
 ## Task 3: Encoder/cache and portable values
 - [ ] Produce actual source-compatible embedding views with installed runtime.

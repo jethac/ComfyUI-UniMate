@@ -576,3 +576,35 @@ Cancellation and a pre-copy workspace estimate guard execution. This completes
 numeric realignment only; encoded sample assembly and public workflows remain
 open. Combined suite and source lineage are recorded with this change.
 Combined command: preceding 469-test suite with six added realignment comparisons; 475 passed, six subtests, no skips, 15.96s. Two existing Torch JIT warnings; changed-file Ruff passed.
+
+## Encoded numeric sample assembly (2026-10-03)
+
+training_samples.assemble_sample adapts the post-augmentation portion of pinned
+MotionDataset.__getitem__. It accepts actual embedding views as explicit arrays;
+tests use controlled numeric views to isolate assembly, not to claim encoder
+execution. The fixture compiles the unchanged __getitem__ body, unchanged shared
+transforms and original reference-only Motion code. Augmentation is supplied by
+the separately source-compared operation fixture. Dataset/stats lookup is outside
+this layer; no end-to-end training dataset claim follows from this harness.
+
+60 exact field/dtype comparisons span tpos/first_frame, float16/32/64, no-op,
+addition/removal/pooling/perturbation and cropped/padded lengths. Checks cover
+rest feature expansion, facing realignment, normalization, valid length, copied
+parent features and original topology/statistics/embedding fields. Outputs own
+their arrays and inputs/global RNG remain unchanged. Seven invalid input cases
+cover empty captions, capacity/options, embedding dimensions/nonfinite tokens
+and workspace budget; cancellation propagates. The absent adapter failed before
+implementation. Numeric caption views are preserved independently without pooling.
+
+Combined suite: 543 passed, six subtests, no skips, 17.81s; two existing Torch JIT
+warnings. Command: previous 475-test command plus tests/test_training_samples.py,
+in the same explicitly pinned reference environment. Changed-file Ruff passed.
+Encoder/cache production, persisted identity contracts, batch collation, public
+sample nodes and headless/Cloud Offload execution remain required unverified work.
+Review found dense topology validation preceded the workspace budget. A regression
+forbidding entry into validation under a one-byte budget failed before the fix.
+Shallow field/array/rank/capacity checks and the conservative input/dense/output
+estimate now reject before topology validation. This estimate is not measured
+process peak memory.
+Final regression run: 544 passed, six subtests, no skips, 18.20s; two existing warnings. Changed-file Ruff and git diff --check passed.
+Independent review rechecked the budget correction and has no remaining actionable findings.

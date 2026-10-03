@@ -89,6 +89,13 @@
     }
   },
   "adapters": {
+    "training_samples.py": {
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "source": "unimate/dataset/mixture/dataset.py",
+      "sha256": "413a539e4ad4606e599c502758f9d1a199e5750feb44eebccb28f9845ca6961e",
+      "license": "MIT; LICENSE-UniMate",
+      "changes": "Post-augmentation sample assembly adapted from MotionDataset.__getitem__: local seeded cropping, validated explicit embedding views, cancellation, capacities, workspace estimate and independent output copies. Encoder/cache production and portable identities are separate boundaries."
+    },
     "training_transforms.py": {
       "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
       "source": "unimate/dataset/transforms.py",

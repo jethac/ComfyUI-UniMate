@@ -63,9 +63,14 @@ def reference():
     source = Path(root) / 'unimate/dataset/mixture/dataset.py'
     tree = ast.parse(source.read_text(encoding='utf-8'))
     owner = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'MotionDataset')
-    names = {'_extract_aug_dict', '_apply_augmentations', '_aug_addition', '_aug_removal', '_aug_pooling', '_aug_perturbation'}
+    names = {'__getitem__', '_extract_aug_dict', '_apply_augmentations', '_aug_addition', '_aug_removal', '_aug_pooling', '_aug_perturbation'}
     owner.body = [n for n in owner.body if isinstance(n, ast.FunctionDef) and n.name in names]
     owner.bases = []
+    transform_path = Path(root) / 'unimate/dataset/transforms.py'
+    assert hashlib.sha256(transform_path.read_bytes()).hexdigest() == '0c16cd112fb5df83778d245df06dbeaa040546fda56611421286340ae0fe231a'
+    transform_tree = ast.parse(transform_path.read_text(encoding='utf-8'))
+    transform_body = [n for n in transform_tree.body if isinstance(n, ast.FunctionDef)]
+    exec(compile(ast.Module(body=transform_body, type_ignores=[]), str(transform_path), 'exec'), namespace)
     namespace['aug_ops'] = SimpleNamespace(**namespace)
     exec(compile(ast.Module(body=[owner], type_ignores=[]), str(source), 'exec'), namespace)
     return namespace
