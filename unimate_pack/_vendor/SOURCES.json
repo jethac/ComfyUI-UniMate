@@ -87,5 +87,19 @@
       "sha256": "1668d2e2369bec63deb2f4955b1f13801047ce63d01b177a060b25015dd51917",
       "changes": "Only vocabulary import made package-relative in rig_names.py; other source unchanged."
     }
+  },
+  "adapters": {
+    "training_augmentation.py": {
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "source": "unimate/dataset/mixture/augmentations.py",
+      "sha256": "691158d3c25559060853b53099bc5b26357031bd51d016fc4a7732397a9feed3",
+      "license": "MIT; LICENSE-UniMate",
+      "changes": "Source operation logic adapted to local RNGs, cancellation, validation and workspace budgets. Reference-compared standard matrix/quaternion equations replace external Motion code. Explicit neutral_fk addition corrects shifted HML slots; default released behavior is unchanged.",
+      "reference_sources": {
+        "unimate/utils/motion_utils.py": "cddb2436e8fc4d02a2f5715398fd689c730b364b425bd8057bf65f083a93dd30",
+        "unimate/utils/rotation_conversions.py": "0b3df0c50126f2298de3d9512936e404504e2089bf2a0629c1cd2ade6eed012f",
+        "unimate/dataset/mixture/dataset.py": "413a539e4ad4606e599c502758f9d1a199e5750feb44eebccb28f9845ca6961e"
+      }
+    }
   }
 }

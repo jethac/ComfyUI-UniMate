@@ -279,6 +279,25 @@ by epoch. Its UNIMATE_SAMPLING value contains only clip IDs, source/options iden
 and bounded numeric weights/indices. Validation with a source dataset additionally
 recomputes weights and sampled indices. This is an epoch plan, not a training run.
 
+Training augmentation has a numeric adapter for released ellipsoid/linear joint
+addition, leaf removal, one-child pooling, bone perturbation and randomized
+selection. It operates after actual joint-name embedding, as upstream does;
+public encoded-sample production, text caches, collation and training remain open.
+Local seeded generators preserve global RNG state. Validation and a configurable
+512 MiB estimated workspace budget precede copies; cancellation is checked during
+edits and rejection sampling. Dense topology/eigendecomposition calls are not
+interruptible internally.
+
+Released addition duplicates a parent local rotation and can change original
+joint poses. The default `released` policy reproduces it. Optional `neutral_fk`
+corrects the inserted joint rotation and preserves original-joint FK. Neither
+policy recomputes velocity channels; source velocities remain and inserted
+velocity is zero. Pooling is not claimed to preserve original moving poses.
+FK/RIFKE recomputation preserves input-precision rotation normalization and
+quaternion round trips, including the source's different FK and facing diagonals.
+Pinned reference comparisons cover float16, float32 and float64. Removal/pooling
+retain the released fixed path limit of five and report that effective value.
+
 ## Cloud Offload implementation
 
 Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries registered UniMate values unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.

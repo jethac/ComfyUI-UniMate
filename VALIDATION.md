@@ -505,3 +505,41 @@ These are epoch plans and data workflows. Augmentation, collation, text-cache
 consumption and training execution remain open. Explicit declarations use real
 staging helpers; coordinator discovery, injected worker cancellation and
 provider/container deployment remain separate unverified gates.
+
+## Training augmentation numeric foundation (2026-10-03)
+
+Pinned UniMate `2c5b384715aa63d8639b1ed7eb74bfe614570c7a` augmentation,
+motion, rotation, topology and dataset wrapper bodies are compared unchanged.
+The reference fixture verifies all five source-file SHA-256 identities and three
+reference-only Motion file identities recorded in test_training_augmentation.py;
+it checks the actual imported paths. Motion is not distributed or imported by
+the production adapter. MIT adaptation lineage is recorded in SOURCES.json.
+
+Comparisons cover ellipsoid/linear addition, removal, pooling, perturbation,
+no-op and randomized wrapper, two topologies, multiple seeds and three dtypes.
+Motion channels are bit-exact for float16/float32; the measured float64 maximum
+motion difference was 1.3322676295501878e-15. Tests cover quaternion diagonal ties,
+source-fixed wrapper parameters, parameter boundaries, immutable inputs, global
+RNG isolation, graph consistency, FK/RIC agreement, pre-copy workspace rejection
+and cancellation during rejection sampling.
+
+Independent FK checks demonstrate released addition duplicates parent local
+rotation and can alter original poses. Default released policy reproduces it;
+explicit neutral_fk corrects insertion, with original-joint FK preservation
+checked across both addition methods, both topologies and three seeds. Velocity
+channels retain released behavior. Pooling is not claimed pose-preserving.
+Review found inaccurate path-limit reporting for removal/pooling overrides.
+Both regressions failed before the effective-limit report fix and passed after.
+
+Combined suite: 431 passed, six subtests, no skips, 15.46s; two Torch JIT
+DeprecationWarnings. Changed-file Ruff and git diff --check passed.
+Windows Python 3.11.9, NumPy 2.4.3, Torch 2.11.0+cu128, SciPy 1.17.1.
+Command, with PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 and explicit pinned
+UNIMATE_DATASET_REFERENCE/UNIMATE_MOTION_REFERENCE paths:
+`python -m pytest tests/test_training_augmentation.py tests/test_dataset_selection.py tests/test_dataset_workflow.py tests/test_dataset_adapters.py tests/test_dataset_contracts.py tests/test_dataset_io.py tests/test_dataset_stats.py tests/test_dataset_transport.py tests/test_nodes.py -q --tb=short`.
+
+This is numeric foundation evidence. Public encoded-sample generation, text
+caches, crop/normalization/collation, augmentation nodes, training execution and
+their Linux/headless/cloud workflows remain open. The configured workspace
+estimate is not measured process peak memory; bulk NumPy topology/eigen calls
+are not internally interruptible.
