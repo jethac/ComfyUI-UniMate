@@ -20,5 +20,3 @@ provider provisioning or paid resources are required.
   restored files and independent animation playback.
 - [x] Review the cross-repository changes, push direct to default branches and record
   exact revisions/runtime evidence. Keep deployment/scheduling gates distinct.
-
-

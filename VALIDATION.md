@@ -211,3 +211,21 @@ FK and RIC (360 frames checked). Local evidence:
 `.runtime/stadia-preprocessing-worker/independent-check.json`.
 This run performs no new inference and does not test provider scheduling or a
 deployed worker container.
+
+### Partition execution-list correction, 2026-10-03
+
+The previous scalar capture schema let ComfyUI map a batch into repeated writes
+at one boundary path. A two-case reproduction retained only the last case:
+`.runtime/batch-bridge-loss.json`. Bridges now capture the whole execution list
+once and restore list outputs using `comfy.partition.execution.v1` envelopes.
+Legacy unwrapped values restore as one scalar, including Python list-valued data.
+Client and runner updates must deploy together; old readers cannot read the new
+envelope. The bounded, pickle-free bundle format remains unchanged.
+
+Client/protocol checks: 70 passed. Worker checks: 36 passed. Harness checks: seven
+passed; changed harness lint passed. The Windows scalar worker regression passed
+both jobs and retrieved 110 files. A third job with two distinct, ordered motions
+also passed, preserving motion payloads and recovering different FK/RIC skeletons.
+All 170 PNGs and eight GLB/FBX/provenance files were retrieved across three jobs.
+Evidence: `.runtime/preprocessing-mapped-list-check/report.json`. This verifies
+same-rig mapped values, not multiple rigs, new model inference or deployment.

@@ -20,3 +20,14 @@ def test_preprocessing_worker_graph_has_explicit_typed_boundaries():
                for node in restored.values())
     assert any(node['class_type'] == 'SaveImage' and node['inputs']['images'] == ['in_image_fk', 0]
                for node in restored.values())
+
+
+def test_execution_list_graph_consumes_and_captures_mapped_motion_cases():
+    from tools.cloud_workflow import execution_list_graph
+    graph, outputs = execution_list_graph()
+    assert {node['inputs']['boundary_key'] for node in graph.values()
+            if node['class_type'] == 'CloudPartitionInput'} == {'rig', 'motion'}
+    assert {item['key'] for item in outputs} == {'motion', 'skeleton_fk', 'skeleton_ric'}
+    for method in ('fk', 'ric'):
+        assert graph['recover_' + method]['inputs']['motion'] == ['in_motion', 0]
+        assert graph['out_skeleton_' + method]['inputs']['value'] == ['recover_' + method, 0]

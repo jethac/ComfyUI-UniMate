@@ -135,6 +135,8 @@ def install_link(source, target):
 
 
 def verify(args):
+    if getattr(args, 'worker_lists', False) and not getattr(args, 'worker', False):
+        raise ValueError('Execution-list verification requires worker mode')
     if getattr(args, 'worker', False) and not (
             args.cloud_root and getattr(args, 'cloud_client_root', None)
             and getattr(args, 'skeleton_reference', None)):
@@ -298,7 +300,8 @@ def verify(args):
             sys.path.insert(0, str(args.comfy_root.resolve()))
             from tools.cloud_workflow import run_worker_workflows
             entries, evidence = run_worker_workflows(base, graph, workspace, args.cloud_root,
-                                                     args.cloud_client_root)
+                                                     args.cloud_client_root,
+                                                     getattr(args, 'worker_lists', False))
             report['worker_execution'] = evidence
             report['graphs'].extend({'kind': 'real-worker-partition', 'graph': job['partition']['workflow'],
                 'status': job['status']} for job in evidence['jobs'])
@@ -424,7 +427,7 @@ def verify(args):
             from unimate_pack.contracts import decode_arrays
             frames = len(decode_arrays(load_motion(args.skeleton_reference.read_bytes())['features'])['features'])
             assert sum(f['filename'].endswith('.png') for f in exports) == frames * (
-                6 if getattr(args, 'worker', False) else 2)
+                10 if getattr(args, 'worker_lists', False) else 6 if getattr(args, 'worker', False) else 2)
             report['skeleton_frames_per_mode'] = frames
         if getattr(args, "batch", False):
             assert sum(f["filename"].endswith(".glb") for f in exports) == 4
@@ -466,6 +469,7 @@ def main():
     parser.add_argument("--batch", action="store_true", help="Exercise typed motion-list export for four cases")
     parser.add_argument('--skeleton-reference', type=Path, help='Verify archive loading, both recovery modes and every preview frame')
     parser.add_argument('--worker', action='store_true', help='Execute preprocessing/recovery through the real partition worker')
+    parser.add_argument('--worker-lists', action='store_true', help='Also verify two distinct mapped motion cases; requires --worker')
     parser.add_argument('--cloud-client-root', type=Path, help='Cloud Offload node checkout for client artifact restoration')
     parser.add_argument("--cpu", action="store_true", help="Run ComfyUI on CPU")
     args = parser.parse_args()

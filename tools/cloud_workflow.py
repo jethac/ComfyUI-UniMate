@@ -72,7 +72,30 @@ def restored_graph(boundaries):
     return graph
 
 
-def run_worker_workflows(base, graph, workspace, cloud_root, client_root):
+def execution_list_graph():
+    graph = {f'in_{key}': {'class_type': 'CloudPartitionInput', 'inputs': {
+        'boundary_key': key, 'artifact_path': '', 'type_name': kind}}
+        for key, kind in (('rig', 'UNIMATE_RIG'), ('motion', 'UNIMATE_MOTION'))}
+    outputs = [{'key': 'motion', 'type_name': 'UNIMATE_MOTION'}]
+    graph['out_motion'] = {'class_type': 'CloudPartitionOutput', 'inputs': {
+        'value': ['in_motion', 0], 'boundary_key': 'motion', 'output_path': '',
+        'type_name': 'UNIMATE_MOTION'}}
+    for method in ('fk', 'ric'):
+        graph['recover_' + method] = {'class_type': 'UniMateRecoverSkeleton', 'inputs': {
+            'rig': ['in_rig', 0], 'motion': ['in_motion', 0], 'method': method}}
+        graph['preview_' + method] = {'class_type': 'UniMatePreviewSkeleton', 'inputs': {
+            'skeleton': ['recover_' + method, 0], 'projection': 'front', 'resolution': 128}}
+        graph['save_' + method] = {'class_type': 'SaveImage', 'inputs': {
+            'images': ['preview_' + method, 0], 'filename_prefix': 'verified/list-' + method}}
+        key = 'skeleton_' + method
+        graph['out_' + key] = {'class_type': 'CloudPartitionOutput', 'inputs': {
+            'value': ['recover_' + method, 0], 'boundary_key': key, 'output_path': '',
+            'type_name': 'UNIMATE_SKELETON'}}
+        outputs.append({'key': key, 'type_name': 'UNIMATE_SKELETON'})
+    return graph, outputs
+
+
+def run_worker_workflows(base, graph, workspace, cloud_root, client_root, execution_lists=False):
     sys.path.insert(0, str(cloud_root.resolve()))
     from cloud_offload.assets import resolve_partition_assets
     from cloud_offload.comfyui import ComfyUIWorkflowExecutor
@@ -80,7 +103,12 @@ def run_worker_workflows(base, graph, workspace, cloud_root, client_root):
     from cloud_offload.queue import JobQueue
     from cloud_offload.storage import LocalStorage
     from cloud_offload.worker import Worker
-    from cloud_offload.partition_protocol import load_bundle
+    from cloud_offload.partition_protocol import dump_bundle, load_bundle, pack_execution_values, unpack_execution_values
+
+    def load_value(path):
+        values = unpack_execution_values(load_bundle(path))
+        assert len(values) == 1, 'This fixture expects one execution value per boundary'
+        return values[0]
     from tools.verify_workflow import bundle_inventory
     from unimate_pack.contracts import validate_asset, validate_rig, validate_motion, validate_skeleton
     import folder_paths
@@ -142,7 +170,7 @@ def run_worker_workflows(base, graph, workspace, cloud_root, client_root):
         for key, artifact in first['output_artifacts'].items():
             paths[key] = workspace / 'partition' / f'captured-{key}.part'
             worker._download_partition_artifact(artifact, paths[key])
-        values = {key: load_bundle(path) for key, path in paths.items()}
+        values = {key: load_value(path) for key, path in paths.items()}
         validate_asset(values['asset'])
         validate_rig(values['rig'])
         validate_motion(values['motion'], values['rig'])
@@ -165,12 +193,12 @@ def run_worker_workflows(base, graph, workspace, cloud_root, client_root):
             assert bundle_inventory(path) == bundle_inventory(paths[key]), key
         extracted_path = workspace / 'partition/extracted.part'
         worker._download_partition_artifact(second['output_artifacts']['extracted'], extracted_path)
-        extracted = load_bundle(extracted_path)
+        extracted = load_value(extracted_path)
         rigs = {}
         for key in ('canonical_rig', 'extracted_rig', 'canonical_conditioning'):
             path = workspace / 'partition' / f'{key}.part'
             worker._download_partition_artifact(second['output_artifacts'][key], path)
-            rigs[key] = load_bundle(path)
+            rigs[key] = load_value(path)
         validate_rig(rigs['canonical_rig'])
         validate_rig(rigs['extracted_rig'])
         validate_motion(extracted, rigs['extracted_rig'])
@@ -178,8 +206,34 @@ def run_worker_workflows(base, graph, workspace, cloud_root, client_root):
         assert rigs['canonical_conditioning']['rig_id'] == rigs['canonical_rig']['rig_id']
         assert rigs['canonical_conditioning']['arrays'] == rigs['canonical_rig']['conditioning']
         assert rigs['extracted_rig']['asset']['sha256'] == hashlib.sha256(animated.read_bytes()).hexdigest()
-        from unimate_pack.contracts import decode_arrays
+        from unimate_pack.contracts import decode_arrays, encode_arrays
         assert len(decode_arrays(extracted['features'])['features']) == len(values['image_fk']) - 1
+        if execution_lists:
+            cases = [copy.deepcopy(values['motion']) for _ in range(2)]
+            features = decode_arrays(cases[1]['features'])
+            features['features'][:, 0, 9] += 0.01
+            cases[1]['features'] = encode_arrays(**features)
+            for index, case in enumerate(cases):
+                case['metadata']['execution_fixture_case'] = index
+                validate_motion(case, values['rig'])
+            case_path = workspace / 'partition/list-input.part'
+            dump_bundle(pack_execution_values(cases), case_path)
+            artifact = worker._upload_partition_artifact(case_path)
+            list_workflow, list_outputs = execution_list_graph()
+            result = execute(list_workflow,
+                [{'key': 'rig', 'type_name': 'UNIMATE_RIG'}, {'key': 'motion', 'type_name': 'UNIMATE_MOTION'}],
+                list_outputs, {'rig': first['output_artifacts']['rig'], 'motion': artifact['artifact_id']})
+            for key, identity in result['output_artifacts'].items():
+                path = workspace / 'partition' / ('list-result-' + key + '.part')
+                worker._download_partition_artifact(identity, path)
+                restored_cases = unpack_execution_values(load_bundle(path))
+                assert len(restored_cases) == 2, key
+                if key == 'motion':
+                    assert restored_cases == cases
+                else:
+                    for skeleton in restored_cases:
+                        validate_skeleton(skeleton, values['rig']['rig_id'])
+                    assert restored_cases[0]['arrays'] != restored_cases[1]['arrays'], key
         return entries, {'jobs': jobs, 'staged_assets': staged,
                          'boundary_types_verified': sorted({item['type_name'] for item in boundaries}),
                          'scope': 'Real partition handler, staging, execution, artifact storage and client restoration; no provider scheduling or container deployment'}
