@@ -9,6 +9,16 @@
 
 ## Global constraints
 
+Selected-weight dependency completed: 36 registered nodes; explicit raw/EMA
+portable values and managed files. Independent review's forged-trainability bug
+was reproduced and fixed before numeric decode (four RED→GREEN regressions).
+Windows full suite: 1,223 passed, 50 skipped, six subtests; headless focused:
+58 passed, ten skipped. Stadia: two direct baselines, three actual handler jobs,
+two retrieved files and staged reload. Separate source-model/EMA comparison:
+443 tensors exact per selection. See selected-weight validation record.
+Complete offline bundle assembly, generalized inference and playback remain
+the next dependencies; this increment does not close Task 5/full training.
+
 - No pickle, downloads, telemetry, automatic providers or Motion runtime imports.
 - Preserve pinned math; retain UniMate, SiT and guided-diffusion notices.
 - Never select hardware independently of ComfyUI or put live state on sockets.
@@ -171,6 +181,25 @@ cancellation and cleanup. Distributed/unbalanced loaders and learned-variance
 model output remain required full-goal work.
 
 ### Subsequent required tasks
+
+Inference export dependency sequence (required scope is unchanged):
+
+1. Extract explicitly selected raw/EMA inference weights from public job-bound
+   checkpoints for every training backbone. Validate model/EMA header layouts,
+   aliases, job identities and finite data before numeric allocation/mutation.
+   Emit a portable numeric value and managed file nodes, retaining training
+   provenance and omitting optimizer/RNG state. Compare reconstructed forward
+   outputs to checkpoint raw and source EMA copies across all four axes. Exercise
+   actual trained installed checkpoints and worker persistence/retrieval.
+2. Assemble offline inference bundles with the exact selected statistics and
+   installed text encoder. Extend inference reconstruction/conditioning/sampling
+   for trained configurations, schedules and windows rather than forcing every
+   trained model through the released f60 configuration whitelist.
+3. Run trained raw/EMA bundles through generation, constrained workflows, export
+   and independent playback on local/stadia/worker paths. Record remaining matrix
+   entries until every required family/paradigm/configuration has evidence.
+
+The first dependency alone is not completed trained-model inference coverage.
 
 Selected initialization increment: permit explicitly marked raw bundles alongside
 EMA bundles; the converter must select one without fallback. Configure Training

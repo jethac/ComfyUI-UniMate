@@ -105,6 +105,8 @@ class NodeTests(unittest.TestCase):
                 "UniMateTrain",
                 "UniMateLoadTrainingCheckpoint",
                 "UniMateSaveTrainingCheckpoint",
+                "UniMateExportInferenceWeights",
+                "UniMateLoadInferenceWeights",
                 "UniMateCollateTrainingSamples",
                 "UniMatePrepareTrainingSample",
             ],

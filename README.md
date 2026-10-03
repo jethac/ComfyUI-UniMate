@@ -38,6 +38,8 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Train UniMate | Run optimizer groups from scratch or selected installed weights; return checkpoint and progress |
 | Load UniMate Training Checkpoint | Load a numeric `.unimatetrain` checkpoint from managed inputs |
 | Save UniMate Training Checkpoint | Save a numeric checkpoint to managed outputs |
+| Export UniMate Inference Weights | Select raw or EMA denoiser weights from a training checkpoint and save `.unimateweights` |
+| Load UniMate Inference Weights | Load `.unimateweights` from managed inputs |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -158,8 +160,17 @@ weights; its default is `--weights ema`, with no fallback.
 Installed v2 raw/EMA training, socket/file resume and client retrieval passed
 Windows and stadia CPU server/handler checks; see [initialization validation](docs/2026-10-03-training-initialization-validation.md).
 Current execution is single-process, using balanced epoch sampling.
-Distributed/unbalanced loaders, learned-variance backbone output, exported
-inference state and the full server/worker training matrix remain open.
+Export Inference Weights takes a training checkpoint and an explicit `raw` or
+`ema` selection. It saves denoiser tensors and training-job metadata without
+optimizer, scaler or RNG state. Load Inference Weights reads this file from
+managed inputs. Both nodes require sufficient workspace (32,768 MiB for the
+installed v2 checks). `.unimateweights` is an intermediate artifact: Model Loader
+does not accept it. Assembly with normalization statistics and a text encoder,
+and generation from these artifacts remain open. Selected-weight export,
+declared-input reload and client retrieval passed headless stadia server/worker
+checks; see [selected-weight validation](docs/2026-10-03-inference-weights-validation.md).
+Distributed/unbalanced loaders, learned-variance backbone output and the full
+server/worker training matrix remain open.
 Raw-data curation remains open.
 
 ## Cloud Offload

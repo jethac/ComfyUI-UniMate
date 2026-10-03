@@ -11,7 +11,9 @@ from unimate_pack.training_text import build_text_cache
 def test_registered_training_schemas():
     extension=asyncio.run(extension_module.comfy_entrypoint())
     ids=[cls.GET_SCHEMA().node_id for cls in asyncio.run(extension.get_node_list())]
-    assert len(ids)==len(set(ids))==34
+    assert len(ids)==len(set(ids))==36
+    assert 'UniMateExportInferenceWeights' in ids
+    assert 'UniMateLoadInferenceWeights' in ids
     assert 'UniMateSaveTrainingCheckpoint' in ids
     assert 'UniMateLoadTrainingCheckpoint' in ids
     assert 'UniMateTrain' in ids
@@ -123,6 +125,36 @@ def test_checkpoint_save_cancellation_removes_staged_file(tmp_path):
             nodes.UniMateSaveTrainingCheckpoint.execute(checkpoint,'cancel/state')
     assert cancelled==[True]
     assert not [path for path in output.rglob('*') if path.is_file()]
+
+
+def test_inference_weight_nodes_roundtrip_and_staging(tmp_path):
+    import folder_paths
+    import pytest
+    from unittest.mock import patch
+    from test_inference_weights import checkpoint
+    from unimate_pack.inference_weights import create_inference_model
+    output=tmp_path/'output'
+    inputs=tmp_path/'input'
+    output.mkdir()
+    inputs.mkdir()
+    with patch.object(folder_paths,'get_output_directory',return_value=str(output)),\
+         patch.object(folder_paths,'get_input_directory',return_value=str(inputs)):
+        source=checkpoint()
+        exported=nodes.UniMateExportInferenceWeights.execute(source,'ema','trained/weights',512)
+        value=exported.result[0]
+        descriptor=exported.ui['files'][0]
+        data=(output/descriptor['subfolder']/descriptor['filename']).read_bytes()
+        (inputs/'trained.unimateweights').write_bytes(data)
+        loaded=nodes.UniMateLoadInferenceWeights.execute('trained.unimateweights',512).result[0]
+        assert loaded==value and not create_inference_model(loaded).training
+        assert nodes.UniMateLoadInferenceWeights.cloud_offload_assets({'archive':'trained.unimateweights'})==[
+            dict(category='__input__',filename='trained.unimateweights')]
+        assert len(nodes.UniMateLoadInferenceWeights.fingerprint_inputs('trained.unimateweights',512))==64
+        with pytest.raises(ValueError):
+            nodes.UniMateLoadInferenceWeights.execute('../trained.unimateweights',512)
+        with pytest.raises(ValueError,match='workspace'):
+            nodes.UniMateExportInferenceWeights.execute(source,'ema','trained/weights',1)
+        assert nodes.UniMateExportInferenceWeights.GET_SCHEMA().is_output_node
 
 
 def test_actual_training_sample_node():

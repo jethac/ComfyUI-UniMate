@@ -482,7 +482,25 @@ runtime versions, device, thread/dtype settings and numeric backend settings,
 including matmul precision, cuDNN flags/version and attention backend choices.
 Cross-runtime or renamed-class restoration is not established. Checkpoint values
 round-trip through actual Cloud Offload codecs; public IO, worker execution,
-dataset-bound job generation and checkpoint-to-inference export remain open.
+dataset-bound job generation have subsequent implementation and validation
+records. Complete checkpoint-to-inference workflows remain open.
+
+### Selected inference weights
+
+Export/Load Inference Weights use `UNIMATE_INFERENCE_WEIGHTS` portable values
+and `.unimateweights` files. The `UMWEIGHT` header contains a little-endian
+uint64 JSON length, bounded JSON metadata and named safetensors. Metadata binds
+the pinned source, training job, explicit raw/EMA selection, source checkpoint
+identity and tensor digest. Optimizer, scaler and RNG numeric state are omitted.
+Job configuration, model layout, source trainability, shared aliases and finite
+values are validated before decoding checkpoint tensors. EMA never falls back
+to raw weights. The known model factory reconstructs private frozen CPU models
+for verification; live models are not portable socket values.
+
+These files are a dependency for complete trained-model bundles, not accepted
+Model Loader inputs. Bundle assembly with exact statistics/text encoding,
+generalized sampling and exported playback remain required. Full optimizer
+history validation belongs to resume, not selected-weight extraction.
 
 ## Cloud Offload implementation
 

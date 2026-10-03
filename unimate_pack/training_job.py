@@ -4,7 +4,7 @@ import hashlib
 
 from .contracts import decode_arrays,_digest
 from .dataset_contracts import _fields,manifest_bytes,validate_dataset
-from .dataset_selection import sampling_plan,validate_sampling
+from .dataset_selection import sampling_plan,validate_sampling,_number
 from .statistics import UPSTREAM_REVISION,validate_statistics
 from .training_checkpoint import _exact,_json_value
 from .training_dataset_samples import (_preflight,dataset_identity,statistics_identity,
@@ -25,6 +25,57 @@ SAMPLE_DEFAULTS=dict(mode='tpos',augmentation='none',realign_feature=True,ground
 
 def job_identity(value):
     return hashlib.sha256(manifest_bytes({k:v for k,v in value.items() if k!='sha256'})).hexdigest()
+
+
+def _sample_options(sample):
+    if type(sample) is not dict or sample.keys()-SAMPLE_DEFAULTS.keys():
+        raise ValueError('Invalid sample options')
+    sample={**deepcopy(SAMPLE_DEFAULTS),**sample}
+    for name,choices in [('mode',('tpos','first_frame')),
+        ('augmentation',('none','addition','addition_linear','removal','pooling','perturbation','random')),
+        ('embedding_policy',('cached','fresh')),('addition_policy',('released','neutral_fk'))]:
+        if sample[name] not in choices:
+            raise ValueError('Invalid sample '+name)
+    if any(type(sample[k]) is not bool for k in ('realign_feature','ground_rest')):
+        raise ValueError('Invalid sample flags')
+    enabled=sample['enabled']
+    if (type(enabled) is not list or any(type(x) is not str or x not in
+        ('addition','removal','pooling','perturbation') for x in enabled) or len(set(enabled))!=len(enabled)):
+        raise ValueError('Invalid enabled augmentations')
+    return sample
+
+
+def validate_training_job_metadata(value):
+    """Validate portable configuration; actual artifact/epoch validation is separate."""
+    _fields(value,FIELDS|({'initialization'} if type(value) is dict and 'initialization' in value else set()))
+    _json_value(value)
+    _digest(value['sha256'],'training job')
+    if (value['schema']!='unimate.training_job.v1' or value['upstream_revision']!=UPSTREAM_REVISION
+        or job_identity(value)!=value['sha256']):
+        raise ValueError('Training job schema/source/digest mismatch')
+    if not _exact(model_options(value['model']),value['model']) or not _exact(session_options(value['optimizer']),value['optimizer']):
+        raise ValueError('Noncanonical training configuration')
+    if value['paradigm'] not in ('flow','diffusion') or type(value['loss']) is not dict:
+        raise ValueError('Invalid training paradigm/loss')
+    (create_flow_schedule if value['paradigm']=='flow' else create_diffusion_schedule)(value['loss'])
+    _integer(value['batch_size'],'batch_size',1)
+    _integer(value['seed'],'seed')
+    if value['batch_size']>4096 or value['seed']>=2**64 or type(value['drop_last']) is not bool:
+        raise ValueError('Invalid training batch/seed/drop_last')
+    if not _exact(_sample_options(value['sample']),value['sample']):
+        raise ValueError('Noncanonical training sample options')
+    _fields(value['sampling'],{'alpha','dataset_alpha'})
+    _number(value['sampling']['alpha'])
+    if value['sampling']['dataset_alpha'] is not None:
+        _number(value['sampling']['dataset_alpha'])
+    if 'initialization' in value:
+        validate_initialization(value['initialization'])
+    if type(value['datasets']) is not list or not 1<=len(value['datasets'])<=4096:
+        raise ValueError('Invalid training dataset identities')
+    for data in value['datasets']:
+        _fields(data,{'dataset_sha256','statistics_sha256','text_cache_sha256'})
+        for name,digest in data.items():
+            _digest(digest,name)
 
 
 def make_training_job(dataset,statistics,cache,options=None,*,initialization=None,cancel=None,
@@ -87,21 +138,7 @@ def make_training_job(dataset,statistics,cache,options=None,*,initialization=Non
     drop_last=options.get('drop_last',True)
     if type(drop_last) is not bool:
         raise ValueError('Invalid drop_last flag')
-    sample=options.get('sample',{})
-    if type(sample) is not dict or sample.keys()-SAMPLE_DEFAULTS.keys():
-        raise ValueError('Invalid sample options')
-    sample={**deepcopy(SAMPLE_DEFAULTS),**sample}
-    for name,choices in [('mode',('tpos','first_frame')),
-        ('augmentation',('none','addition','addition_linear','removal','pooling','perturbation','random')),
-        ('embedding_policy',('cached','fresh')),('addition_policy',('released','neutral_fk'))]:
-        if sample[name] not in choices:
-            raise ValueError('Invalid sample '+name)
-    if any(type(sample[k]) is not bool for k in ('realign_feature','ground_rest')):
-        raise ValueError('Invalid sample flags')
-    enabled=sample['enabled']
-    if (type(enabled) is not list or any(type(x) is not str or x not in
-        ('addition','removal','pooling','perturbation') for x in enabled) or len(set(enabled))!=len(enabled)):
-        raise ValueError('Invalid enabled augmentations')
+    sample=_sample_options(options.get('sample',{}))
     sampling=options.get('sampling',{})
     if type(sampling) is not dict or sampling.keys()-{'alpha','dataset_alpha'}:
         raise ValueError('Invalid sampling options')
@@ -129,7 +166,7 @@ def make_training_job(dataset,statistics,cache,options=None,*,initialization=Non
         if len(cond['parents'])>model['max_joints']:
             raise ValueError('Training topology exceeds model joint capacity')
         insertion=sample['augmentation'] in ('addition','addition_linear') or (
-            sample['augmentation']=='random' and 'addition' in enabled)
+            sample['augmentation']=='random' and 'addition' in sample['enabled'])
         if insertion and len(cond['parents'])>=model['max_joints']:
             raise ValueError('Training augmentation exceeds model joint capacity')
     value=dict(schema='unimate.training_job.v1',upstream_revision=UPSTREAM_REVISION,
@@ -144,11 +181,7 @@ def make_training_job(dataset,statistics,cache,options=None,*,initialization=Non
 
 
 def validate_training_job(value,dataset,statistics,cache,*,cancel=None,max_workspace_bytes=512*1024*1024):
-    _fields(value,FIELDS|({'initialization'} if type(value) is dict and 'initialization' in value else set()))
-    _json_value(value)
-    _digest(value['sha256'],'training job')
-    if job_identity(value)!=value['sha256']:
-        raise ValueError('Training job digest mismatch')
+    validate_training_job_metadata(value)
     options={k:value[k] for k in ('model','optimizer','paradigm','loss','sample','sampling','batch_size','drop_last','seed')}
     if 'initialization' in value:
         options['initialization']=value['initialization']

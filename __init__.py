@@ -36,6 +36,8 @@ async def comfy_entrypoint():
         UniMateTrain,
         UniMateLoadTrainingCheckpoint,
         UniMateSaveTrainingCheckpoint,
+        UniMateExportInferenceWeights,
+        UniMateLoadInferenceWeights,
         UniMateCollateTrainingSamples,
         UniMatePrepareTrainingSample,
     )
@@ -75,6 +77,8 @@ async def comfy_entrypoint():
                 UniMateTrain,
                 UniMateLoadTrainingCheckpoint,
                 UniMateSaveTrainingCheckpoint,
+                UniMateExportInferenceWeights,
+                UniMateLoadInferenceWeights,
                 UniMateCollateTrainingSamples,
                 UniMatePrepareTrainingSample,
             ]

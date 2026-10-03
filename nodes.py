@@ -30,6 +30,8 @@ from .training_nodes import (
     UniMateTrain as UniMateTrain,
     UniMateLoadTrainingCheckpoint as UniMateLoadTrainingCheckpoint,
     UniMateSaveTrainingCheckpoint as UniMateSaveTrainingCheckpoint,
+    UniMateExportInferenceWeights as UniMateExportInferenceWeights,
+    UniMateLoadInferenceWeights as UniMateLoadInferenceWeights,
     UniMateCollateTrainingSamples as UniMateCollateTrainingSamples,
     UniMateBuildTextCache as UniMateBuildTextCache,
     UniMatePrepareTrainingSample as UniMatePrepareTrainingSample,

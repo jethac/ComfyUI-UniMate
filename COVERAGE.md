@@ -2,6 +2,16 @@
 
 Audit date: 2026-10-03. This is a capability inventory, not a claim of complete support.
 
+Selected trained weights: Export/Load Inference Weights now expose explicit raw
+or EMA extraction and managed `.unimateweights` IO. All four backbone axes and
+both training paradigms passed exact selected-state/forward checks. Headless
+stadia passed actual server/worker export, declared-input reload and client
+retrieval; both real v2 selections matched all 443 checkpoint/source-EMA tensors.
+See [validation](docs/2026-10-03-inference-weights-validation.md). This intermediate
+artifact is not a complete Model Loader bundle. Assembly, generalized trained
+sampling/export/playback, Windows server export and injected cancellation remain
+open; full training and full UniMate coverage are not achieved.
+
 ## Evidence baseline
 
 - [Project page](https://linzhanmou.com/unimate/) and [paper, arXiv v1](https://arxiv.org/html/2609.05415v1).

@@ -3,7 +3,7 @@ import json
 
 from comfy_api.latest import io
 
-from .dataset_nodes import CATEGORY,Dataset,Statistics,_cancel,_one,_LoadArchive,_save_archive
+from .dataset_nodes import CATEGORY,Dataset,Statistics,_cancel,_one,_LoadArchive,_save_archive,_input_path
 
 Model=io.Custom('UNIMATE_MODEL')
 TextCache=io.Custom('UNIMATE_TEXT_CACHE')
@@ -11,6 +11,59 @@ TrainingSample=io.Custom('UNIMATE_TRAINING_SAMPLE')
 TrainingBatch=io.Custom('UNIMATE_TRAINING_BATCH')
 TrainingJob=io.Custom('UNIMATE_TRAINING_JOB')
 TrainingCheckpoint=io.Custom('UNIMATE_TRAINING_CHECKPOINT')
+InferenceWeights=io.Custom('UNIMATE_INFERENCE_WEIGHTS')
+
+
+def _weight_workspace(value):
+    if type(value) is not int or not 1<=value<=65536:
+        raise ValueError('Invalid workspace budget')
+    return value*1024*1024
+
+
+class UniMateExportInferenceWeights(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__,display_name='Export UniMate Inference Weights',category=CATEGORY,
+            inputs=[TrainingCheckpoint.Input('checkpoint'),io.Combo.Input('weights',options=['raw','ema']),
+                io.String.Input('filename_prefix',default='unimate/trained'),
+                io.Int.Input('workspace_mib',default=32768,min=1,max=65536)],
+            outputs=[InferenceWeights.Output()],is_output_node=True)
+
+    @classmethod
+    def execute(cls,checkpoint,weights='ema',filename_prefix='unimate/trained',workspace_mib=32768):
+        from .unimate_pack.inference_weights import make_inference_weights,dump_inference_weights
+        budget=_weight_workspace(workspace_mib)
+        value=make_inference_weights(checkpoint,weights,cancel=_cancel,max_workspace_bytes=budget)
+        return _save_archive(value,filename_prefix,'.unimateweights',
+            lambda item:dump_inference_weights(item,cancel=_cancel,max_workspace_bytes=budget))
+
+
+class UniMateLoadInferenceWeights(_LoadArchive):
+    from .unimate_pack.inference_weights import MAX_ARCHIVE_BYTES as LIMIT
+    SUFFIX,TYPE,DISPLAY_NAME='.unimateweights',InferenceWeights,'Load UniMate Inference Weights'
+
+    @classmethod
+    def define_schema(cls):
+        schema=super().define_schema()
+        schema.inputs.append(io.Int.Input('workspace_mib',default=32768,min=1,max=65536))
+        return schema
+
+    @classmethod
+    def execute(cls,archive,workspace_mib=32768):
+        from .unimate_pack.inference_weights import load_inference_weights,_budget
+        budget=_weight_workspace(workspace_mib)
+        _cancel()
+        path=_input_path(archive,cls.SUFFIX,cls.LIMIT)
+        _budget(path.stat().st_size,budget)
+        with path.open('rb') as stream:
+            payload=stream.read(cls.LIMIT+1)
+        value=load_inference_weights(payload,cancel=_cancel,max_workspace_bytes=budget)
+        return io.NodeOutput(value)
+
+    @classmethod
+    def fingerprint_inputs(cls,archive,workspace_mib=32768):
+        _weight_workspace(workspace_mib)
+        return super().fingerprint_inputs(archive)
 
 
 class UniMateLoadTrainingCheckpoint(_LoadArchive):

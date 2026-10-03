@@ -58,7 +58,7 @@ def _constructor(config):
     return cls,kwargs
 
 
-def training_model_layout(options,*,cancel=None,max_model_bytes=2*1024**3):
+def training_model_spec(options,*,cancel=None,max_model_bytes=2*1024**3):
     config=model_options(options)
     if type(max_model_bytes) is not int or max_model_bytes<=0:
         raise ValueError('Invalid model budget')
@@ -77,7 +77,15 @@ def training_model_layout(options,*,cancel=None,max_model_bytes=2*1024**3):
     layout={name:(tuple(tensor.shape),tensor.dtype) for name,tensor in state.items()}
     if cancel:
         cancel()
-    return layout,[names for names in groups.values() if len(names)>1]
+    return dict(layout=layout,aliases=[names for names in groups.values() if len(names)>1],
+        parameters=[name for name,_ in probe.named_parameters()],
+        trainable={name:param.requires_grad for name,param in probe.named_parameters()},
+        class_name='unimate.denoiser.'+cls.__name__)
+
+
+def training_model_layout(options,*,cancel=None,max_model_bytes=2*1024**3):
+    spec=training_model_spec(options,cancel=cancel,max_model_bytes=max_model_bytes)
+    return spec['layout'],spec['aliases']
 
 
 def create_training_model(options=None,*,seed=0,cancel=None,max_model_bytes=2*1024**3):
