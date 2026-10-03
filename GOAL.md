@@ -21,4 +21,15 @@ Keep documentation and coverage evidence accurate. Push authorized completed wor
 
 Completion requires implementation and authoritative validation evidence for every capability. Missing upstream code is a gap to resolve, not completed coverage. Neither the existing five-node path nor an unrelated automatic-rigging project satisfies this goal.
 
+For each capability, COVERAGE.md must identify its source, public node or workflow, supported inputs and outputs, verification evidence, and any remaining gap. Resolve every gap before marking this goal complete. Keep historical audit findings distinct from current implementation status.
+
+Completion gates:
+
+- Every released and paper-described capability has a usable node or documented node workflow; no capability is excluded merely because its upstream integration is difficult.
+- Every released model family and applicable normalization has passed reference comparisons and workflow execution.
+- Local ComfyUI and Cloud Offload workflows cover all applicable node paths, including staging, portable values, cancellation and artifact retrieval.
+- Headless stadia-testbed runs pass, with exported motion and appearance checked independently.
+- Required tests pass; README.md, DESIGN.md, COVERAGE.md and validation records describe the verified implementation accurately.
+- Completed work is committed and pushed to jethac/ComfyUI-UniMate's default branch.
+
 This goal supersedes the earlier generated-mesh/automatic-rigging objective at the user's instruction.
