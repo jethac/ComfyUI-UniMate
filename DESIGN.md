@@ -340,6 +340,29 @@ collection through actual server/partition handlers. Each platform retrieves
 three batch artifacts, preserving all tensor fields and sample identities.
 No training execution is established by these workflows.
 
+## Training runtime foundation
+
+The flow training kernel consumes portable batches and returns a differentiable
+mean loss plus scalar metrics. The caller owns model mode, device and optimizer.
+All three released interpolant paths, velocity/noise/score prediction and loss
+weightings use pinned source math. Linear velocity supports geodesic and smoothness
+auxiliary losses; incompatible options fail. The current kernel requires float32
+CPU or caller-selected CUDA parameters, positive valid lengths and finite
+per-sample/reduced losses. Input/batch workspace limits do not estimate model
+activation memory. A scoped CPU/selected-CUDA RNG preserves process states around
+the forward pass; cancellation and exceptions also restore them.
+
+The source geodesic converter yields NaNs for degenerate 6D rotations before
+masking. `stable` policy substitutes identity rotations in masked or degenerate
+slots (norm/cross norm below 1e-8), then uses the unchanged source loss. Valid
+rotation calculations match the pinned source exactly. `released` policy exposes
+unchanged source behavior; nonfinite results fail before backward/update. This
+deviation is explicit and reference-tested. The unchanged EMA warmup/update class
+is retained. Flow loss/EMA foundations and small-backbone update tests do not
+establish a public training workflow. Diffusion, session/accumulation/precision,
+distributed execution, portable resume, progress/checkpoint nodes and installed
+model/server/headless/worker training remain required.
+
 ## Cloud Offload implementation
 
 Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries registered UniMate values unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.

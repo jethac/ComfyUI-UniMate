@@ -86,6 +86,39 @@
       "source": "data_process/joint_annotation/vocab.py",
       "sha256": "1668d2e2369bec63deb2f4955b1f13801047ce63d01b177a060b25015dd51917",
       "changes": "Only vocabulary import made package-relative in rig_names.py; other source unchanged."
+    },
+    "flow/transport.py": {
+      "source": "unimate/models/flow/transport.py",
+      "sha256": "5e2d4aa7dd472689d984d6473d353582c5386327593d3da64e4f427b5c75af40",
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "changes": "Imports made package-relative where needed; line endings normalized; training bodies unchanged."
+    },
+    "flow/path.py": {
+      "source": "unimate/models/flow/path.py",
+      "sha256": "ea4995a973b902a7339fb4b9d05b903b353db99c12ed48f4dae7420e7cb44692",
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "changes": "Imports made package-relative where needed; line endings normalized; training bodies unchanged."
+    },
+    "flow/integrators.py": {
+      "source": "unimate/models/flow/integrators.py",
+      "sha256": "0ed70897c18f346a1498c45b395888d3a1dae5f2ded3c408254d7a9e7c012c4b",
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "changes": "Imports made package-relative where needed; line endings normalized; training bodies unchanged."
+    },
+    "ema.py": {
+      "source": "unimate/training/ema.py",
+      "sha256": "d6d9c46d9e60549a6ee16cb60fc304fc6dd01152ae5e12f8e6e86dbbf0889c3e",
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "changes": "Imports made package-relative where needed; line endings normalized; training bodies unchanged."
+    },
+    "training_math.py": {
+      "source_sha256": {
+        "unimate/models/diffusion/nn.py": "e180198678ad9c0f4c1a32ed63996ff3605480b26160dfe043a02b0cc801e2de",
+        "unimate/utils/rotation_conversions.py": "0b3df0c50126f2298de3d9512936e404504e2089bf2a0629c1cd2ade6eed012f",
+        "unimate/utils/geo_utils.py": "45fe62097f22d1d2f58f0114a2995d9fbb6b0514440b6fee1106c915c38f69d2"
+      },
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "changes": "Unchanged named helper bodies extracted; Torch imports retained; unused Motion-free helpers omitted."
     }
   },
   "adapters": {
@@ -131,6 +164,23 @@
         "unimate/utils/rotation_conversions.py": "0b3df0c50126f2298de3d9512936e404504e2089bf2a0629c1cd2ade6eed012f",
         "unimate/dataset/mixture/dataset.py": "413a539e4ad4606e599c502758f9d1a199e5750feb44eebccb28f9845ca6961e"
       }
+    },
+    "training_loss.py": {
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "source": "unimate/models/flow/transport.py",
+      "sha256": "5e2d4aa7dd472689d984d6473d353582c5386327593d3da64e4f427b5c75af40",
+      "license": "MIT; LICENSE-UniMate, LICENSE-SiT, LICENSE-guided-diffusion",
+      "changes": "Portable-batch/config validation, explicit CPU/caller-selected CUDA float32 loss boundary, scoped RNG/cancellation and finite term/reduction guards. Stable geodesic policy substitutes identity for masked/degenerate rotations before unchanged source loss; explicit released policy retains source failure behavior. Caller owns optimizer/device/mode; no public training workflow."
+    }
+  },
+  "license_sources": {
+    "LICENSE-SiT": {
+      "url": "https://raw.githubusercontent.com/willisma/SiT/main/LICENSE.txt",
+      "sha256": "cf9b17822d1fcd4ff32ccbe14183386fb3adf6f2ff92dc184130823f7fc28173"
+    },
+    "LICENSE-guided-diffusion": {
+      "url": "https://raw.githubusercontent.com/openai/guided-diffusion/main/LICENSE",
+      "sha256": "86bbb73e855821d7c401912fd4bf82e34313e6e3b6fd6f909f2b6cc9e209a53b"
     }
   }
 }

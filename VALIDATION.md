@@ -894,3 +894,43 @@ Full suite: 906 passed, 50 skipped, six subtests, 25.94s; two existing Torch JIT
 warnings. Changed-file Ruff and whitespace checks passed. Training, live provider
 dispatch, deployed containers, coordinator discovery and injected worker
 cancellation remain open.
+
+## Differentiable flow training and EMA foundation (2026-10-03)
+
+`training_loss.py` restores portable batches and executes pinned flow training
+math. Twenty-seven Linear/GVP/VP × velocity/noise/score × none/velocity/likelihood
+cases match source per-sample reduction, metrics and parameter gradients exactly
+on deterministic synthetic inputs. Separate geodesic, smoothness and combined
+auxiliary tests match source exactly on nondegenerate unpadded rotation inputs.
+The unchanged EMA warmup/update class matches twelve successive source updates.
+AST checks establish unchanged vendored transport/path/integrator/EMA and helper
+bodies. Source revision:
+`2c5b384715aa63d8639b1ed7eb74bfe614570c7a`; file hashes and retained UniMate,
+SiT and guided-diffusion license identities are in `_vendor/SOURCES.json`.
+
+The released rotation converter produces NaNs for degenerate rotations before
+masking. A regression reproduces nonfinite source geodesic loss on padded samples.
+The adapter's explicit `stable` policy substitutes identity in masked or
+degenerate rotation slots before unchanged source geodesic calculation; loss and
+backprop gradients are finite. `released` exposes the original behavior, and the
+kernel rejects its nonfinite result before backward. This is a documented numeric
+deviation, not a claim of source equality on degenerate rotations.
+
+All four vendored backbones consumed synthetic portable batches, produced finite
+gradients, completed an AdamW update and copied the first-step EMA weights exactly.
+Those tests use one layer, latent size 64 and seven-dimensional fixture text,
+not installed released checkpoints or a real encoder. Caller-selected CUDA loss
+also matches the pinned source exactly and preserves CPU/selected-CUDA RNG states.
+Environment: Windows Python 3.11.9, Torch 2.11.0+cu128, RTX 5060 Ti; backbone
+update tests run on CPU. Model mode/device/optimizer remain caller-owned.
+Cancellation after forward and model exceptions restore RNG and leave gradients
+unset. Invalid options, zero valid lengths, eval/frozen models and nonfinite
+reductions reject. Review found a mean-reduction overflow despite finite terms;
+the regression failed before reduced-value guards and passed afterward.
+
+Full suite after that fix: 961 passed, 50 skipped, six subtests, 57.65s; two existing
+Torch JIT warnings. Changed-file Ruff and whitespace checks passed. Independent
+review rechecked the overflow fix and found no remaining actionable findings.
+Diffusion, optimizer sessions, precision/accumulation/distributed execution,
+portable resume, public progress/checkpoint nodes, installed-model training and
+server/headless/worker training remain open.

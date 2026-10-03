@@ -144,4 +144,4 @@ The runner needs Blender, this pack, its Python dependencies, and the Cloud Offl
 
 ## License
 
-[MIT](LICENSE). Independent integration of [UniMate](https://github.com/Friedrich-M/UniMate), Linzhan Mou et al., SIGGRAPH Asia 2026. Vendored code retains its notices. UniMate weights are MIT; FLAN-T5 is Apache-2.0. Imported assets retain their source licenses.
+[MIT](LICENSE). Independent integration of [UniMate](https://github.com/Friedrich-M/UniMate), Linzhan Mou et al., SIGGRAPH Asia 2026. Vendored code retains UniMate, [SiT](unimate_pack/_vendor/LICENSE-SiT) and [guided-diffusion](unimate_pack/_vendor/LICENSE-guided-diffusion) notices. UniMate weights are MIT; FLAN-T5 is Apache-2.0. Imported assets retain their source licenses.
