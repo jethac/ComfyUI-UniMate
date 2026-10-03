@@ -226,7 +226,7 @@ IMAGE batches do not carry fps; the skeleton value does. Cancellation is checked
 recovery and between rendered frames. Pinned upstream comparisons validate both recovery
 paths; server and cloud evidence is tracked separately in COVERAGE.md.
 
-## Cloud Offload implementation
+## Foot-contact correction
 
 Foot Lock Motion independently implements Appendix E.5 contact postprocessing.
 FK drives height/displacement contact detection, five-frame median filtering and
@@ -246,7 +246,25 @@ workspace estimation uses 20 times feature bytes plus 128 bytes per frame, cappe
 at 512 MiB before FK allocation. This is an allocation budget, not measured peak
 process memory. Server/worker evidence is tracked separately from numeric checks.
 
-Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries all four sockets unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.
+## Training dataset foundations
+
+Numeric dataset shards are independent of mesh-import limits. Conditioning and
+feature NPZs are content-addressed; manifests preserve clip labels, captions,
+origins and train/evaluation membership. Numeric topologies accept 2–4096 joints.
+The optional source-rig digest records provenance; it does not establish mesh
+export compatibility. Deterministic archives preserve original payload bytes,
+including numeric precision and byte order, without pickle or extraction.
+
+The [shard contract](docs/superpowers/specs/2026-10-03-dataset-contracts.md) defines
+aggregate budgets and validation. Statistics extraction selects training clips
+only and shares read-only arrays for repeated payloads. The numeric statistics
+adapter preserves every released pooling/balancing/tying combination. These
+foundations have test evidence; public dataset/statistics sockets and nodes,
+shard collections, cloud adapters and training runtime consumption remain open.
+
+## Cloud Offload implementation
+
+Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries registered UniMate values unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.
 
 Trusted loaded node classes declare selected files via `cloud_offload_assets(inputs)`: GLBs use `__input__`; bundles use `unimate`. Exact declarations override generic discovery at their uniquely matching input. Preflight checks local file identities and uploads only unresolved declared artifacts. Workers stage inputs under ComfyUI/input and bundles under registered model paths. Missing runner requirements fail instead of falling back to local execution.
 

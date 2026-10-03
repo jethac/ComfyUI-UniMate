@@ -368,5 +368,32 @@ Command: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`,
 `UNIMATE_DATASET_REFERENCE=.runtime/upstream-audit`, then
 `.runtime/testenv/Scripts/python.exe -m pytest tests/test_dataset_stats.py -q`.
 Runtime: Windows, Python 3.11.9, NumPy 2.4.3, CPU. This validates the numeric
-component only. Public dataset/statistics nodes, persisted/portable contracts,
-training consumption and local/stadia/Cloud Offload execution remain open.
+component only. At that point public dataset/statistics nodes, persisted/portable
+contracts, training consumption and local/stadia/Cloud Offload execution remained open.
+
+## Numeric dataset shards and archives — 2026-10-03
+
+`dataset_contracts.py` and `dataset_io.py` implement bounded content-addressed
+numeric shards and deterministic ZIP/JSON archives. Mesh assets are omitted;
+conditioning has its own identity and an optional source-rig provenance digest.
+Training topologies support 2–4096 joints independently of the mesh adapter.
+Feature precision, byte order, origin, captions and train/evaluation membership
+survive persistence. Statistics extraction excludes evaluation clips and shares
+read-only arrays for duplicate payloads.
+
+The combined dataset contract/archive/statistics suite passed 85 tests, no skips;
+changed-file Ruff passed. Cases include 2/151/4096-joint inputs, rejection at
+1/4097 joints, original float16/32/64 and non-native-byte-order payloads, a
+float64-only distinguishable value, malformed/digest-mismatched inputs, duplicate
+and traversal ZIP members, nested object arrays, cancellation and mutation.
+Sentinel checks prove outer aggregate payload rejection precedes array reads and
+inner aggregate expanded-member rejection precedes numeric decoding. Initial
+cancellation regressions exposed exception relabeling during load; callbacks now
+propagate unchanged. Independent review found no blocking defects.
+
+Command: the prior statistics reference environment, then
+`.runtime/testenv/Scripts/python.exe -m pytest tests/test_dataset_contracts.py tests/test_dataset_io.py tests/test_dataset_stats.py -q`.
+Runtime: Windows, Python 3.11.9, NumPy 2.4.3, CPU. No ComfyUI node execution is
+claimed by this check. Public dataset/statistics nodes, shard collections for
+larger training data, Cloud Offload registration/staging, training consumption
+and local/stadia integration remain open.
