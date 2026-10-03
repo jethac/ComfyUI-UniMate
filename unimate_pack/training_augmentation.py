@@ -103,7 +103,7 @@ def _recompute_positions(aug, cancel):
     aug['motion'][:, 1:, :3] = np.einsum('tij,tkj->tki', facing, positions[:, 1:])
 
 
-def _quaternion_roundtrip(matrices, *, quaternion_vector=False):
+def _matrix_quaternions(matrices):
     """Standard signed-diagonal quaternion equations in source dtype/order.
 
     No Motion implementation is imported or distributed. Quaternion-vector
@@ -128,7 +128,11 @@ def _quaternion_roundtrip(matrices, *, quaternion_vector=False):
         for index, rule in enumerate(rules):
             if rule is not None:
                 components[index][largest[dominant]] *= np.sign(rule[largest[dominant]])
-    w, x, y, z = (component.astype(np.float64) for component in components)
+    return np.stack(components, axis=-1).astype(np.float64)
+
+
+def _quaternion_roundtrip(matrices, *, quaternion_vector=False):
+    w, x, y, z = np.moveaxis(_matrix_quaternions(matrices), -1, 0)
     diagonal = w*w + x*x + y*y + z*z if quaternion_vector else np.ones_like(w)
     result = np.empty((*matrices.shape[:-2], 3, 3))
     result[..., 0, 0] = diagonal - 2*(y*y + z*z)

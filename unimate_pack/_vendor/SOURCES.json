@@ -94,7 +94,10 @@
       "source": "unimate/dataset/transforms.py",
       "sha256": "0c16cd112fb5df83778d245df06dbeaa040546fda56611421286340ae0fe231a",
       "license": "MIT; LICENSE-UniMate",
-      "changes": "Numeric crop, condition extraction, normalization, padding and parent-copy arithmetic adapted with input validation, local seeded cropping, cancellation and padding workspace checks. Source padding precision promotion and zero valid-length first-frame tails retained."
+      "changes": "Numeric crop, condition extraction, normalization, padding and parent-copy arithmetic adapted with input validation, local seeded cropping, cancellation and workspace checks. Source padding precision promotion and zero valid-length first-frame tails retained. Independent quaternion equations reproduce crop-facing realignment.",
+      "reference_sources": {
+        "unimate/utils/motion_utils.py": "cddb2436e8fc4d02a2f5715398fd689c730b364b425bd8057bf65f083a93dd30"
+      }
     },
     "training_augmentation.py": {
       "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",

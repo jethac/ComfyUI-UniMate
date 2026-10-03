@@ -563,3 +563,16 @@ the same pinned environment. Changed-file Ruff and git diff --check passed.
 Source MIT lineage is retained. This does not prove facing realignment, encoded
 sample assembly, portable sample/cache values, collation or public sample nodes;
 those remain open, as do their headless and Cloud Offload workflow checks.
+
+## Cropped training facing realignment (2026-10-03)
+
+realign_clip matches the unchanged pinned realign_unimate_clip body using the
+reference-only Motion quaternion implementation. Six comparisons cover two
+nontrivial topologies and float16/32/64, with nonidentity facing after cropping.
+All output motion channels are bit-exact; source inputs, position and velocity
+channels remain unchanged. Production uses independently expressed signed
+quaternion conversion/composition equations, not Motion imports or vendored code.
+Cancellation and a pre-copy workspace estimate guard execution. This completes
+numeric realignment only; encoded sample assembly and public workflows remain
+open. Combined suite and source lineage are recorded with this change.
+Combined command: preceding 469-test suite with six added realignment comparisons; 475 passed, six subtests, no skips, 15.96s. Two existing Torch JIT warnings; changed-file Ruff passed.

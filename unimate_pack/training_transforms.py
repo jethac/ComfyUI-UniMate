@@ -102,3 +102,52 @@ def build_parent_features(condition, parents, *, cancel=None):
         if parent != -1:
             result[joint] = condition[parent]
     return {'tpos_first_frame_parents': result}
+
+
+def realign_clip(motion, parents, *, cancel=None, max_workspace_bytes=512*1024*1024):
+    """Rebase facing at cropped frame zero, preserving source arithmetic."""
+    from .rig_math import rotation_6d_matrices
+    from .training_augmentation import _matrix_quaternions
+
+    _check(cancel)
+    _array(motion, (3,))
+    if motion.shape[-1] != 12:
+        raise ValueError('Expected twelve motion features')
+    _integer(max_workspace_bytes, 'max_workspace_bytes', 1)
+    if 16*motion.nbytes > max_workspace_bytes:
+        raise ValueError('Realignment exceeds workspace budget')
+    build_parent_features(motion[0], parents, cancel=cancel)
+    rotation_6d_matrices(motion[..., 3:9])
+
+    def decode(raw):
+        first = raw[..., :3] / np.linalg.norm(raw[..., :3], axis=-1, keepdims=True)
+        third = np.cross(first, raw[..., 3:])
+        third /= np.linalg.norm(third, axis=-1, keepdims=True)
+        second = np.cross(third, first)
+        return _matrix_quaternions(np.stack([first, second, third], axis=-1))
+
+    def compose(left, right):
+        w,x,y,z = np.moveaxis(left,-1,0)
+        a,b,c,d = np.moveaxis(right,-1,0)
+        return np.stack([a*w-b*x-c*y-d*z,
+                         a*x+b*w-c*z+d*y,
+                         a*y+b*z+c*w-d*x,
+                         a*z-b*y+c*x+d*w],axis=-1)
+
+    def encode(q):
+        w,x,y,z = np.moveaxis(q,-1,0)
+        scale = 2.0/(q*q).sum(-1)
+        return np.stack([1-scale*(y*y+z*z),scale*(x*y+z*w),scale*(x*z-y*w),
+                         scale*(x*y-z*w),1-scale*(x*x+z*z),scale*(y*z+x*w)],axis=-1)
+
+    result=motion.copy()
+    initial=decode(motion[:1,0,3:9])
+    result[:,0,3:9]=encode(compose(decode(motion[:,0,3:9]),initial*np.array([1,-1,-1,-1])))
+    for joint,parent in enumerate(parents):
+        _check(cancel)
+        if parent == 0:
+            result[:,joint,3:9]=encode(compose(initial,decode(motion[:,joint,3:9])))
+    if not np.isfinite(result).all():
+        raise ValueError('Nonfinite realignment result')
+    _check(cancel)
+    return result

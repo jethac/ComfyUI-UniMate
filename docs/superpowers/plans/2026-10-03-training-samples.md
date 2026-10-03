@@ -13,7 +13,7 @@ collation and thin public nodes. Python/NumPy/Torch and existing V3 runtime.
 - [x] Verify exact source parity and negative cases; retain MIT lineage.
 
 ## Task 2: Facing realignment and complete sample assembly
-- [ ] Compare nonidentity quaternion realignment with reference-only Motion.
+- [x] Compare nonidentity quaternion realignment with reference-only Motion.
 - [ ] Assemble augmented samples in source order, preserving identities/stats.
 
 ## Task 3: Encoder/cache and portable values
@@ -28,4 +28,5 @@ collation and thin public nodes. Python/NumPy/Torch and existing V3 runtime.
 All tasks require malformed input, budgets and cancellation checks, evidence in
 VALIDATION.md and accurate COVERAGE.md. No fake embeddings or pickle. Preserve
 full GOAL.md, including training runtime and all released encoder/model families.
+
 

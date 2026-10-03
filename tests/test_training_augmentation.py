@@ -53,7 +53,7 @@ def reference():
                          'compute_edge_indexs', 'compute_laplacian_eigenvectors')})
     for path, names in (
         ('unimate/utils/rotation_conversions.py', {'rotation_6d_to_matrix_np'}),
-        ('unimate/utils/motion_utils.py', {'compute_rifke', 'hml_rotations_to_bvh_quaternions', 'fk_global_positions'}),
+        ('unimate/utils/motion_utils.py', {'compute_rifke', 'hml_rotations_to_bvh_quaternions', 'fk_global_positions', 'realign_unimate_clip'}),
         ('unimate/dataset/mixture/augmentations.py', None),
     ):
         source = Path(root) / path
@@ -309,3 +309,18 @@ def test_structural_operation_report_keeps_released_default_path_limit(operation
     _, report = augmentation.augment_sample(sample(), operation, 17, max_path_len=3,
                                             removal_rate=.75, pool_rate=.75)
     assert report['parameters']['max_path_len'] == 5
+
+@pytest.mark.parametrize('dtype',[np.float16,np.float32,np.float64])
+@pytest.mark.parametrize('branching',[False,True])
+def test_crop_realign_matches_released_quaternions(reference,dtype,branching):
+    from unimate_pack import training_transforms
+    value=sample(branching,dtype)
+    clip=value['motion'][2:].copy()
+    before=clip.copy()
+    expected=reference['realign_unimate_clip'](clip,value['parents'])
+    actual=training_transforms.realign_clip(clip,value['parents'])
+    np.testing.assert_array_equal(actual,expected)
+    np.testing.assert_array_equal(clip,before)
+    np.testing.assert_array_equal(actual[...,:3],before[...,:3])
+    np.testing.assert_array_equal(actual[...,9:],before[...,9:])
+
