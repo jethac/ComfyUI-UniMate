@@ -40,6 +40,17 @@ Expansion generates the first segment freely, pins each later segment's prefix t
 
 ## Model and research coverage
 
+Released config inspection at Hugging Face revision `971da7cfc1c8d99c2af6c00be9d2ed5700f99073`:
+
+| Family | Attention / text conditioning | Padded joint slots | Depth capacity | Layers |
+| --- | --- | --- | --- | --- |
+| `unimate_mixamo_f60` | graph / AdaLN | 22 | 7 | 6 |
+| `unimate_uniml3d_f60_preview` | graph / AdaLN | 61 | 19 | 10 |
+| `unimate_uniml3d_f60_v2` | graph / AdaLN | 71 | 19 | 10 |
+| `unimate_uniml3d_f60_v2_full_cross_attn` | full / cross-attention | 71 | 19 | 10 |
+
+All four configs use 60-frame, 12-feature windows and FLAN-T5-base. Their capacity differences must drive both denoiser reconstruction and conditioning padding. The current constrained path hardcodes 71 slots; Mixamo statistics are not yet validated against the current three-family statistics contract. Exact config acceptance alone would not establish support. Each family requires strict checkpoint loading, numeric conditioning comparison and actual inference/export evidence.
+
 The released factory implements graph/full attention and AdaLN/cross-attention combinations. The current adapter accepts one exact graph/AdaLN configuration. Supporting the released full/cross-attention model requires token text conditioning and config-driven reconstruction, not relaxing validation alone. Preview and Mixamo bundles must each pass strict loading and numerical checks against their own configs and statistics.
 
 Training is also released: flow/diffusion schedules, EMA, resume, mixed datasets, balanced sampling, topology augmentation, cached text embeddings and architecture ablations. These are not currently represented by nodes. A literal claim of 100% technology coverage must account for them explicitly; an inference-only pack cannot make that claim. Training/job nodes need isolated configuration, dataset input, progress, cancellation and exported checkpoint contracts. Dataset curation includes filtering, canonicalization, rendering and language-assisted annotation; those utilities likewise need a documented interface or an explicit coverage gap.
