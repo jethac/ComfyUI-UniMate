@@ -139,6 +139,10 @@ PyTorch 2.14.1+cpu, Blender 5.1.1. Cloud runner execution remains open.
 
 ### Rig identity portability correction, 2026-10-03
 
+Headless stadia at pack `2e17283` also accepted the old Windows archive against the
+freshly prepared Linux rig: 17 frames per recovery mode, all 34 PNGs retrieved plus
+GLB/provenance. Remote evidence: `run-legacy-windows-20261003/report.json`.
+
 The observed Windows/Linux ID mismatch came from NPZ ZIP creator-OS markers, not numeric
 conditioning differences. The asset, mapping and every array's dtype, shape and payload
 matched exactly. Canonical marker 3 preserves the existing Linux identity on fresh Windows
