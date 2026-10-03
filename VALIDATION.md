@@ -1022,3 +1022,62 @@ Internal snapshots are trusted tensor trees. Portable untrusted serialization,
 dataset/epoch binding, distributed behavior, public nodes, model residency,
 installed-model updates/export/inference and actual-worker cancellation/resume
 remain required. No cross-runtime byte equality is claimed.
+
+## Portable training checkpoint contract (2026-10-03)
+
+`unimate.training_checkpoint.v1` carries bounded JSON metadata and safetensors
+bytes. Expected bindings identify model class/config/initial weights, ordered
+dataset/statistics/text-cache digests, sampling options and epoch-plan position.
+Tests use fixture bindings; they establish validation against expected values,
+not independent proof of original dataset provenance. Public jobs must compute
+these identities from validated actual contracts. Source pin remains
+`2c5b384715aa63d8639b1ed7eb74bfe614570c7a`.
+
+Uninterrupted and portable-restored flow/diffusion sessions match all internal
+state within each tested runtime. Four small backbone families preserve dropout
+and conditioning-mask streams across safetensors serialization and restoration.
+Caller-selected CUDA none/BF16/FP16 fixtures restore RNG and scaler state exactly.
+Initial/no-EMA states and legitimate unused/frozen parameters also round-trip.
+These use synthetic batches and the previously described small backbones,
+not installed model checkpoints or real-data training jobs.
+
+Rehashed corrupt model, optimizer moments, LR/EMA/scaler counters, RNG,
+configuration and data-position cases reject without live mutation. Header shapes,
+offsets/references, tags and workspace reject before safetensors load. Creation's
+workspace check precedes snapshot copying. Cancellation detected after live load
+rolls back the session. Boolean/integer substitutions and completely missing
+moments were reproduced and fixed before review.
+
+Review found three Important issues. Each had failing regressions before its fix:
+aggregate/escaped JSON size is now checked before full serialization; exact
+runtime identity records matmul precision, cuDNN flags/version and attention
+backends; independent per-parameter integer update history now rejects partial
+Adam-state deletion or lowered counters. Unused/frozen parameters retain zero
+update counts and no optimizer moments. The source float32 Adam step counter's
+saturation at 2**24 is preserved while integer session history continues.
+Deferred minor: expected-position input comparison should enforce schema/types
+as strictly as the stored position; it is currently caller-owned.
+
+Actual client/runner codec round trips preserve the checkpoint dictionary and
+bytes, followed by validated restoration. This verifies codecs, not job
+scheduling or worker training. Both sibling source checkouts were present; these
+tests did not skip on the tested platforms.
+
+Final Windows suite: 1,098 passed, 50 skipped, six subtests, 205.01s; six previously
+described warnings. Changed-file Ruff and diff checks pass. Headless stadia:
+48 passed, three CUDA-only checks skipped, 8.05s; one JIT warning. Linux CPU uses
+Python 3.11.15, Torch 2.14.1+cpu, NumPy 2.4.6, Transformers 5.18.0 and
+`OMP_NUM_THREADS=2`. Exact equality is within runtime; mismatched runtime/device
+identities intentionally reject rather than claiming cross-runtime resume.
+
+Stadia's isolated `training-checkpoint-audit-20261003` worktree is based on
+`3a9337a` plus the checkpoint/session/test files. Uploaded files match local SHA256:
+
+- Checkpoint adapter: `9104ac5395edbb7ca79c87e9e1690bdb6d1baa7c87eea73faaa2b9e343e9069e`.
+- Session adapter: `de007cbb931c758fe366b9915e7566009462139eaaaea8b50cd5cec8a937db6b`.
+- Checkpoint tests: `5af4e065ee759c4c48455f84eee1a37d8493fa09c1c42d511820e5dd71dd84c9`.
+
+Public checkpoint IO and job binding producers, distributed behavior, installed
+model updates/export/inference, ComfyUI memory residency and actual-worker
+training/resume/cancellation remain open. Runtime values contain no live objects;
+class/config metadata is not dynamically imported or executed.

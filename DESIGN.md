@@ -399,6 +399,31 @@ portable validation, distributed execution, model residency and public ownership
 remain required. Caller must keep architecture, device and trainability fixed
 during a session.
 
+The portable `unimate.training_checkpoint.v1` value stores safetensors bytes and
+a bounded, tagged JSON state tree. It binds model class/config/initial weights,
+ordered dataset/statistics/text-cache digests, sampling options and epoch-plan
+position. The stored consumed-batch count must match the session; epoch and batch
+offset must describe that count. Public jobs still need to derive these bindings
+from validated actual artifacts rather than accepting caller labels as proof.
+
+Validation preflights JSON aggregate encoded size (including escaping), tensor
+headers, offsets, references, dtypes, shapes and workspace before tensor decoding.
+It then checks finite values, AdamW/LR/EMA/scaler counters and generator-valid RNG
+states before transactional restore. Per-parameter integer update counts record
+which parameters received committed optimizer updates; zero-count unused/frozen
+parameters have no moments. Adam history must cover exactly those parameters and
+match their counts. The source float32 Adam counter's 2**24 saturation is retained;
+integer session history continues counting committed updates.
+
+Limits are 2 GiB tensor payload, 4 MiB JSON/header and 100,000 state nodes with
+depth 32. Default tensor workspace is 8 GiB; preflight reserves eight payload
+copies. This does not bound activation memory. Exact restoration requires matching
+runtime versions, device, thread/dtype settings and numeric backend settings,
+including matmul precision, cuDNN flags/version and attention backend choices.
+Cross-runtime or renamed-class restoration is not established. Checkpoint values
+round-trip through actual Cloud Offload codecs; public IO, worker execution,
+dataset-bound job generation and checkpoint-to-inference export remain open.
+
 ## Cloud Offload implementation
 
 Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries registered UniMate values unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.

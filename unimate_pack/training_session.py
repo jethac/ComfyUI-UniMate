@@ -114,6 +114,7 @@ class TrainingSession:
         self.rng_device=torch.Generator(device=self.device).manual_seed(seed).get_state() if self.device.type=='cuda' else None
         self.updates=0
         self.batches=0
+        self.optimizer_updates=[0]*len(params)
 
     def _new_scaler(self):
         return torch.amp.GradScaler('cuda',enabled=self.options['precision']=='fp16')
@@ -132,7 +133,8 @@ class TrainingSession:
             modes={name:m.training for name,m in self.model.named_modules()},
             optimizer=self.optimizer.state_dict(),scheduler=self.scheduler.state_dict(),
             ema=self.ema.state_dict() if self.ema else None,scaler=self.scaler.state_dict(),
-            rng_cpu=self.rng_cpu,rng_device=self.rng_device,updates=self.updates,batches=self.batches)
+            rng_cpu=self.rng_cpu,rng_device=self.rng_device,updates=self.updates,batches=self.batches,
+            optimizer_updates=self.optimizer_updates)
 
     def snapshot(self,*,max_state_bytes=MAX_STATE_BYTES):
         with _LOCK:
@@ -157,11 +159,13 @@ class TrainingSession:
         self.rng_device=state['rng_device'].clone() if state['rng_device'] is not None else None
         self.updates=state['updates']
         self.batches=state['batches']
+        self.optimizer_updates=list(state['optimizer_updates'])
         self.optimizer.zero_grad(set_to_none=True)
 
-    def restore(self,state,*,max_state_bytes=MAX_STATE_BYTES):
+    def restore(self,state,*,max_state_bytes=MAX_STATE_BYTES,cancel=None):
         """Restore an internally generated snapshot, with rollback on load errors."""
         with _LOCK:
+            _check(cancel)
             self._budget(max_state_bytes)
             current=self._raw_state()
             if type(state) is not dict or state.keys()!=current.keys():
@@ -178,7 +182,9 @@ class TrainingSession:
             _finite(state)
             before=_copy(current)
             try:
+                _check(cancel)
                 self._apply(state)
+                _check(cancel)
             except BaseException:
                 self._apply(before)
                 raise
@@ -228,6 +234,7 @@ class TrainingSession:
                         for key,value in means.items():
                             metrics[key]=metrics.get(key,0.)+value.item()/len(batches)
                     self.scaler.unscale_(self.optimizer)
+                    active=[i for i,p in enumerate(self.model.parameters()) if p.grad is not None]
                     gradients=[p.grad for p in self.model.parameters() if p.grad is not None]
                     if not gradients:
                         raise ValueError('Training produced no gradients')
@@ -250,6 +257,8 @@ class TrainingSession:
                         self.rng_device=torch.cuda.get_rng_state(self.device).clone()
                     self.updates+=1
                     self.batches+=len(batches)
+                    for index in active:
+                        self.optimizer_updates[index]+=1
                     metrics.update(lr=self.scheduler.get_last_lr()[0],updates=self.updates,batches=self.batches)
                 return metrics
             except BaseException:

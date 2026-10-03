@@ -68,12 +68,38 @@ Task 3 foundation is single-process. Distributed reduction/skip/accumulation,
 public session ownership and ComfyUI memory-management integration remain
 mandatory before full training coverage.
 
+### Task 4: Portable checkpoint contract
+
+`make_training_checkpoint(session, binding, position)` emits
+`unimate.training_checkpoint.v1`: bounded JSON tensor-reference tree and
+safetensors bytes, source/runtime identities and content digests. Binding records
+model class/config/initial-weight identity, ordered dataset/statistics/text-cache
+identities and sampling options. Position records epoch, batch offset, epoch-plan
+digest and consumed count; count must match session state.
+
+`validate_training_checkpoint(value, session, binding, expected_position=None)`
+checks exact binding/runtime, option/state schemas, parameter shapes/trainability,
+AdamW moments/counters, LR state, EMA, scaler and RNG. Header/tensor-reference
+preflight and workspace checks precede safetensors allocation. Numeric finite
+checks and RNG-generator validation precede live session mutation.
+`restore_training_checkpoint` validates then uses transactional internal restore.
+No dynamic import, pickle or local paths. Exact resume currently requires the
+same runtime/device identity; compatible cross-runtime resume needs separate
+explicit policy and evidence. Dataset/plan digests are caller-supplied bindings;
+public jobs must derive them from validated actual dataset/epoch contracts.
+
+Tests: round-trip and uninterrupted/resumed flow/diffusion, four backbones and
+precision state; malformed tree/header/budget rejection before decode; corrupt
+optimizer/LR/EMA/scaler/RNG/config/dataset position rejection without mutation;
+binary integrity, cancellation and transport dictionary/bytes compatibility.
+
 ### Subsequent required tasks
 
 - [x] Diffusion schedule/loss kernel and reference comparisons.
 - [x] Single-process optimizer session, internal resume, accumulation and precision foundation.
 - [ ] AdamW, LR schedule, EMA, accumulation/precision/distributed sessions and exact resume comparisons.
-- [ ] Bounded portable model/optimizer/scheduler/EMA/RNG/data-position checkpoint contracts.
+- [x] Bounded portable model/optimizer/scheduler/EMA/RNG/data-position checkpoint value contract.
+- [x] Portable checkpoint value contract, supplied artifact/position binding and exact fixture resume.
 - [ ] Model architecture/job configuration and public training/progress/checkpoint nodes.
 - [ ] Installed-model batch/backprop/update, exported checkpoint inference and independent playback.
 - [ ] Windows/headless stadia/actual-worker resume, cancellation, cleanup and artifact retrieval.
@@ -107,3 +133,15 @@ source microbatch skipping — avoids invalid partial updates; cost is different
 data consumption on failures, which public/distributed jobs must make explicit.
 Final: minor (deferred): compare partial final-group divisor numerically.
 Final: minor (deferred): inject scheduler/EMA exceptions and pre-update cancellation.
+
+Task 4: missing contract RED → round-trip/corruption checks GREEN. Strict
+boolean/integer comparisons, missing moments, pre-copy workspace and post-load
+cancellation were reproduced before fixes. Final review found three Important
+issues, fixed in one pass with RED→GREEN: aggregate/escaped JSON preflight;
+numeric runtime settings; partial Adam history deletion/lowered counters.
+Sessions now record independent per-parameter committed update counts, including
+zero-count unused/frozen parameters. Full suite after fixes: 1,098 passed,
+50 skipped, six subtests; headless checkpoint checks 48 passed, three CUDA skips.
+Actual client/runner codec round trips pass. No public or real-dataset training
+claim. Final: minor (deferred): validate expected-position schema/types as strictly
+as stored position; expected position is currently a caller-owned comparison.
