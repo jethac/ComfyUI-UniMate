@@ -48,20 +48,26 @@ UniMateDatasetStatistics, UniMateLoadStatistics, UniMateSaveStatistics.
 - [x] RED schema/registration, real adapter plumbing, list-mode validation,
   filename containment, staging declarations, fingerprint and cancellation tests.
 - [x] Implement schema/file adapters without training dependencies.
-- [ ] Run node and foundation suites; review; document and commit.
+- [x] Run node and foundation suites; review; document and commit.
 
 ### Task 3: Transport and workflows
 
 Add `tools/dataset_workflow.py` and workflow checks using existing verifier.
 
 - [x] Verify actual client/runner dictionary/bytes codec for both new types.
-- [ ] Run local/headless stadia actual partition capture/restore, artifact save/
+- [x] Run local/headless stadia actual partition capture/restore, artifact save/
   reload and statistical comparison, recording all repo/runtime identities.
-- [ ] Update README/DESIGN/COVERAGE/VALIDATION and push verified completed work.
+- [x] Update README/DESIGN/COVERAGE/VALIDATION and push verified completed work.
 
 Keep goal active while any task or broader training/dataset gate remains open.
 
 Execution record: Tasks 1/2 implemented; 141 tests and 6 subtests pass; independent
-node review found no blockers. Task 2 commit and Task 3 headless workflow gates
-remain tracked separately. Expansion preflight regression tests failed before
+node review found no blockers. Task 2 committed as 1acbe98; Task 3 Windows and stadia direct/three-job
+partition runs passed with six retrieved archives each. Expansion preflight regression tests failed before
 the guard and passed afterward. No claim of training runtime coverage.
+
+Task 3 review: no blockers; 27 independent workflow/adapter tests passed.
+Ruling: this harness uses actual staging helpers with explicit declarations;
+coordinator discovery, injected worker cancellation and provider/container
+execution remain separate full-goal gates. Two-dataset option comparisons do
+not replace pinned numeric reference tests for balancing behavior.

@@ -424,3 +424,40 @@ single-dataset fixture alone cannot distinguish those modes.
 Actual sibling client/runner codec tests preserve both portable types. This does
 not prove partition-handler staging or saved archive retrieval. Local/headless
 stadia dataset workflows and training runtime consumption remain open.
+
+
+## Dataset headless worker workflows (2026-10-03)
+
+`tools/dataset_workflow.py` passed on Windows and headless stadia-testbed. Each
+run executed one direct ComfyUI graph and three real partition-handler jobs:
+collection/statistics capture, portable value restoration, and saved archive
+reload. All six public nodes were registered and executed. Each worker job
+returned two archives; all six files restored through the actual client, and
+restored bytes and loaded values matched their source exactly. Two archives
+were resolved/uploaded/staged through real runner helpers before reload.
+
+Fixture: one previously verified synthetic legged rig, three matching motions,
+two training datasets and one evaluation clip with deliberately divergent
+features. All eight statistics modes matched direct results exactly, including
+original array payload bytes. Evaluation membership was excluded. The fixture
+has one training object per dataset, so balanced-reduction correctness still
+relies on the pinned-upstream numeric reference suite.
+
+Pack revision: `1acbe982ad2a7e3cd02ec8de9ef29c5bd5b4f6d2` plus the subsequently
+committed workflow harness. Runner `43bd1a0d998ffcba2568de2289cd3131f271aaa6`;
+client `4a7a9376d8e20cc3decfba26cd1e626bd198ab7a`. Windows ComfyUI
+`e2f44d7fe65e270ac111237366b03e396b94dcea`, Python 3.11.9, NumPy 2.4.3.
+Stadia ComfyUI `84ba85773925f071c516f0208184773802b4d44a`, Python 3.11.15,
+NumPy 2.4.6. Both servers ran CPU mode; no models or Blender processes were
+needed. Reports retain system identities, source bundle hashes, graph/job
+identities, boundary artifacts and staged asset digests.
+
+Windows report: `.runtime/dataset-worker-check-1/report.json`. Stadia source:
+`/home/jethac/workspaces/comfy-unimate-e2e-20261001/run-dataset-worker-20261003-1/report.json`;
+local copy `.runtime/stadia-dataset-worker/report.json`. Command:
+`python tools/dataset_workflow.py --comfy-root <ComfyUI> --cloud-root <cloud-offload> --client-root <ComfyUI-Cloud-Offload> --python <ComfyUI-python> --rig <captured-rig.part> --motion <captured-motion.part> --workdir <empty-directory>`.
+
+Independent review found no blockers and ran 27 workflow/adapter tests. Asset
+declarations are supplied directly to runner helpers; coordinator/client
+declaration discovery is not established. Worker cancellation was not injected.
+Provider scheduling and deployed-container execution remain unverified.

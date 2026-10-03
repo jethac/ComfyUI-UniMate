@@ -265,8 +265,11 @@ sockets; actual client/runner codec round trips preserve their original bytes.
 Managed loaders declare input archives and saves return core files descriptors.
 Shared conditioning retains per-clip rig provenance even when meshes differ.
 Statistics payload and archive expansion limits are 8 MiB and 16 MiB, checked
-before numeric decoding. Headless staging/retrieval workflows, shard collections
-and training runtime consumption remain open.
+before numeric decoding. Windows and headless stadia workflows execute all six
+nodes, all eight statistics modes, boundary capture/restore and archive reload.
+Actual runner asset staging and client retrieval pass. These checks supply asset
+declarations directly; coordinator discovery and injected worker cancellation
+remain unverified. Shard collections and training runtime consumption remain open.
 
 ## Cloud Offload implementation
 

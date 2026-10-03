@@ -109,7 +109,9 @@ normalization options. Saved shards preserve original numeric payloads and label
 
 Load Dataset accepts numeric topologies with 2–4096 joints; Build Dataset uses
 the existing mesh adapter's limits. These nodes provide data and normalization;
-training, curation, augmentation and headless dataset workflows remain open.
+direct and Windows/headless stadia partition-handler workflows passed, including
+archive staging, capture/restore and file retrieval. Training, curation and
+augmentation remain open.
 
 ## Cloud Offload
 
