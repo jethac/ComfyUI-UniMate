@@ -29,7 +29,7 @@ def test_constrained_inference_normalizes_reference_and_preserves_selected_featu
     monkeypatch.setattr(contracts, "validate_rig", lambda value: None)
     monkeypatch.setattr(mm, "load_models_gpu", lambda *a, **kw: None)
     cond = {"mean": torch.ones((1, 71, 12)) * 0.3, "std": torch.ones((1, 71, 12)) * 1.7,
-            "motion_length": torch.tensor([60]), "lengths_mask": torch.ones((1, 60), dtype=torch.bool)}
+            "motion_length": torch.tensor([60]), "lengths_mask": torch.ones((1, 1, 1, 60), dtype=torch.bool)}
     monkeypatch.setattr(upstream, "build_condition", lambda *a: cond)
     runtime = SimpleNamespace(
         encode=lambda texts: ([np.ones((2, 768), np.float32) for _ in texts], np.ones((len(texts), 768))),
@@ -47,4 +47,5 @@ def test_constrained_inference_normalizes_reference_and_preserves_selected_featu
         np.testing.assert_array_equal(actual[:, 1], raw[:, 1])
     assert result["metadata"]["solver"]["method"] == "euler"
     assert cond["motion_length"].tolist() == [frames]
-    assert cond["lengths_mask"].tolist() == [[True] * frames + [False] * (60 - frames)]
+    assert cond["lengths_mask"].shape == (1, 1, 1, 60)
+    assert cond["lengths_mask"].reshape(-1).tolist() == [True] * frames + [False] * (60 - frames)

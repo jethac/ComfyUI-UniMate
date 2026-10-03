@@ -13,10 +13,12 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_real_model_edit_and_inbetween_preserve_constraints_and_export(tmp_path):
+@pytest.mark.parametrize("frames", [7, 60])
+def test_real_model_edit_and_inbetween_preserve_constraints_and_export(tmp_path, frames):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "ComfyUI"))
     sys.path.insert(0, str(Path(__file__).parent / "fixtures"))
     from rig_generator import synthetic_glb
+    from test_blender_math import evaluated_vertices
     import torch
     from comfy.cli_args import args
     if not torch.cuda.is_available():
@@ -30,7 +32,7 @@ def test_real_model_edit_and_inbetween_preserve_constraints_and_export(tmp_path)
     rig = prepare_rig(make_asset(synthetic_glb(True), "branching.glb"), "+Z")
     conditioning = decode_arrays(rig["conditioning"])
     joints = len(conditioning["parents"])
-    features = np.zeros((60, joints, 12), np.float32)
+    features = np.zeros((frames, joints, 12), np.float32)
     features[:, :, 3] = features[:, :, 7] = 1
     features[:, 0, 1] = conditioning["tpos_first_frame"][0, 1]
     reference = make_motion(rig["rig_id"], encode_arrays(features=features), {})
@@ -39,6 +41,7 @@ def test_real_model_edit_and_inbetween_preserve_constraints_and_export(tmp_path)
         motion = generate_motion(model, rig, "A character walks forward.", 0, 3,
             reference=reference, constraint_mode=mode, selection=selection)
         actual = decode_arrays(motion["features"])["features"]
+        assert actual.shape == features.shape
         assert np.isfinite(actual).all()
         assert np.any(actual != features)
         if mode == "inbetween":
@@ -48,7 +51,10 @@ def test_real_model_edit_and_inbetween_preserve_constraints_and_export(tmp_path)
         output = export_glb(rig, motion)
         doc, _ = parse_glb(output)
         for sampler in doc["animations"][0]["samplers"]:
-            assert doc["accessors"][sampler["output"]]["count"] == 60
+            assert doc["accessors"][sampler["output"]]["count"] == frames
+        vertices = np.stack([evaluated_vertices(output, frame) for frame in range(frames)])
+        assert np.isfinite(vertices).all()
+        assert np.any(vertices[1:] != vertices[0])
         (tmp_path / f"{mode}.glb").write_bytes(output)
 
 

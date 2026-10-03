@@ -279,7 +279,7 @@ def generate_motion(
             cond["motion_length"] = torch.full_like(cond["motion_length"], frames)
             cond["lengths_mask"] = (
                 torch.arange(60, device=cond["lengths_mask"].device)[None, :] < frames
-            )
+            ).reshape(cond["lengths_mask"].shape)
         mm.load_models_gpu([runtime.denoiser], force_full_load=True)
         device = runtime.denoiser.load_device
         cond = {
