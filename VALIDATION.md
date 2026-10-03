@@ -191,3 +191,23 @@ Focused checks: six harness tests, 36 worker tests and 48 client tests passed.
 This exercises the actual handler and executor against a local ComfyUI server.
 Provider scheduling, deployed worker containers and stadia execution of this graph
 remain separate gates. The fixture does not perform model inference.
+
+### Headless partition handler verification, 2026-10-03
+
+Stadia-testbed passed the same two-job worker graph at pack `7790f88`, worker
+`3f7d613` and client `176e24c`. The input was the 60-frame archive from the earlier
+released v2 in-betweening run. All six boundary types restored and were consumed;
+canonical preparation and 59-frame animation extraction passed their identity
+checks. Retrieved outputs: 360 PNGs, two GLBs, two FBXs and four provenance files.
+Remote evidence: `run-preprocessing-worker-20261003/report.json` under the recorded
+stadia workspace. Runtime: Python 3.11.15, PyTorch 2.14.1+cpu, Blender 5.1.1 and
+ComfyUI `84ba85773925f071c516f0208184773802b4d44a`.
+
+Independent downloaded-output checks evaluated all 60 frames and 21 vertices in
+both GLBs: finite, changing motion with zero difference after restoration.
+Mesh, skin, material, texture and image structures matched. The original,
+restored IMAGE and re-rendered skeleton PNGs matched pixel for pixel for both
+FK and RIC (360 frames checked). Local evidence:
+`.runtime/stadia-preprocessing-worker/independent-check.json`.
+This run performs no new inference and does not test provider scheduling or a
+deployed worker container.

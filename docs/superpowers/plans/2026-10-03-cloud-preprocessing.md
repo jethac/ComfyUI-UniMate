@@ -16,8 +16,9 @@ provider provisioning or paid resources are required.
 - [x] Preserve image descriptors in worker partition results and restore them under
   ComfyUI's `images` UI key; existing path containment rules remain in force.
 - [x] Add worker-mode harness and unit checks for its manifest/type coverage.
-- [ ] Run real Windows and headless stadia partition jobs, verify output values,
+- [x] Run real Windows and headless stadia partition jobs, verify output values,
   restored files and independent animation playback.
-- [ ] Review the cross-repository changes, push direct to default branches and record
+- [x] Review the cross-repository changes, push direct to default branches and record
   exact revisions/runtime evidence. Keep deployment/scheduling gates distinct.
+
 

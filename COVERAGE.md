@@ -137,3 +137,11 @@ The existing five-node tests prove the narrow generation/export path. They do no
 2026-10-03: added a constrained Euler kernel with fixed-noise replacement, broadcast frame/joint masks and cancellation checks. Both mask modes match the pinned upstream sampler bit for bit on the deterministic velocity fixture (7 tests passed including cancellation and invalid-step checks). Added safe numeric reference-motion archive save/load with canonical rig identity and Unicode metadata round trips (3 tests passed). These are subsystem interfaces; public IO/edit/in-between/expansion nodes and real-model constrained validation remain pending.
 
 2026-10-03: motion validation and GLB export now accept nonempty variable-length clips within the existing numeric archive limits. Blender playback verification iterates over the actual clip length. Contract and independent GLB skinning tests cover 1-, 59-, 60-, 110- and 600-frame values where applicable: 74 focused tests passed. Generation remains fixed to its existing model window; expansion and reference-motion nodes are not implemented by this change. External Blender and Cloud Offload validation for expanded clips remain pending.
+
+2026-10-03: actual Cloud Offload partition-handler workflows passed on Windows
+(17-frame fixture) and headless stadia (60-frame released-model archive). Six types
+crossed eight boundaries, then were restored and consumed. Canonical preparation,
+conditioning, motion extraction, FK/RIC rendering and GLB/FBX export passed. Stadia
+retrieved 368 files; independent playback and all 360 preview images matched after
+restoration. See VALIDATION.md for revisions and evidence. Provider scheduling,
+deployed containers, inference/batch paths and remaining capability gaps are open.
