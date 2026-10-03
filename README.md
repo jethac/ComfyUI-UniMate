@@ -11,8 +11,10 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Export UniMate GLB | Add animation to the original GLB; save provenance JSON |
 | In-between UniMate Motion | Preserve selected reference frames and generate the transition |
 | Edit UniMate Motion | Preserve selected joints and regenerate the remaining motion |
+| Load UniMate Motion | Load a numeric motion archive with canonical rig identity |
+| Save UniMate Motion | Save a numeric motion archive for later reuse |
 
-The target is complete UniMate capability coverage. The pack implements one model path, with generation, in-betweening and editing nodes. Real-model validation for the constrained nodes is pending; expansion and other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Existing source clips are ignored and replaced by one generated clip.
+The target is complete UniMate capability coverage. The pack implements one model path, with generation, in-betweening and editing nodes. The constrained paths passed offline real-model inference and Blender export on a synthetic rig; expanded ComfyUI server and Cloud Offload checks remain pending. Expansion and other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Existing source clips are ignored and replaced by one generated clip.
 
 ## Install
 
@@ -52,6 +54,8 @@ Put a rigged GLB under `ComfyUI/input/`, then connect Load Rigged GLB → Prepar
 Choose the source facing direction explicitly. Joint-pair facing requires raw left/right joint names. Generate exposes prompt, seed, guidance, and normalization family (`objaverse`, `mixamo`, `truebones`). Guidance 1 is unconditional, matching upstream. Solver settings follow the pinned model. A clip has 60 keys at `i/30` seconds and is not automatically looped.
 
 ## Supported assets
+
+Save UniMate Motion writes `.npz` archives. Copy an archive into ComfyUI input and select it in Load UniMate Motion to reuse it as a reference. In-betweening accepts comma-separated frame indices (`0,-1` preserves the first and last frame); editing accepts original or cleaned joint names. Reference clips must belong to the same prepared rig and fit the current 60-frame model window. Both modes require guidance greater than 1.
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 

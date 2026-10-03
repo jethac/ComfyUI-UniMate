@@ -75,6 +75,8 @@ class NodeTests(unittest.TestCase):
                 "UniMateExportGLB",
                 "UniMateInbetweenMotion",
                 "UniMateEditMotion",
+                "UniMateLoadMotion",
+                "UniMateSaveMotion",
             ],
         )
         for cls in classes:
@@ -85,6 +87,24 @@ class NodeTests(unittest.TestCase):
             ["objaverse", "mixamo", "truebones"],
         )
         self.assertTrue(nodes.UniMateExportGLB.OUTPUT_NODE)
+
+    def test_motion_archive_nodes_round_trip_and_confine_paths(self):
+        import numpy as np
+        from unimate_node_test.unimate_pack.contracts import make_motion, encode_arrays
+        from unimate_node_test.unimate_pack.motion_io import load_motion
+        motion = make_motion("a" * 64, encode_arrays(features=np.zeros((110, 5, 12), np.float32)), {})
+        saved = nodes.UniMateSaveMotion.execute(motion, "motions/walk")
+        item = saved.ui["files"][0]
+        path = self.output / item["subfolder"] / item["filename"]
+        self.assertEqual(load_motion(path.read_bytes()), motion)
+        (self.input / "walk.npz").write_bytes(path.read_bytes())
+        loaded = nodes.UniMateLoadMotion.execute("walk.npz")
+        self.assertEqual(loaded.result[0], motion)
+        self.assertEqual(nodes.UniMateLoadMotion.cloud_offload_assets({"archive": "walk.npz"}),
+                         [{"category": "__input__", "filename": "walk.npz"}])
+        for invalid in ("../walk.npz", "walk.glb", "missing.npz"):
+            with self.assertRaises((ValueError, OSError)):
+                nodes.UniMateLoadMotion.execute(invalid)
 
     def test_constrained_nodes_forward_reference_and_selection(self):
         calls = []

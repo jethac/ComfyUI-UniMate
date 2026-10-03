@@ -303,6 +303,87 @@ class UniMateGenerateMotion(io.ComfyNode):
         return io.NodeOutput(motion)
 
 
+def _motion_input_path(archive):
+    name = _relative_name(archive)
+    if Path(name).suffix.lower() != ".npz":
+        raise ValueError("Select a UniMate .npz motion archive")
+    root = Path(folder_paths.get_input_directory()).resolve()
+    path = _contained(root / name, root)
+    if not path.is_file():
+        raise FileNotFoundError("Motion archive is missing")
+    if not 0 < path.stat().st_size <= MAX_ASSET_BYTES:
+        raise ValueError("Motion archive is empty or exceeds 256 MiB")
+    return path
+
+
+class UniMateLoadMotion(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        root = Path(folder_paths.get_input_directory())
+        names = []
+        for path in root.rglob("*.npz"):
+            name = path.relative_to(root).as_posix()
+            try:
+                _motion_input_path(name)
+            except (ValueError, OSError):
+                continue
+            names.append(name)
+        return io.Schema(node_id=cls.__name__, display_name="Load UniMate Motion", category=CATEGORY,
+                         inputs=[io.Combo.Input("archive", options=sorted(names))], outputs=[Motion.Output()])
+
+    @classmethod
+    def execute(cls, archive):
+        from .unimate_pack.motion_io import load_motion
+        with _motion_input_path(archive).open("rb") as stream:
+            payload = stream.read(MAX_ASSET_BYTES + 1)
+        if len(payload) > MAX_ASSET_BYTES:
+            raise ValueError("Motion archive exceeds 256 MiB")
+        return io.NodeOutput(load_motion(payload))
+
+    @classmethod
+    def fingerprint_inputs(cls, archive):
+        return _fingerprint(_motion_input_path(archive))
+
+    @classmethod
+    def cloud_offload_assets(cls, inputs):
+        archive = inputs.get("archive")
+        _motion_input_path(archive)
+        return [{"category": "__input__", "filename": _relative_name(archive)}]
+
+
+class UniMateSaveMotion(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name="Save UniMate Motion", category=CATEGORY,
+                         inputs=[Motion.Input("motion"), io.String.Input("filename_prefix", default="unimate/motion")],
+                         outputs=[Motion.Output()], is_output_node=True)
+
+    @classmethod
+    def execute(cls, motion, filename_prefix="unimate/motion"):
+        from .unimate_pack.motion_io import dump_motion
+        from comfy import model_management
+        payload = dump_motion(motion)
+        root = Path(folder_paths.get_output_directory()).resolve()
+        prefix = _relative_name(filename_prefix)
+        _contained(root / prefix, root)
+        directory, filename, counter, _, _ = folder_paths.get_save_image_path(prefix, str(root))
+        parent = _contained(Path(directory), root)
+        final = _contained(parent / f"{filename}_{counter:05}_{uuid.uuid4().hex}.npz", root)
+        descriptor, stage_name = tempfile.mkstemp(prefix=".unimate-motion-", dir=parent)
+        stage = Path(stage_name)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+            model_management.throw_exception_if_processing_interrupted()
+            os.replace(stage, final)
+        finally:
+            stage.unlink(missing_ok=True)
+        return io.NodeOutput(motion, ui={"files": [{"filename": final.name,
+            "subfolder": parent.relative_to(root).as_posix(), "type": "output"}]})
+
+
 class UniMateInbetweenMotion(io.ComfyNode):
     MODE = "inbetween"
 

@@ -11,6 +11,8 @@ async def comfy_entrypoint():
         UniMatePrepareRig,
         UniMateInbetweenMotion,
         UniMateEditMotion,
+        UniMateLoadMotion,
+        UniMateSaveMotion,
     )
 
     class UniMateExtension(ComfyExtension):
@@ -23,6 +25,8 @@ async def comfy_entrypoint():
                 UniMateExportGLB,
                 UniMateInbetweenMotion,
                 UniMateEditMotion,
+                UniMateLoadMotion,
+                UniMateSaveMotion,
             ]
 
     return UniMateExtension()
