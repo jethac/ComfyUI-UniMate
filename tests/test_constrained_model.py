@@ -39,6 +39,7 @@ def test_real_model_edit_and_inbetween_preserve_constraints_and_export(tmp_path,
     joint_name = str(conditioning["joint_names"][1])
     for mode, selection in (("inbetween", "0,-1"), ("edit", joint_name)):
         motion = generate_motion(model, rig, "A character walks forward.", 0, 3,
+            normalization=os.environ.get("UNIMATE_TEST_NORMALIZATION", "objaverse"),
             reference=reference, constraint_mode=mode, selection=selection)
         actual = decode_arrays(motion["features"])["features"]
         assert actual.shape == features.shape
