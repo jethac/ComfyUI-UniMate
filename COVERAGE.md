@@ -76,6 +76,8 @@ The existing five-node tests prove the narrow generation/export path. They do no
 
 ## Execution evidence
 
+2026-10-03: Mixamo's installed EMA/T5 bundle passed conditioned and unconditional free generation, finite 60-frame feature checks, Blender export and independent skinning playback (two tests, 115.98 seconds). Outputs are local under `.runtime/mixamo-free-model-check`. Preview free-generation remains running. The expanded stadia ComfyUI graph registered successfully and is executing on CPU; completion and artifact checks remain unproven.
+
 2026-10-03: the full-cross-attention bundle passed offline free sampling at guidance 1 and 3, local T5 conditioning, finite 60-frame features, Blender export and independent changing skinning playback across all frames (two tests, 169.61 seconds). Outputs are local under `.runtime/full-cross-free-model-check`. Equivalent Mixamo and preview checks are running; server/cloud/stadia coverage remains separate.
 
 2026-10-03: official EMA conditional and unconditional forward outputs for Mixamo, preview and full-cross-attention matched the pinned upstream backbones bit for bit on deterministic padded branching inputs, with finite outputs. The three opt-in checkpoint tests passed in 498.50 seconds and lint passed. These comparisons use fixture text embeddings and statistics to isolate denoiser reconstruction; they do not substitute for end-to-end T5, sampling or cloud checks.
