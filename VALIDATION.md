@@ -172,3 +172,22 @@ test skipped in that run. Contract/node/reference checks are recorded separately
 - Latency/peak VRAM measurements and a real deployed-image workflow.
 
 These limits prevent a claim that all [release gates](DESIGN.md#verification-and-release-gates) passed.
+
+### Actual partition handler verification, 2026-10-03
+
+Windows worker-mode verification passed two real ComfyUI partition jobs, using
+Cloud Offload's partition handler, artifact storage, declared input staging and
+client file restoration. Eight boundaries covered six value types: asset, rig,
+motion, conditioning, skeleton and IMAGE. Restored values were consumed by the
+second job; canonical preparation and animation extraction retained their checked
+asset/rig identities. Every round-trip bundle member matched its original digest.
+
+The 17-frame fixture produced 102 PNGs, two GLBs, two FBXs and four provenance files.
+FBX export performed its Blender re-import checks. Report:
+`.runtime/preprocessing-worker-fbx-check/report.json`. Runtime: ComfyUI
+`84ba85773925f071c516f0208184773802b4d44a`, Blender 5.1.1, Windows Python 3.11.
+Focused checks: six harness tests, 36 worker tests and 48 client tests passed.
+
+This exercises the actual handler and executor against a local ComfyUI server.
+Provider scheduling, deployed worker containers and stadia execution of this graph
+remain separate gates. The fixture does not perform model inference.

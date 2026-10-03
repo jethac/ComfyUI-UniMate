@@ -28,6 +28,12 @@ def test_preview_artifact_requires_valid_png_pixels():
         validate_output('bad.png', b'not a png')
 
 
+def test_fbx_artifact_requires_binary_fbx_header():
+    validate_output('motion.fbx', b'Kaydara FBX Binary  \x00\x1a\x00' + bytes(32))
+    with pytest.raises(ValueError):
+        validate_output('bad.fbx', b'not binary fbx')
+
+
 def test_batch_artifact_provenance_detects_duplicate_or_misassigned_cases():
     prompts = ["stand", "walk"]
     cases = [{"seed": i, "prompt": prompts[i // 2], "frames": 60} for i in range(4)]

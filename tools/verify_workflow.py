@@ -34,6 +34,9 @@ def validate_output(filename, data):
     if filename.endswith(".glb"):
         from unimate_pack.assets import validate_glb
         validate_glb(data)
+    elif filename.endswith('.fbx'):
+        if not data.startswith(b'Kaydara FBX Binary  \x00\x1a\x00'):
+            raise ValueError('Invalid binary FBX artifact header')
     elif filename.endswith(".npz"):
         from unimate_pack.motion_io import load_motion
         load_motion(data)
@@ -132,6 +135,10 @@ def install_link(source, target):
 
 
 def verify(args):
+    if getattr(args, 'worker', False) and not (
+            args.cloud_root and getattr(args, 'cloud_client_root', None)
+            and getattr(args, 'skeleton_reference', None)):
+        raise ValueError('Worker verification requires cloud/client checkouts and a skeleton reference archive')
     workspace = args.workdir.resolve()
     if workspace.exists() and any(workspace.iterdir()):
         raise ValueError("Workflow verification requires a new empty directory")
@@ -171,7 +178,7 @@ def verify(args):
     graph["3"]["inputs"]["bundle"] = bundle.name
     graph["5"]["inputs"]["filename_prefix"] = "verified/local"
     if getattr(args, 'skeleton_reference', None):
-        if args.cloud_root or getattr(args, 'extended', False) or getattr(args, 'batch', False):
+        if (args.cloud_root and not getattr(args, 'worker', False)) or getattr(args, 'extended', False) or getattr(args, 'batch', False):
             raise ValueError('Run archive skeleton verification separately from inference or bridges')
         shutil.copyfile(args.skeleton_reference, workspace / 'input/reference.npz')
         graph['4'] = {'class_type': 'UniMateLoadMotion', 'inputs': {'archive': 'reference.npz'}}
@@ -287,7 +294,15 @@ def verify(args):
             "UniMate nodes failed registration"
         )
         report["system_stats"] = json.loads(request(base, "/system_stats"))
-        if args.cloud_root:
+        if getattr(args, 'worker', False):
+            sys.path.insert(0, str(args.comfy_root.resolve()))
+            from tools.cloud_workflow import run_worker_workflows
+            entries, evidence = run_worker_workflows(base, graph, workspace, args.cloud_root,
+                                                     args.cloud_client_root)
+            report['worker_execution'] = evidence
+            report['graphs'].extend({'kind': 'real-worker-partition', 'graph': job['partition']['workflow'],
+                'status': job['status']} for job in evidence['jobs'])
+        elif args.cloud_root:
             # Capture actual node values through ComfyUI execution, never direct codec calls.
             capture = json.loads(json.dumps(graph))
             for node, type_name in TYPES.items():
@@ -408,7 +423,8 @@ def verify(args):
             from unimate_pack.motion_io import load_motion
             from unimate_pack.contracts import decode_arrays
             frames = len(decode_arrays(load_motion(args.skeleton_reference.read_bytes())['features'])['features'])
-            assert sum(f['filename'].endswith('.png') for f in exports) == frames * 2
+            assert sum(f['filename'].endswith('.png') for f in exports) == frames * (
+                6 if getattr(args, 'worker', False) else 2)
             report['skeleton_frames_per_mode'] = frames
         if getattr(args, "batch", False):
             assert sum(f["filename"].endswith(".glb") for f in exports) == 4
@@ -449,6 +465,8 @@ def main():
     parser.add_argument("--extended", action="store_true", help="Exercise constrained modes, expansion and numeric saving")
     parser.add_argument("--batch", action="store_true", help="Exercise typed motion-list export for four cases")
     parser.add_argument('--skeleton-reference', type=Path, help='Verify archive loading, both recovery modes and every preview frame')
+    parser.add_argument('--worker', action='store_true', help='Execute preprocessing/recovery through the real partition worker')
+    parser.add_argument('--cloud-client-root', type=Path, help='Cloud Offload node checkout for client artifact restoration')
     parser.add_argument("--cpu", action="store_true", help="Run ComfyUI on CPU")
     args = parser.parse_args()
     print(json.dumps(verify(args), indent=2))
