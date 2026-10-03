@@ -80,7 +80,7 @@ Expand UniMate Motion accepts a JSON array of prompts in segment order. Each seg
 
 Generate UniMate Batch accepts prepared rigs, 1–32 JSON prompts and 1–64 repetitions, capped at 256 cases. Cases run in rig, prompt, then repetition order; seeds increment modulo uint64. Sampling runs one case at a time. Model and sampling settings must each contain one value. Combine UniMate Rigs collects two rig lists and can be chained. Connect the batch's matching rigs output and motion output to export; each motion keeps its own skeleton. See [multi-rig API workflow](examples/unimate_multi_rig_api.json).
 
-Eight cases across five- and seven-joint synthetic rigs passed Windows server execution and independent playback across all 480 frames. The Windows partition handler also staged the model/assets, generated the cases and restored both paired lists; all 16 original/restored exports matched in independent playback. Headless multi-rig model validation remains pending.
+Eight cases across five- and seven-joint synthetic rigs passed Windows and headless stadia server execution. The partition handler staged the model/assets, generated the cases and restored both paired lists; all 16 original/restored exports matched across 960 frames on each platform. Provider dispatch and deployed containers remain unverified.
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 

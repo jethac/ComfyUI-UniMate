@@ -269,4 +269,15 @@ six subtests passed; changed code lint passed. Review found no blocker.
 
 Staging is explicitly invoked before the actual partition handler. Provider
 dispatch, gateway submission/extraction and deployed containers are not exercised
-by this harness. Headless multi-rig model validation remains open.
+by this harness.
+
+The same two-job workflow passed headlessly on stadia-testbed using pack
+`0a2d77b`, cloud runner `43bd1a0` and client `4a7a937`. Both declared rigs and
+the model bundle were digest-staged; eight paired cases used seeds 0–7. The
+independent playback checker evaluated all 16 GLBs / 960 frames and found exact
+original/restored skinning equality, with preserved appearance and finite,
+changing vertices. Runtime: Linux, Python 3.11.15, PyTorch 2.14.1+cpu, Blender
+5.1.1, CPU device, float32. ComfyUI and model bundle identities match the Windows
+record above. Evidence: `.runtime/stadia-multi-rig-worker/report.json` and
+`independent-playback.json`. Provider dispatch, gateway submission/extraction and
+deployed containers remain outside this harness.
