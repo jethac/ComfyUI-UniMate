@@ -23,6 +23,20 @@ begins dataloader iteration again. Do not claim exact continuation of the origin
 random sequence. If the adapter adds stronger continuation, identify it as an
 adapter extension and retain a released-semantics mode.
 
+`models/factory.py::create_transport` additionally exposes Linear/GVP/VP paths,
+velocity/noise/score prediction and velocity/likelihood loss weighting. The
+training CLI uses its defaults; a complete technology interface must account for
+the factory variants too. Flow's geodesic and smoothness auxiliaries reconstruct
+denormalized data and assert a Linear path. Invalid combinations must fail before
+starting a job. These variants have not yet passed reference comparisons.
+
+Diffusion supports timestep respacing, linear/cosine beta schedules, beta scaling,
+epsilon/data prediction and fixed or learned-range variance. Its factory selects
+MSE and forwards the geodesic weight, but not the smoothness weight. The inspected
+learned-variance loss computes a `vb` component without adding it to `loss`.
+Record this released behavior in comparisons; any correction needs a documented
+adapter deviation and a separate verification case.
+
 The scheduler is deliberately not wrapped by Accelerate: its target duration is
 already counted in optimizer steps. Wrapping it can advance the schedule once
 per process and change multi-device behavior.
@@ -77,6 +91,9 @@ joint annotation (`joint_annotation`), rendering, motion captioning, caption
 rewriting, body-plan classification and reviewed annotation patches. These are
 separate coverage requirements; feature extraction alone does not cover them.
 Their full function/option audit remains open.
+Rendering entry points are under `data_process/motion_rendering`, including
+Truebones, Objaverse, Mixamo and rest-pose rendering; they are distinct from
+the existing skeleton preview nodes.
 
 `vlm_caption/backends.py` supports local Qwen and OpenAI-compatible/Gemini APIs.
 The pack must support local annotation offline and explicit provider selection
