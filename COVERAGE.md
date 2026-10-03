@@ -65,4 +65,6 @@ The existing five-node tests prove the narrow generation/export path. They do no
 
 ## Execution evidence
 
+2026-10-03: added a constrained Euler kernel with fixed-noise replacement, broadcast frame/joint masks and cancellation checks. Both mask modes match the pinned upstream sampler bit for bit on the deterministic velocity fixture (7 tests passed including cancellation and invalid-step checks). Added safe numeric reference-motion archive save/load with canonical rig identity and Unicode metadata round trips (3 tests passed). These are subsystem interfaces; public IO/edit/in-between/expansion nodes and real-model constrained validation remain pending.
+
 2026-10-03: motion validation and GLB export now accept nonempty variable-length clips within the existing numeric archive limits. Blender playback verification iterates over the actual clip length. Contract and independent GLB skinning tests cover 1-, 59-, 60-, 110- and 600-frame values where applicable: 74 focused tests passed. Generation remains fixed to its existing model window; expansion and reference-motion nodes are not implemented by this change. External Blender and Cloud Offload validation for expanded clips remain pending.
