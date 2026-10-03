@@ -8,14 +8,15 @@ from .feature_encoding import encode_motion_features, rebase_rotations
 from .rig_math import parse_glb, world_matrices, rotation_part
 
 
-def extract_motion(rig, clip_index=0):
+def extract_motion(rig, clip_index=0, *, check_cancel=lambda: None):
+    check_cancel()
     validate_rig(rig)
     conditioning = decode_arrays(rig["conditioning"])
     parents = conditioning["parents"]
     joints = rig["mapping"]["joint_indices"]
     transform = np.asarray(rig["mapping"]["source_to_canonical"])
     basis = rotation_part(transform)
-    times, worlds, _ = sample_clip(rig["asset"]["glb"], clip_index)
+    times, worlds, _ = sample_clip(rig["asset"]["glb"], clip_index, check_cancel=check_cancel)
     positions = worlds[:, joints][..., :3, 3] @ transform[:3, :3].T + transform[:3, 3]
     lengths = np.linalg.norm(positions[:, 1:] - positions[:, parents[1:]], axis=-1)
     rest_positions = conditioning["tpos_first_frame"]
@@ -44,6 +45,7 @@ def extract_motion(rig, clip_index=0):
         facing[:, 0, 0] = facing[:, 2, 2] = c
         facing[:, 0, 2], facing[:, 2, 0] = s, -s
     features = encode_motion_features(positions, rotations, parents, facing)
+    check_cancel()
     return make_motion(rig["rig_id"], encode_arrays(features=features), dict(
         mode="source_clip", clip_index=clip_index, frames=len(features), fps=30,
         sample_start=float(times[0]), sample_end=float(times[-1]),

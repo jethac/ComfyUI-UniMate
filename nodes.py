@@ -427,8 +427,10 @@ class UniMateExtractMotion(io.ComfyNode):
 
     @classmethod
     def execute(cls, rig, clip_index=0):
+        from comfy import model_management
         from .unimate_pack.source_motion import extract_motion
-        return io.NodeOutput(extract_motion(rig, clip_index))
+        return io.NodeOutput(extract_motion(rig, clip_index,
+            check_cancel=model_management.throw_exception_if_processing_interrupted))
 
 
 class UniMateExpandMotion(io.ComfyNode):

@@ -53,3 +53,23 @@ def test_step_interpolation_holds_until_the_next_key():
     actual = sample_channel(np.array([0, 1]), np.array([[0, 0, 0], [2, 0, 0]]),
                             np.array([-1, 0.5, 1, 2]), "STEP", "translation")
     np.testing.assert_array_equal(actual, [[0, 0, 0], [0, 0, 0], [2, 0, 0], [2, 0, 0]])
+
+
+def test_clip_sampling_stops_on_cancellation():
+    source = synthetic_glb(True)
+    document, _ = parse_glb(source)
+    cond, mapping = prepare_document(document, "+Z")
+    features = np.zeros((60, 7, 12), np.float32)
+    features[..., 3] = features[..., 7] = 1
+    features[:, 0, 1] = cond["tpos_first_frame"][0, 1]
+    animated = animate_document(source, cond, mapping, features)
+    calls = []
+
+    def cancel():
+        calls.append(1)
+        if len(calls) == 3:
+            raise RuntimeError("cancelled")
+
+    with pytest.raises(RuntimeError, match="cancelled"):
+        sample_clip(animated, check_cancel=cancel)
+    assert len(calls) == 3

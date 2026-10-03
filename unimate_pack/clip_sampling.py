@@ -45,7 +45,8 @@ def sample_channel(keys, values, times, interpolation, path):
     return result
 
 
-def sample_clip(payload, clip_index=0):
+def sample_clip(payload, clip_index=0, *, check_cancel=lambda: None):
+    check_cancel()
     document = validate_glb(payload)
     if type(clip_index) is not int or not 0 <= clip_index < len(document.get("animations", [])):
         raise ValueError("Select an existing animation clip")
@@ -69,6 +70,7 @@ def sample_clip(payload, clip_index=0):
     worlds = np.empty((frames, nodes, 4, 4), dtype=np.float64)
     locals_ = np.empty_like(worlds)
     for frame in range(frames):
+        check_cancel()
         pose = copy.deepcopy(document)
         for target, values in evaluated:
             node = pose["nodes"][target["node"]]
@@ -76,4 +78,5 @@ def sample_clip(payload, clip_index=0):
                 raise ValueError("Animated matrix nodes require TRS conversion before extraction")
             node[target["path"]] = values[frame].tolist()
         worlds[frame], locals_[frame], _ = world_matrices(pose)
+    check_cancel()
     return times, worlds, locals_

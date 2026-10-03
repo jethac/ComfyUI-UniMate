@@ -91,7 +91,7 @@ class NodeTests(unittest.TestCase):
         self.assertTrue(nodes.UniMateExportGLB.OUTPUT_NODE)
 
     def test_extract_node_forwards_selected_clip_and_preserves_identity(self):
-        with self.fake_module("source_motion", extract_motion=lambda rig, clip_index: {"rig_id": rig["rig_id"], "clip_index": clip_index}):
+        with self.fake_module("source_motion", extract_motion=lambda rig, clip_index, **kwargs: {"rig_id": rig["rig_id"], "clip_index": clip_index}):
             output = nodes.UniMateExtractMotion.execute({"rig_id": "a" * 64}, 2)
             self.assertEqual(output.result[0], {"rig_id": "a" * 64, "clip_index": 2})
 
