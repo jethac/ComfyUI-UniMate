@@ -679,3 +679,38 @@ This proves installed FLAN-T5 numeric cache production on Windows. It does not
 prove other released encoders, external cache-file conversion, public nodes,
 portable sample/batch identities or Linux/headless/Cloud Offload execution.
 Combined foundation suite: 577 passed, six subtests, no skips, 17.85s; two existing warnings. Command: preceding 568-test suite plus tests/test_training_text.py. Changed-file Ruff and git diff --check passed. Independent review rechecked pooling overflow; no remaining actionable findings.
+
+## Portable encoded training sample contract (2026-10-03)
+
+unimate.training_sample.v1 carries fifteen numeric array fields and six source
+sample metadata fields, preserving input precision and owning decoded arrays.
+Provenance records dataset digest, portable clip ID, statistics digest and text
+cache digest. Options retain crop mode/seed/start, realignment and augmentation
+report. An identity digest covers schema/source, provenance, options, metadata
+and the array digest. Optional expected provenance rejects stale source identity.
+This verifies declared provenance; dataset/cache-bound producer recomputation is
+still required and is not inferred from a caller-provided digest.
+
+Array creation is budgeted before encoding, persisted NPZ members have 64 MiB
+compressed/expanded limits with exact field membership, and metadata is bounded
+canonical JSON. Validation reuses numeric sample validation without allocating
+source collation tensors. All arrays serialize in sorted order. Eleven tests
+cover float16/32/64 round trips, ownership, malformed/stale identities, metadata
+and options, precopy budget rejection and absence of source tensor allocation.
+The missing contract failed before implementation. Existing collation comparisons
+remain green after separating validation from allocation.
+
+Combined foundation suite: 588 passed, six subtests, no skips, 17.62s; two existing
+Torch JIT warnings. Command: preceding 577-test suite plus
+tests/test_training_sample_contracts.py in the same pinned environment. An unused
+import caused initial Ruff failure; removed it and changed-file Ruff passed.
+Public nodes, dataset/cache-bound sample producer, portable batch encoding and
+Windows/stadia/Cloud Offload sample workflows remain required open work.
+Review found workspace rejection followed numeric decoding and explicit requested
+crop starts could disagree with recorded starts. Both new regressions failed
+before correction. Declared compressed/expanded archive size is now bounded by
+min(64 MiB, workspace/4) before decode; explicit starts must match metadata in
+creation and validation. Numeric validation still checks the conservative batch
+workspace estimate without allocating source tensors.
+Final suite: 590 passed, six subtests, no skips, 17.40s; two existing warnings. Changed-file Ruff and git diff --check passed.
+Independent review rechecked both fixes: thirteen contract tests pass, no remaining actionable findings.

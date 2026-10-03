@@ -11,15 +11,15 @@ OPTIONAL={'max_motion_length','spectral_feats','joint_names_emb','offsets',
           'tpos_first_frame_parents','caption_emb','caption_tokens','object_type','caption','split_tag'}
 
 
-def collate_samples(batch, *, max_workspace_bytes=512*1024*1024, cancel=None):
-    """Return released CPU tensors; persisted portable batch encoding is separate."""
+def validate_samples(batch, *, max_workspace_bytes=512*1024*1024, cancel=None):
+    """Validate numeric samples without allocating source batch tensors."""
     _check(cancel)
     _integer(max_workspace_bytes,'max_workspace_bytes',1)
     if type(batch) not in (list,tuple) or len(batch)>4096:
         raise ValueError('Expected bounded sample list')
     batch=[value for value in batch if value is not None]
     if not batch:
-        return None,None
+        return []
     size=None
     input_bytes=0
     max_spectral,max_tokens,text_dim=0,1,None
@@ -119,6 +119,14 @@ def collate_samples(batch, *, max_workspace_bytes=512*1024*1024, cancel=None):
                 raise ValueError('Nonfinite or float32-unrepresentable sample')
         if np.any(value['std'].astype(np.float32)<=0):
             raise ValueError('Nonpositive standard deviations')
+    return batch
+
+
+def collate_samples(batch, *, max_workspace_bytes=512*1024*1024, cancel=None):
+    """Return released CPU tensors; persisted portable batch encoding is separate."""
+    batch=validate_samples(batch,max_workspace_bytes=max_workspace_bytes,cancel=cancel)
+    if not batch:
+        return None,None
     # Source retains parents/edges by reference. Own input arrays at this boundary.
     owned=[{key:array.copy() if isinstance(array,np.ndarray) else array
             for key,array in value.items()} for value in batch]
