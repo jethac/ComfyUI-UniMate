@@ -608,3 +608,36 @@ estimate now reject before topology validation. This estimate is not measured
 process peak memory.
 Final regression run: 544 passed, six subtests, no skips, 18.20s; two existing warnings. Changed-file Ruff and git diff --check passed.
 Independent review rechecked the budget correction and has no remaining actionable findings.
+
+## Numeric training batch collation (2026-10-03)
+
+The released MIT mixture collator is retained unchanged at its verified source
+SHA-256 7cb7672ba97572282ec7a3153abd21aeb4917ecf7f77bf7d3079e13a9f888eb2,
+revision 2c5b384715aa63d8639b1ed7eb74bfe614570c7a. Source lineage/license remains
+in SOURCES.json and LICENSE-UniMate. training_collation wraps its CPU tensor
+boundary with shape/dtype/capacity/embedding validation, plain finite arrays,
+float32 representability, positive std, estimated workspace preflight and owned
+copies. Float32 default Torch dtype is required explicitly. This wrapper does
+not introduce persisted identities or portable tensor serialization.
+
+15 complete nested output comparisons cover float16/32/64 inputs and all,
+mixed-caption, caption-free, partial-spectral and required-only layouts. Samples
+have unequal joint counts, different spectral widths and token lengths, padded
+time and zero valid length. Every source tensor, array, label, mask and optional
+key matches. Padded std equals one; caption-less rows retain one valid zero token.
+Returned parents/edges cannot mutate caller arrays. Five malformed cases plus
+pre-source budget/cancellation and empty filtered batch checks bring the focused
+suite to 22 tests. The missing adapter failed before implementation.
+
+Cancellation is checked during validation and before/after the unchanged source
+collator; its tensor allocation/copy loops are not internally interruptible.
+Workspace is a conservative numeric estimate, not measured process peak memory.
+Actual encoder/cache production, portable sample/batch contracts, public nodes
+and headless/Cloud Offload sample workflows remain open.
+Review found two source-conversion hazards. Positive float64 std=1e-100 became
+zero in float32, and uint64 relation 2**64-1 became a negative int64 embedding
+index. Both regressions failed before correction. Validation now checks std
+positivity in float32 and bounds unsigned integer arrays plus converted scalar
+fields to int64 before source invocation.
+Final combined suite: 568 passed, six subtests, no skips, 16.80s; two existing warnings. Command: preceding 544-test suite plus tests/test_training_collation.py, same pinned environment. Changed-file Ruff and git diff --check passed.
+Independent review rechecked both conversion fixes; no remaining actionable findings.

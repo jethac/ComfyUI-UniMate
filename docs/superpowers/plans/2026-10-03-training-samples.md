@@ -21,7 +21,7 @@ collation and thin public nodes. Python/NumPy/Torch and existing V3 runtime.
 - [ ] Add bounded numeric cache/sample archives and identity validation.
 
 ## Task 4: Batch collation and public workflows
-- [ ] Compare unchanged source collation across variable joints/spectral/captions.
+- [x] Compare unchanged source collation across variable joints/spectral/captions.
 - [ ] Add V3 cache/sample/augmentation/batch nodes and transport contracts.
 - [ ] Run installed encoder and Windows/stadia direct plus worker workflows.
 

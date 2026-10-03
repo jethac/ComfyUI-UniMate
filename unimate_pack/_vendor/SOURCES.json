@@ -89,6 +89,13 @@
     }
   },
   "adapters": {
+    "training_collation.py": {
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "source": "unimate/dataset/mixture/collate.py",
+      "sha256": "7cb7672ba97572282ec7a3153abd21aeb4917ecf7f77bf7d3079e13a9f888eb2",
+      "license": "MIT; LICENSE-UniMate",
+      "changes": "Unchanged source stored as _vendor/mixture_collate.py; wrapper validates bounded sample shapes/capacities/embedding dimensions, estimates workspace before copies/source allocation, owns arrays and checks cancellation around CPU collation. Requires float32 default tensor dtype."
+    },
     "training_samples.py": {
       "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
       "source": "unimate/dataset/mixture/dataset.py",

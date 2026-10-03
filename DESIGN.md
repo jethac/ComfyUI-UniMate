@@ -298,6 +298,17 @@ quaternion round trips, including the source's different FK and facing diagonals
 Pinned reference comparisons cover float16, float32 and float64. Removal/pooling
 retain the released fixed path limit of five and report that effective value.
 
+Numeric encoded-sample assembly now follows released post-augmentation order:
+crop, optional facing realignment, rest-feature expansion, condition extraction,
+normalization, time padding and parent-copy features. A validated CPU wrapper
+uses the unchanged MIT batch collator for variable joints, spectral widths and
+caption lengths. Masks preserve valid lengths and caption-less zero tokens;
+padded standard deviations are one. Inputs must remain valid after float32/int64
+conversion. The source collator's bulk tensor work is not internally cancellable.
+Actual encoder/cache producers, persisted sample/batch identities and public
+sample workflows are still required; these numeric modules do not establish
+training or Cloud Offload execution coverage.
+
 ## Cloud Offload implementation
 
 Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries registered UniMate values unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.
