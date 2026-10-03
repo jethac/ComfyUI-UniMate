@@ -183,3 +183,19 @@ def export_glb(rig, motion):
     )
     validate_glb(output)
     return output
+
+
+def export_fbx(rig, motion):
+    glb = export_glb(rig, motion)
+    frames = len(decode_arrays(motion["features"])["features"])
+    with tempfile.TemporaryDirectory(prefix="unimate-fbx-") as temporary:
+        folder = Path(temporary)
+        (folder / "input.glb").write_bytes(glb)
+        worker = Path(__file__).with_name("fbx_job.py").resolve()
+        _run_process([blender_executable(), "--background", "--factory-startup",
+            "--disable-autoexec", "--python-exit-code", "1", "--python", str(worker),
+            "--", str(folder), str(frames)], folder)
+        output = (folder / "output.fbx").read_bytes()
+        if not output.startswith(b"Kaydara FBX Binary"):
+            raise ValueError("Blender did not produce binary FBX")
+        return output
