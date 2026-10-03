@@ -60,6 +60,33 @@ def read_accessor(doc, binary, index):
     ).reshape(accessor["count"], width)
 
 
+@pytest.mark.parametrize("frames", [1, 59, 110])
+def test_export_preserves_every_frame_of_reference_and_expanded_motion(frames):
+    source = synthetic_glb(False)
+    doc, _ = parse_glb(source)
+    cond, mapping = prepare_document(doc, "+Z")
+    features = np.zeros((frames, len(cond["parents"]), 12), np.float32)
+    features[:, :, 3] = 1
+    features[:, :, 7] = 1
+    features[:, 0, 1] = cond["tpos_first_frame"][0, 1]
+    features[:, 0, 9] = 0.01
+    output = animate_document(source, cond, mapping, features)
+    exported, binary = parse_glb(output)
+    for sampler in exported["animations"][0]["samplers"]:
+        times = read_accessor(exported, binary, sampler["input"])[:, 0]
+        np.testing.assert_allclose(times, np.arange(frames) / 30, atol=3e-7)
+        assert exported["accessors"][sampler["output"]]["count"] == frames
+    shift = np.linalg.inv(np.asarray(mapping["source_to_canonical"]))[:3, :3] @ np.array(
+        [(frames - 1) * 0.01, 0, 0]
+    )
+    before = evaluated_vertices(source)
+    np.testing.assert_allclose(
+        evaluated_vertices(output, frames - 1) - before,
+        np.broadcast_to(shift, before.shape),
+        atol=2e-6,
+    )
+
+
 def evaluated_vertices(glb, frame=None):
     import copy
     from unimate_pack.rig_math import world_matrices

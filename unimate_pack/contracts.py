@@ -589,8 +589,8 @@ def validate_motion(value: dict, rig_id: str | None = None) -> None:
         set(arrays) != {"features"}
         or features.dtype != np.dtype("float32")
         or features.ndim != 3
-        or features.shape[0] != 60
+        or features.shape[0] < 1
         or features.shape[2] != 12
         or not 5 <= features.shape[1] <= 70
     ):
-        raise ValueError("Motion requires float32 features shaped (60, 5–70, 12)")
+        raise ValueError("Motion requires float32 features shaped (T>=1, 5–70, 12)")

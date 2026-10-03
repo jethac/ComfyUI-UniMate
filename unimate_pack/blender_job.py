@@ -128,7 +128,7 @@ def main():
         (folder / "output.glb").write_bytes(output)
         armature = load(folder / "output.glb")
         scene = bpy.context.scene
-        for frame in range(60):
+        for frame in range(len(features)):
             scene.frame_set(frame)
             evaluate_vertices()
         # Disable the clip and verify the original binding still evaluates identically.
@@ -145,7 +145,7 @@ def main():
             raise ValueError("Export changed Blender rest-pose geometry")
         report = {
             "blender": bpy.app.version_string,
-            "frames_verified": 60,
+            "frames_verified": len(features),
             "rest_max_error": float(np.max(np.abs(after - rest_vertices))),
         }
     else:

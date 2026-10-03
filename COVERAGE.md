@@ -62,3 +62,7 @@ Cross-topology text-mediated transfer is supported technology. Conventional corr
 6. Extend Cloud Offload staging and retrieval for every new portable value; run each inference mode headlessly on stadia-testbed and evaluate exported playback independently.
 
 The existing five-node tests prove the narrow generation/export path. They do not prove complete UniMate coverage.
+
+## Execution evidence
+
+2026-10-03: motion validation and GLB export now accept nonempty variable-length clips within the existing numeric archive limits. Blender playback verification iterates over the actual clip length. Contract and independent GLB skinning tests cover 1-, 59-, 60-, 110- and 600-frame values where applicable: 74 focused tests passed. Generation remains fixed to its existing model window; expansion and reference-motion nodes are not implemented by this change. External Blender and Cloud Offload validation for expanded clips remain pending.

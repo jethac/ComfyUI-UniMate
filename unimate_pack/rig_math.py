@@ -330,6 +330,7 @@ def decode_features(features, parents):
 
 
 def animate_document(source, cond, mapping, features):
+    frames = len(features)
     document, binary = parse_glb(source)
     document = copy.deepcopy(document)
     binary = bytearray(binary)
@@ -360,7 +361,7 @@ def animate_document(source, cond, mapping, features):
         document.setdefault("accessors", []).append(entry)
         return len(document["accessors"]) - 1
 
-    time = accessor(np.arange(60) / 30, "SCALAR")
+    time = accessor(np.arange(frames) / 30, "SCALAR")
     animation = {"name": "UniMate", "channels": [], "samplers": []}
 
     def channel(j, path, values, kind):
@@ -378,7 +379,7 @@ def animate_document(source, cond, mapping, features):
         rest_local = rotation_part(local[j])
         applied = rest_local @ canonical_rest.T @ rotations[:, k] @ canonical_rest
         quats = np.array([matrix_quaternion(r) for r in applied])
-        for f in range(1, 60):
+        for f in range(1, frames):
             if np.dot(quats[f - 1], quats[f]) < 0:
                 quats[f] *= -1
         if "matrix" in document["nodes"][j]:
@@ -389,7 +390,7 @@ def animate_document(source, cond, mapping, features):
             node["scale"] = np.linalg.norm(local[j, :3, :3], axis=0).tolist()
         channel(j, "rotation", quats, "VEC4")
     source_root = (
-        np.concatenate([root, np.ones((60, 1))], axis=1) @ np.linalg.inv(sim).T
+        np.concatenate([root, np.ones((frames, 1))], axis=1) @ np.linalg.inv(sim).T
     )
     p = node_parents[joints[0]]
     if p >= 0:

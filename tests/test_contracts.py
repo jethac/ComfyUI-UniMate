@@ -136,13 +136,23 @@ def test_motion_shape_fps_dtype_and_identity_are_enforced_before_export():
         validate_motion(motion, "b" * 64)
     for change in (
         {"fps": 24},
-        {"features": npz(features=np.zeros((59, 5, 12), np.float32))},
+        {"features": npz(features=np.zeros((0, 5, 12), np.float32))},
         {"features": npz(features=np.zeros((60, 5, 12), np.float64))},
         {"features": npz(features=np.zeros((60, 71, 12), np.float32))},
         {"metadata": {"model": "C:\\models\\local.safetensors"}},
     ):
         with pytest.raises(ValueError):
             validate_motion(dict(motion, **change))
+
+
+@pytest.mark.parametrize("frames", [1, 59, 60, 110, 600])
+def test_motion_contract_supports_reference_and_expanded_clip_lengths(frames):
+    motion = make_motion(
+        "a" * 64,
+        npz(features=np.zeros((frames, 5, 12), np.float32)),
+        {"frames": frames},
+    )
+    validate_motion(motion, "a" * 64)
 
 
 def test_model_bundle_has_verified_hashes_and_safe_entries():

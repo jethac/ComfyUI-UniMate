@@ -1,42 +1,26 @@
-# UniMate implementation plan
+# Full UniMate coverage implementation plan
 
-The user requested parallel implementation and mandatory Cloud Offload execution on 2026-09-30. This supersedes the earlier documentation-only instruction and DESIGN.md's deferred cloud scope.
+> Execute inline using the executing-plans and test-driven-development skills. Track evidence in COVERAGE.md. This plan implements GOAL.md; it does not reduce its scope.
 
-## Shared contracts
+**Goal:** Complete the node and verification coverage listed in GOAL.md and COVERAGE.md.
 
-All socket values are plain dictionaries. No dataclasses, NumPy arrays, local paths, or live model objects may cross a boundary. Binary payloads use bytes; arrays use a numeric NPZ payload loaded with `allow_pickle=False`.
+**Architecture:** Keep portable rig/model/motion dictionaries and Comfy-managed inference. Add separate motion IO, constrained sampling, collection, visualization, training and preprocessing adapters. Preserve original assets while extending export paths.
 
-- `UNIMATE_ASSET`: `{"schema":"unimate.asset.v1", "glb": bytes, "sha256": str, "name": str}`.
-- `UNIMATE_RIG`: `{"schema":"unimate.rig.v1", "asset": asset, "rig_id": str, "conditioning": bytes, "mapping": dict}`. Conditioning contains numeric/string arrays only. Mapping carries original skeleton identity and reversible canonicalization.
-- `UNIMATE_MODEL`: `{"schema":"unimate.model.v1", "bundle": bytes, "sha256": str, "name": str}`. A single safe `.unimate` ZIP contains model config, numeric normalization stats, EMA safetensors, local text encoder/tokenizer, and a manifest. Large boundary transfers are accepted for correctness; no reference to a local-only model path.
-- `UNIMATE_MOTION`: `{"schema":"unimate.motion.v1", "rig_id": str, "features": bytes, "fps":30, "metadata": dict}`. Features NPZ contains float32 `features` of shape `(60,J,12)`.
+**Tech stack:** Python, NumPy, PyTorch, pinned UniMate, ComfyUI extension API, external Blender.
 
-Shared functions in `unimate_pack/contracts.py`: `make_asset(glb: bytes, name: str) -> dict`, `validate_asset(value: dict) -> None`, `make_rig(asset: dict, conditioning: bytes, mapping: dict) -> dict`, `validate_rig(value: dict) -> None`, `make_model(bundle: bytes, name: str) -> dict`, `validate_model(value: dict) -> None`, `make_motion(rig_id: str, features: bytes, metadata: dict) -> dict`, `validate_motion(value: dict, rig_id: str | None = None) -> None`, `encode_arrays(**arrays) -> bytes`, `decode_arrays(payload: bytes) -> dict[str,np.ndarray]`.
+**Constraints:** Offline runtime; no forced torch replacement; safe numeric archives; preserved appearance and coordinate mappings; portable Cloud Offload values; cancellation and cleanup; direct default-branch pushes; factual documentation.
 
-Subsystem APIs:
+## Stages
 
-- `unimate_pack/assets.py`: `validate_glb(glb: bytes) -> dict` returns parsed metadata after checked supported-rig validation.
-- `unimate_pack/blender.py`: `prepare_rig(asset: dict, facing: str, left_joint: str = "", right_joint: str = "") -> dict`; `export_glb(rig: dict, motion: dict) -> bytes`. Blender executable uses `UNIMATE_BLENDER`; task temp roots must be managed and cancellable. Worker script imports bpy only inside Blender.
-- `unimate_pack/inference.py`: `load_model_bundle(path: str | Path) -> dict`; `generate_motion(model: dict, rig: dict, prompt: str, seed: int, guidance: float, normalization: str = "objaverse") -> dict`.
-- `nodes.py`: five IDs exactly as DESIGN.md. `UniMateLoadRig.cloud_offload_assets(inputs)` declares the selected `asset` under category `__input__`; loader `bundle` is a registered `unimate` model asset. Export reports `3d` GLB plus `files` provenance.
+- [ ] Motion contracts: update `unimate_pack/contracts.py` and export/playback paths to accept bounded variable-length sequences. Test short clips, long expansion clips, empty/oversized sequences and legacy 60-frame compatibility in `tests/test_contracts.py`.
+- [ ] Motion IO: add `unimate_pack/motion_io.py` and node schemas in `nodes.py` for numeric feature save/load and source-asset motion extraction. Preserve rig identity and canonical basis; test rotated/scaled rest poses, incompatible rigs and finite data before exposing reference inputs.
+- [ ] Constrained sampling: add `unimate_pack/constrained.py`, adapt `inference.py`, and add Edit/In-between/Expand nodes. Compare fixed-noise replacement/Euler behavior against the released reference, including signed indices, joint names, variable valid lengths and overlap seams. Test cancellation during each segment.
+- [ ] Model families: replace exact single-config reconstruction in `upstream.py` with validated config-driven architecture selection; update `bundle.py` and `tools/build_bundle.py`. Load actual released checkpoints for every family, with matching text/statistics paths and numerical reference comparisons.
+- [ ] Collections: expose repetitions, batching and shared-prompt target-rig workflows with typed portable collections. Verify seeds and bounded memory behavior independently of chunk size.
+- [ ] Preprocessing and export: expose conditioning/canonical asset outputs, GLB/FBX export, FK/RIC previews. Verify skinning, textures, frame counts and coordinates through Blender and independent evaluators.
+- [ ] Training and data utilities: expose isolated configuration/dataset/job/checkpoint contracts for released training and preprocessing tooling. Verify execution, resume, progress, cancellation and output artifacts; require explicit setup for external annotation services.
+- [ ] Paper-described methods: locate or implement foot locking and deformation options. Compare contact detection and IK behavior with the paper's specified method; distinguish renderer limitations from motion capability.
+- [ ] Cloud and integration: extend portable-value inventories and staging as needed. Run every inference mode headlessly on stadia-testbed, compare kept constraints and playback, and verify actual transport/output retrieval.
+- [ ] Completion audit: inspect implementation and validation evidence for every GOAL.md/COVERAGE.md row. Update documentation, commit and push completed stages. Do not mark the goal achieved while any required capability remains missing or unverified.
 
-## Ownership and verification
-
-Agents write disjoint files and do not commit, dispatch helpers, or change another owner's files without coordination. Tests belong to the owning subsystem. Parent integrates and commits. Use test-first; retain failed-test evidence in task reports. Each task report names what was actually verified and outstanding integration concerns.
-
-1. Contracts owner: contracts, GLB validator, dependency-light safety/round-trip tests. Numeric archives reject pickle, malicious entries, excess sizes, nonfinite values, and malformed structures. GLB checks one skin, connected valid joints, supported transforms, skin indices, buffers/accessors, and embedded data.
-2. Rig owner: Blender process and worker, upstream canonicalization and motion recovery adapters, synthetic redistributable GLB fixture generator, Blender rest/deformation/animation tests. Preserve original asset topology/appearance and source coordinates. Prove rest-only preparation and both topology cases.
-3. Inference owner: local safe bundle packer and runtime inference, pinned compatible upstream source, license notices, tests against the reference. ComfyUI selects devices; models unload; no runtime network. Exercise real official weights if available.
-4. Nodes owner: five node schemas, managed filenames/outputs, API-format workflow, ComfyUI registration and node tests. All socket values conform to shared contracts; node import is dependency-light.
-5. Cloud owner: selected input asset declarations/staging, bundle staging, output retrieval, generic protocol compatibility, runner prerequisites and end-to-end partition tests. No paid GPU provisioning required for local runner verification.
-6. Parent: package metadata, precise setup docs, integration and review. Verify the installed nodes through a real headless ComfyUI API workflow, crossing custom values through actual Cloud Offload partition bundles, with Blender and official model inference. A protocol encode-only check cannot establish runner support.
-
-## Rulings
-
-- Work on branch `feat/unimate-cloud-nodes` in the fresh project checkout. Parallel owners have disjoint paths; no extra worktrees required.
-- Plain dictionaries replace design dataclasses to use Cloud Offload's existing safe bytes/dict transport without arbitrary plugin deserialization.
-- A self-contained model bundle replaces multiple local references. This preserves offline inference and arbitrary box boundaries while using existing model staging. It costs boundary bandwidth; future optimization must preserve portability.
-- Cloud Offload is required in the initial implementation. Missing runner dependencies fail preflight/runner preparation with explicit remedies; never silently execute locally.
-- README language is terse and factual, as requested.
-- Official normalization has three families. Expose `normalization` on Generate with `objaverse`, `mixamo`, and `truebones`; record the choice in provenance.
-- Append animation to the original GLB instead of exporting rebuilt geometry. Use Blender to validate preparation and evaluate the result; compare canonicalization and recovery math against upstream.
+Each code stage follows: write a meaningful failing test, observe the expected failure, implement, run relevant checks, review the resulting diff and record evidence. Existing tests remain regression coverage; they cannot substitute for the expanded end-to-end checks.
