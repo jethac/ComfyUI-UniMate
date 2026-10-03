@@ -59,7 +59,7 @@ def recover_positions(features, parents, offsets, method, *, root_origin=(0, 0, 
 def recover_skeleton(rig, motion, method, *, check_cancel=lambda: None):
     check_cancel()
     validate_rig(rig)
-    validate_motion(motion, rig['rig_id'])
+    validate_motion(motion, rig)
     conditioning = decode_arrays(rig['conditioning'])
     features = decode_arrays(motion['features'])['features']
     if features.shape[1] != len(conditioning['parents']):

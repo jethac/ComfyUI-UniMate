@@ -9,6 +9,7 @@ import json
 import math
 import re
 import stat
+import struct
 import zipfile
 
 import numpy as np
@@ -155,6 +156,24 @@ def _members(archive, total_limit, member_limit, count_limit=256):
     return infos
 
 
+def _array_archive_platform(payload: bytes, platform: int) -> bytes:
+    """Change only ZIP's creator-OS byte; preserve every array and other byte."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            infos = _members(archive, MAX_ARRAY_BYTES, MAX_ARRAY_BYTES, 128)
+            cursor = archive.start_dir
+            result = bytearray(payload)
+            for _ in infos:
+                if result[cursor:cursor + 4] != b'PK\x01\x02' or cursor + 46 > len(result):
+                    raise ValueError('Invalid numeric archive directory')
+                name_size, extra_size, comment_size = struct.unpack_from('<HHH', result, cursor + 28)
+                result[cursor + 5] = platform
+                cursor += 46 + name_size + extra_size + comment_size
+            return bytes(result)
+    except (OSError, zipfile.BadZipFile, struct.error) as error:
+        raise ValueError('Invalid numeric archive') from error
+
+
 def encode_arrays(**arrays) -> bytes:
     if not arrays or len(arrays) > 128:
         raise ValueError("Numeric archive requires 1–128 arrays")
@@ -166,7 +185,7 @@ def encode_arrays(**arrays) -> bytes:
         raise ValueError("Numeric archive is too large")
     output = io.BytesIO()
     np.savez(output, **arrays)
-    result = output.getvalue()
+    result = _array_archive_platform(output.getvalue(), 3)
     decode_arrays(result)
     return result
 
@@ -262,6 +281,7 @@ def _rig_digest(asset, conditioning, mapping):
 def make_rig(asset: dict, conditioning: bytes, mapping: dict) -> dict:
     validate_asset(asset)
     _bytes(conditioning, MAX_ARRAY_BYTES, "conditioning")
+    conditioning = _array_archive_platform(conditioning, 3)
     value = {
         "schema": "unimate.rig.v1",
         "asset": copy.deepcopy(asset),
@@ -603,10 +623,21 @@ def make_motion(rig_id: str, features: bytes, metadata: dict) -> dict:
     return value
 
 
-def validate_motion(value: dict, rig_id: str | None = None) -> None:
+def validate_motion(value: dict, rig_id: str | dict | None = None) -> None:
     _record(value, "unimate.motion.v1", ("rig_id", "features", "fps", "metadata"))
     _digest(value["rig_id"], "rig")
-    if rig_id is not None and value["rig_id"] != rig_id:
+    if isinstance(rig_id, dict):
+        # Old archives used native ZIP OS markers. Accept only IDs recomputed from
+        # this exact validated asset, mapping and array payload, never a loose match.
+        validate_rig(rig_id)
+        accepted = {rig_id['rig_id']}
+        if value['rig_id'] not in accepted:
+            accepted.update(_rig_digest(rig_id['asset'],
+                _array_archive_platform(rig_id['conditioning'], platform), rig_id['mapping'])
+                for platform in (0, 3))
+    else:
+        accepted = {rig_id}
+    if rig_id is not None and value["rig_id"] not in accepted:
         raise ValueError("Motion and prepared rig identities do not match")
     if type(value["fps"]) is not int or value["fps"] != 30:
         raise ValueError("UniMate motion requires fps 30")

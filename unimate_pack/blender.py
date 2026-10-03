@@ -168,7 +168,7 @@ def prepare_rig(asset, facing, left_joint="", right_joint="", *, left_shoulder="
 
 def export_glb(rig, motion):
     validate_rig(rig)
-    validate_motion(motion, rig["rig_id"])
+    validate_motion(motion, rig)
     cond = decode_arrays(rig["conditioning"])
     features = decode_arrays(motion["features"])["features"]
     if features.shape[1] != len(cond["parents"]):

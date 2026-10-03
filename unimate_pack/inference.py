@@ -247,7 +247,7 @@ def generate_motion(
         from .motion_selection import frame_mask, joint_mask
         if reference is None or constraint_mode not in ("inbetween", "edit"):
             raise ValueError("Select a reference motion and inbetween or edit mode")
-        validate_motion(reference, rig["rig_id"])
+        validate_motion(reference, rig)
         reference_features = decode_arrays(reference["features"])["features"]
         if reference_features.shape[1] != len(arrays["parents"]) or not 1 <= len(reference_features) <= 60:
             raise ValueError("Reference motion must match the rig and fit the 60-frame window")

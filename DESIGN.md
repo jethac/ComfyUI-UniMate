@@ -181,6 +181,14 @@ Motion preview can render an IMAGE batch or add a frontend viewer once its cost 
 
 ## Skeleton recovery and rendering
 
+Numeric archives use a fixed ZIP creator-OS marker (3). Array payloads and every other
+archive byte remain unchanged. This prevents native Windows/Linux ZIP metadata from
+changing prepared rig identities. Existing rig records retain their exact original digest;
+when a motion consumer receives a validated rig, it also recognizes legacy IDs recomputed
+with creator-OS markers 0 and 3 from that exact asset, mapping and conditioning payload.
+Different arrays, source assets or mappings remain different identities. Workers should
+consume the portable prepared rig rather than reproduce its numeric conditioning.
+
 `UniMateRecoverSkeleton` takes a prepared rig, motion and explicit `fk`/`ric` mode.
 FK reverses parent-shifted 6D rotations and propagates canonical `tpos_offsets` through
 the ordered hierarchy. RIC unrotates facing-relative joint positions and adds root XZ.

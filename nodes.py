@@ -344,7 +344,7 @@ class UniMateGenerateMotion(io.ComfyNode):
         motion = generate_motion(
             model, rig, prompt, seed, guidance, normalization=normalization
         )
-        validate_motion(motion, rig_id=rig["rig_id"])
+        validate_motion(motion, rig_id=rig)
         return io.NodeOutput(motion)
 
 
@@ -573,11 +573,7 @@ class UniMateExportGLB(io.ComfyNode):
         from .unimate_pack.contracts import validate_rig, validate_motion
 
         validate_rig(rig)
-        validate_motion(motion, rig_id=rig["rig_id"])
-        if motion.get("rig_id") != rig["rig_id"]:
-            raise ValueError(
-                "UniMate motion belongs to a different rig; regenerate it for this rig."
-            )
+        validate_motion(motion, rig_id=rig)
         prefix = _relative_name(filename_prefix)
         output_root = Path(folder_paths.get_output_directory()).resolve()
         _contained(output_root / prefix, output_root)

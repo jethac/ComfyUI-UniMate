@@ -135,7 +135,31 @@ Remote report: `/home/jethac/workspaces/comfy-unimate-e2e-20261001/run-skeleton-
 Runtime: ComfyUI `84ba85773925f071c516f0208184773802b4d44a`, Python 3.11.15,
 PyTorch 2.14.1+cpu, Blender 5.1.1. Cloud runner execution remains open.
 
-- Skeleton recovery/rendering: pinned FK/RIC numerical comparisons and Windows server PNG retrieval passed. Focused tests: 109 passed, 6 subtests passed. Windows evidence: `.runtime/skeleton-server-fixture-check/report.json`, with 17 frames per mode and 34 retrieved PNGs; stadia evidence is recorded above. Actual cloud runner execution remains open. Re-preparing the stadia source asset locally produced a different rig identity, so its archive was correctly rejected; identity stability across environments remains under investigation.
+- Skeleton recovery/rendering: pinned FK/RIC numerical comparisons and Windows server PNG retrieval passed. Focused tests: 109 passed, 6 subtests passed. Windows evidence: `.runtime/skeleton-server-fixture-check/report.json`, with 17 frames per mode and 34 retrieved PNGs; stadia evidence is recorded above. Actual cloud runner execution remains open.
+
+### Rig identity portability correction, 2026-10-03
+
+The observed Windows/Linux ID mismatch came from NPZ ZIP creator-OS markers, not numeric
+conditioning differences. The asset, mapping and every array's dtype, shape and payload
+matched exactly. Canonical marker 3 preserves the existing Linux identity on fresh Windows
+preparation. Legacy marker-0/3 motion IDs are accepted only when their exact digests can be
+recomputed from the validated rig; different payloads remain different identities.
+
+Independent skinning evaluation compared the Linux export with its Windows re-export
+at all 60 frames and 21 vertices: maximum coordinate difference was zero. Evidence:
+`.runtime/skeleton-cross-platform-fixed/independent-playback.json`.
+
+The earlier stadia archive passed the Windows ComfyUI workflow: 60 frames per recovery
+mode, 120 retrieved PNGs plus GLB/provenance. An old Windows archive also passed against
+the new canonical rig: 17 frames per mode, 34 retrieved PNGs plus GLB/provenance.
+Evidence: `.runtime/skeleton-cross-platform-fixed/report.json` and
+`.runtime/skeleton-legacy-windows-check/report.json`. Focused regression checks passed:
+102 tests plus 6 subtests, including public legacy GLB/FBX export acceptance. This proves
+the observed container metadata correction; it does not treat different numeric results
+from other environments as equivalent rigs.
+
+External Blender GLB/FBX regression checks passed: 13 tests, one reference-dependent
+test skipped in that run. Contract/node/reference checks are recorded separately above.
 
 - Linux GPU inference, worker-container execution, and live provider provisioning.
 - Redistributable real characters, arbitrary-rig motion quality, and the complete upstream preprocessing CLI.

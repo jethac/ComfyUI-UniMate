@@ -374,11 +374,35 @@ class NodeTests(unittest.TestCase):
             nodes.UniMateModelLoader.fingerprint_inputs("escape.unimate")
 
     def export_context(self):
+        def validate_motion(value, rig_id=None):
+            expected = rig_id['rig_id'] if isinstance(rig_id, dict) else rig_id
+            if expected is not None and value.get('rig_id') != expected:
+                raise ValueError('Motion and prepared rig identities do not match')
         return self.fake_module(
             "contracts",
             validate_rig=lambda value: None,
-            validate_motion=lambda value, rig_id=None: None,
+            validate_motion=validate_motion,
         )
+
+    def test_public_export_accepts_exact_legacy_archive_identity(self):
+        from test_rig_portability import archive_for_platform, legacy_identity
+        from unimate_pack.contracts import make_asset, make_rig, make_motion, encode_arrays
+        from unimate_pack.rig_math import parse_glb, prepare_document
+        from test_blender_math import synthetic_glb
+        import numpy as np
+
+        source = synthetic_glb(True)
+        asset = make_asset(source, 'rig.glb')
+        arrays, mapping = prepare_document(parse_glb(source)[0], '+Z')
+        archive = archive_for_platform(arrays, 0)
+        rig = make_rig(asset, archive, mapping)
+        motion = make_motion(legacy_identity(asset, archive, mapping),
+            encode_arrays(features=np.zeros((7, 7, 12), np.float32)), {})
+        self.assertNotEqual(motion['rig_id'], rig['rig_id'])
+        with self.fake_module('blender', export_glb=lambda *args: b'GLB', export_fbx=lambda *args: b'FBX'):
+            for node in (nodes.UniMateExportGLB, nodes.UniMateExportFBX):
+                result = node.execute(rig, motion, 'legacy/' + node.FORMAT)
+                self.assertTrue(result.ui['files'])
 
     def test_export_unique_files_and_provenance_without_paths(self):
         rig = {"rig_id": "rig-identity", "asset": {"sha256": "source-digest"}}
