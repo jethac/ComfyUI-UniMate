@@ -124,7 +124,8 @@ def test_solver_reference_and_rng_isolation():
     )
     state = torch.random.get_rng_state().clone()
     for guidance in (1, 3):
-        actual = sample_flow(model, {}, 42, guidance, torch.device("cpu"), lambda: None)
+        cond = {"mean": torch.zeros((1, 71, 12)), "lengths_mask": torch.ones((1, 1, 1, 60), dtype=torch.bool)}
+        actual = sample_flow(model, cond, 42, guidance, torch.device("cpu"), lambda: None)
         noise = torch.randn(
             (1, 71, 12, 60), generator=torch.Generator().manual_seed(42)
         )
@@ -151,7 +152,8 @@ def test_cancellation_between_solver_evaluations():
             raise InterruptedError("cancelled")
 
     with pytest.raises(InterruptedError):
-        sample_flow(lambda x, *a, **kw: x * 0.1, {}, 42, 3, torch.device("cpu"), cancel)
+        cond = {"mean": torch.zeros((1, 71, 12)), "lengths_mask": torch.ones((1, 1, 1, 60), dtype=torch.bool)}
+        sample_flow(lambda x, *a, **kw: x * 0.1, cond, 42, 3, torch.device("cpu"), cancel)
     assert len(checks) == 3
 
 

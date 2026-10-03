@@ -295,14 +295,15 @@ def generate_motion(
                     lambda value: progress.update_absolute(value, 100),
                 )
             else:
-                known = torch.zeros((1, 71, 12, 60), device=device)
+                capacity = cond["mean"].shape[1]
+                known = torch.zeros((1, capacity, 12, 60), device=device)
                 raw = torch.from_numpy(reference_features).to(device)
                 count = raw.shape[1]
                 normalized = (raw - cond["mean"][0, :count]) / cond["std"][0, :count]
                 known[0, :count, :, :len(raw)] = normalized.permute(1, 2, 0)
                 samples = sample_constrained_flow(
                     runtime.denoiser.model, cond, known,
-                    torch.from_numpy(keep).to(device), seed, guidance,
+                    torch.from_numpy(keep[:, :capacity]).to(device), seed, guidance,
                     mm.throw_exception_if_processing_interrupted,
                     lambda value: progress.update_absolute(value, 100),
                 )

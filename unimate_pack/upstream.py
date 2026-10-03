@@ -137,14 +137,14 @@ def build_condition(
     joints = len(parents)
     if (
         parents.shape != (joints,)
-        or not 5 <= joints <= 70
+        or not 5 <= joints < config["dataset"]["max_joints"]
         or parents[0] != -1
         or any(not 0 <= parents[j] < j for j in range(1, joints))
     ):
-        raise ValueError("Conditioning requires 5–70 breadth-first connected joints")
+        raise ValueError("Conditioning requires connected joints within this checkpoint's capacity")
     depth = topology.compute_joint_depths(parents)
     if depth.max() > config["dataset"]["max_depth"]:
-        raise ValueError("Skeleton exceeds this checkpoint's maximum depth of 19")
+        raise ValueError("Skeleton exceeds this checkpoint's maximum depth")
     tpos = np.asarray(arrays["tpos_first_frame"], dtype=np.float64)
     if tpos.shape != (joints, 3) or not np.isfinite(tpos).all():
         raise ValueError("Expected finite canonical rest positions (J,3)")
@@ -175,7 +175,7 @@ def build_condition(
         motion=np.zeros((60, joints, 12)),
         max_motion_length=60,
         motion_length=60,
-        max_joints=71,
+        max_joints=config["dataset"]["max_joints"],
         parents=parents,
         edge_indexs=topology.compute_edge_indexs(parents),
         tpos_first_frame=normalized,
@@ -224,7 +224,8 @@ def sample_flow(
 
     generator = torch.Generator(device=device).manual_seed(seed)
     noise = torch.randn(
-        (1, 71, 12, 60), device=device, generator=generator, dtype=torch.float32
+        (1, cond["mean"].shape[1], 12, cond["lengths_mask"].shape[-1]),
+        device=device, generator=generator, dtype=torch.float32
     )
 
     def velocity(t, x):
