@@ -23,6 +23,10 @@ from unimate_pack.bundle import UPSTREAM_REVISION, SOLVER, inspect_bundle
 OFFICIAL_STATS_SHA256 = (
     "c13ecfe8317c5e7b4a04089b71817d0787494d8f3f1df66b0ac8f496842d2c89"
 )
+OTHER_RELEASED_STATS_SHA256 = frozenset({
+    "9a3d946da35da85866d828dacbccc4d587503e103882f18364547a3f3765f675",
+    "f449bd747ec65eeedc5e1723790dc988792c1875ec355af770b1c669b45f9b54",
+})
 
 
 def load_stats(stats_path: Path, trust_legacy_stats: bool = False) -> dict:
@@ -33,7 +37,8 @@ def load_stats(stats_path: Path, trust_legacy_stats: bool = False) -> dict:
         verified_stats = stats_path.read_bytes()
         if (
             not trust_legacy_stats
-            or hashlib.sha256(verified_stats).hexdigest() != OFFICIAL_STATS_SHA256
+            or hashlib.sha256(verified_stats).hexdigest() not in
+            OTHER_RELEASED_STATS_SHA256 | {OFFICIAL_STATS_SHA256}
         ):
             raise ValueError(
                 "Legacy stats require --trust-legacy-stats and the exact pinned official SHA-256"
@@ -43,7 +48,7 @@ def load_stats(stats_path: Path, trust_legacy_stats: bool = False) -> dict:
         legacy = np.load(io.BytesIO(verified_stats), allow_pickle=True).item()
         stats = {
             f"{family}_{part}": np.asarray(legacy[family][part])
-            for family in ("objaverse", "mixamo", "truebones")
+            for family in legacy
             for part in ("mean_root", "std_root", "mean_local", "std_local")
         }
     else:

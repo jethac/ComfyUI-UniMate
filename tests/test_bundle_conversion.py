@@ -50,3 +50,11 @@ def test_unknown_legacy_stats_never_reaches_pickle(tmp_path, monkeypatch, trust)
     monkeypatch.setattr(np, "load", forbidden)
     with pytest.raises(ValueError, match="exact pinned official"):
         build_bundle.load_stats(source, trust)
+
+
+def test_mixamo_only_numeric_stats_round_trip(tmp_path):
+    source = tmp_path / "mixamo.npz"
+    values = {f"mixamo_{part}": np.ones(12) for part in
+              ("mean_root", "std_root", "mean_local", "std_local")}
+    np.savez(source, **values)
+    assert set(build_bundle.load_stats(source)) == set(values)

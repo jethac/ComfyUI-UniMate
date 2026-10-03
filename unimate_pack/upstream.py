@@ -104,8 +104,9 @@ def validate_stats(stats: dict) -> None:
         for family in ("objaverse", "mixamo", "truebones")
         for part in ("mean_root", "std_root", "mean_local", "std_local")
     }
-    if set(stats) != required:
-        raise ValueError("Bundle requires all three explicit normalization families")
+    mixamo = {f"mixamo_{part}" for part in ("mean_root", "std_root", "mean_local", "std_local")}
+    if set(stats) not in (required, mixamo):
+        raise ValueError("Bundle requires complete released normalization families")
     for name, value in stats.items():
         if (
             value.shape != (12,)
@@ -133,6 +134,8 @@ def build_condition(
     validate_stats(stats)
     if normalization not in ("objaverse", "mixamo", "truebones"):
         raise ValueError("Choose objaverse, mixamo, or truebones normalization")
+    if f"{normalization}_mean_root" not in stats:
+        raise ValueError("Selected normalization is absent from this checkpoint")
     parents = arrays["parents"].astype(np.int64)
     joints = len(parents)
     if (
