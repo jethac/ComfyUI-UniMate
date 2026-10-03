@@ -190,6 +190,27 @@ def build_condition(
     return mixture_batch_collate([batch])[1]
 
 
+def sample_constrained_flow(model, cond, known, mask, seed, guidance, check_cancel, progress=None):
+    import torch
+    from .constrained import sample_replacement
+
+    if not 1 < guidance <= 10:
+        raise ValueError("Constrained generation requires guidance greater than 1")
+    generator = torch.Generator(device=known.device).manual_seed(seed)
+    noise = torch.randn(known.shape, generator=generator, device=known.device, dtype=known.dtype)
+
+    def velocity(value, time, cond=None):
+        conditional = model(value, time, cond)
+        check_cancel()
+        unconditional = model(value, time, cond, force_mask=True)
+        return unconditional + guidance * (conditional - unconditional)
+
+    return sample_replacement(
+        velocity, cond, known, mask, noise, check_cancel=check_cancel,
+        progress=(lambda index, total: progress(int(index * 100 / total))) if progress else None,
+    )
+
+
 def sample_flow(
     model, cond, seed: int, guidance: float, device, check_cancel, progress=None
 ):

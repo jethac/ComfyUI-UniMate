@@ -8,6 +8,7 @@ import pytest
 import torch
 
 from unimate_pack.constrained import sample_replacement
+from unimate_pack.upstream import sample_constrained_flow
 
 
 @pytest.mark.parametrize("axis", ["frames", "joints"])
@@ -73,3 +74,22 @@ def test_invalid_step_counts_are_rejected(steps):
     with pytest.raises(ValueError):
         sample_replacement(lambda x, t, cond=None: x, {}, values,
                            torch.zeros_like(values, dtype=torch.bool), values, steps=steps)
+
+
+def test_guided_constrained_flow_uses_local_seed_and_preserves_known_values():
+    def model(x, t, cond=None, force_mask=False):
+        return torch.ones_like(x) * (0.1 if force_mask else 0.2)
+
+    shape = (1, 5, 12, 7)
+    known = torch.zeros(shape)
+    mask = torch.zeros((1, 1, 1, 7), dtype=torch.bool)
+    mask[..., 0] = True
+    rng = torch.random.get_rng_state().clone()
+    actual = sample_constrained_flow(model, {}, known, mask, 73, 3, lambda: None)
+    assert torch.equal(torch.random.get_rng_state(), rng)
+    noise = torch.randn(shape, generator=torch.Generator().manual_seed(73))
+    expected = sample_replacement(
+        lambda x, t, cond=None: torch.ones_like(x) * (0.1 + 3 * (0.2 - 0.1)),
+        {}, known, mask, noise,
+    )
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
