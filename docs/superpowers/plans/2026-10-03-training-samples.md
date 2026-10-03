@@ -17,7 +17,7 @@ collation and thin public nodes. Python/NumPy/Torch and existing V3 runtime.
 - [x] Assemble augmented samples in source order, preserving identities/stats.
 
 ## Task 3: Encoder/cache and portable values
-- [ ] Produce actual source-compatible embedding views with installed runtime.
+- [x] Produce actual source-compatible embedding views with installed runtime.
 - [ ] Add bounded numeric cache/sample archives and identity validation.
 
 ## Task 4: Batch collation and public workflows

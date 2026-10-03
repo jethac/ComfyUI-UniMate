@@ -305,8 +305,12 @@ uses the unchanged MIT batch collator for variable joints, spectral widths and
 caption lengths. Masks preserve valid lengths and caption-less zero tokens;
 padded standard deviations are one. Inputs must remain valid after float32/int64
 conversion. The source collator's bulk tensor work is not internally cancellable.
-Actual encoder/cache producers, persisted sample/batch identities and public
-sample workflows are still required; these numeric modules do not establish
+Portable text-cache production stores ragged tokens and encoder-pooled vectors
+separately, with explicit encoder artifact identity and bounded numeric bytes.
+Fresh dataset views use trimmed-token means; cached views retain their stored
+pooled vector. Installed FLAN-T5 production and source arithmetic were compared
+offline on Windows. Additional encoders, persisted sample/batch identities and public
+sample workflows are still required; these modules do not establish
 training or Cloud Offload execution coverage.
 
 ## Cloud Offload implementation

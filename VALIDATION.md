@@ -641,3 +641,41 @@ positivity in float32 and bounds unsigned integer arrays plus converted scalar
 fields to int64 before source invocation.
 Final combined suite: 568 passed, six subtests, no skips, 16.80s; two existing warnings. Command: preceding 544-test suite plus tests/test_training_collation.py, same pinned environment. Changed-file Ruff and git diff --check passed.
 Independent review rechecked both conversion fixes; no remaining actionable findings.
+
+## Portable training text views and installed encoder (2026-10-03)
+
+training_text builds unimate.text_cache.v1 numeric dictionary/bytes values:
+sorted unique strings, explicit encoder type/version/artifact SHA-256, pinned
+source revision, float32 concatenated ragged tokens, int64 lengths and separate
+float32 encoder-pooled vectors. Missing strings are encoded in chunks <=256;
+complete matching caches need no encoder call. Arrays and ZIP expansion are
+bounded to 64 MiB, entries to 4096 and individual token sequences to 512 rows.
+No pickle, local paths, model objects or device tensors are persisted. Cached
+views retain the encoder vector; fresh views use source-order trimmed-row mean.
+The estimate/bounds cover cache arrays, not encoder VRAM or total process peak.
+Nine foundation tests exercise duplicates, chunking, identity/schema/digest and
+missing-text errors, cache reuse, malformed output, budgets and cancellation.
+Review found finite tokens whose float32 mean overflows; its regression failed
+before the fix. Fresh pooling keeps source arithmetic and rejects nonfinite output.
+
+Actual offline test command: with PYTEST_DISABLE_PLUGIN_AUTOLOAD=1,
+UNIMATE_TEST_BUNDLE=.runtime/models/unimate-v2-licensed.unimate,
+UNIMATE_TEST_COMFY=B:/lab/ComfyUI and pinned UNIMATE_DATASET_REFERENCE,
+`python -m pytest tests/test_training_text_model.py -q -s --tb=short`.
+One passed, 40.30s, two existing Torch JIT warnings. Network connects were
+forbidden. Four texts include anatomical names, a caption and empty text.
+Every token/cached pooled/fresh pooled view matches unchanged pinned
+sequences_from_hidden, pooled_from_hidden and pool exactly; complete-cache
+rebuild also passes without encoder access. Source SHA-256:
+f1433ec15449a77721d921ebc16ae76ef8a552eed79b6413839370e64725dd01.
+Device cuda:0, NumPy 2.4.3, Torch 2.11.0+cu128; encoder artifact identity
+f79264a13a940769912d95fa9521c1f6c4448e1fe129d1ad4e1cf6a7c4a4259d
+hashes the pinned text-encoder manifest/file inventory. Model bundle SHA-256
+3d4420752e64b873f98c8aec2d6f01edf7be861c704920dfc095bd1d700664b8;
+cache arrays SHA-256 136c3b0cf764e1819a6dd8ff4091db709afee34404e373cc5d5592a34071edb9.
+Models are unloaded and private runtime extraction is cleaned in finally.
+
+This proves installed FLAN-T5 numeric cache production on Windows. It does not
+prove other released encoders, external cache-file conversion, public nodes,
+portable sample/batch identities or Linux/headless/Cloud Offload execution.
+Combined foundation suite: 577 passed, six subtests, no skips, 17.85s; two existing warnings. Command: preceding 568-test suite plus tests/test_training_text.py. Changed-file Ruff and git diff --check passed. Independent review rechecked pooling overflow; no remaining actionable findings.
