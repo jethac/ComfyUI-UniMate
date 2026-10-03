@@ -16,6 +16,8 @@ from comfy_api.latest import io
 
 from .dataset_nodes import (
     UniMateBuildDataset as UniMateBuildDataset,
+    UniMateSplitDataset as UniMateSplitDataset,
+    UniMatePlanSampling as UniMatePlanSampling,
     UniMateLoadDataset as UniMateLoadDataset,
     UniMateSaveDataset as UniMateSaveDataset,
     UniMateDatasetStatistics as UniMateDatasetStatistics,

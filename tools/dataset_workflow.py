@@ -21,8 +21,12 @@ sys.path.insert(0, str(ROOT))
 
 MODES = list(itertools.product((False, True), repeat=3))
 LABELS = [dict(id='train-a', dataset_type='objaverse', object_type='shared', split='train'),
-          dict(id='train-b', dataset_type='mixamo', object_type='other', split='train'),
-          dict(id='evaluation', dataset_type='truebones', split='eval')]
+          dict(id='train-a2', dataset_type='objaverse', object_type='shared', split='train'),
+          dict(id='train-other', dataset_type='objaverse', object_type='other', split='train'),
+          dict(id='train-b', dataset_type='mixamo', object_type='shared', split='train'),
+          dict(id='evaluation', dataset_type='objaverse', object_type='evaluation', split='train')]
+SPLIT_OPTIONS = json.dumps(dict(explicit_eval_objects=dict(objaverse=['evaluation'])))
+SAMPLING_MODES = [(.5, None, 0), (1, None, 3), (.5, .25, 0), (1, 1, 3)]
 
 
 def workflow_graph(mode):
@@ -34,9 +38,11 @@ def workflow_graph(mode):
     if mode == 'build':
         boundary('rig', 'UNIMATE_RIG')
         boundary('motion', 'UNIMATE_MOTION')
-        graph['dataset'] = dict(class_type='UniMateBuildDataset', inputs=dict(
+        graph['dataset_build'] = dict(class_type='UniMateBuildDataset', inputs=dict(
             rigs=['in_rig', 0], motions=['in_motion', 0], labels=json.dumps(LABELS),
             default_dataset='objaverse'))
+        graph['dataset'] = dict(class_type='UniMateSplitDataset', inputs=dict(
+            dataset=['dataset_build', 0], ratio=0, seed=17, options=SPLIT_OPTIONS))
     elif mode == 'restore':
         for key, kind in (('dataset', 'UNIMATE_DATASET'), ('statistics', 'UNIMATE_STATISTICS')):
             boundary(key, kind)
@@ -58,9 +64,20 @@ def workflow_graph(mode):
         if mode == 'build':
             stats_node = 'stats_0'
     outputs.append(dict(key='statistics', type_name='UNIMATE_STATISTICS'))
+    for index, (alpha, dataset_alpha, epoch) in enumerate(SAMPLING_MODES):
+        key = 'plan_' + str(index)
+        if mode == 'restore':
+            boundary(key, 'UNIMATE_SAMPLING')
+        else:
+            graph[key] = dict(class_type='UniMatePlanSampling', inputs=dict(
+                dataset=[dataset_node, 0], alpha=alpha, two_level=dataset_alpha is not None,
+                dataset_alpha=dataset_alpha if dataset_alpha is not None else .25, epoch=epoch))
+        outputs.append(dict(key=key, type_name='UNIMATE_SAMPLING'))
     for output in outputs:
         key = output['key']
         source = dataset_node if key == 'dataset' else stats_node if key == 'statistics' else key
+        if mode == 'restore' and key.startswith('plan_'):
+            source = 'in_' + key
         graph['out_' + key] = dict(class_type='CloudPartitionOutput', inputs=dict(
             value=[source, 0], boundary_key=key, type_name=output['type_name'], output_path=''))
     for key, node, source in (('dataset', 'UniMateSaveDataset', dataset_node),
@@ -84,6 +101,7 @@ def run_checks(base, args, workspace):
     from unimate_pack.contracts import decode_arrays, encode_arrays, validate_motion, validate_rig
     from unimate_pack.dataset_builder import build_dataset
     from unimate_pack.dataset_io import load_dataset
+    from unimate_pack.dataset_selection import split_dataset, sampling_plan, validate_sampling
     from unimate_pack.statistics import dataset_statistics, validate_statistics
     from unimate_pack.statistics_io import load_statistics
 
@@ -94,15 +112,18 @@ def run_checks(base, args, workspace):
     rig, motion = rig_values[0], motion_values[0]
     validate_rig(rig)
     validate_motion(motion, rig)
-    motions = [copy.deepcopy(motion) for _ in range(3)]
-    for case, shift in zip(motions, (0, 0.125, 10000), strict=True):
+    motions = [copy.deepcopy(motion) for _ in LABELS]
+    for case, shift in zip(motions, (0, .125, .25, .5, 10000), strict=True):
         arrays = decode_arrays(case['features'])
         arrays['features'][:, :, 9:12] += shift
         case['features'] = encode_arrays(**arrays)
         validate_motion(case, rig)
-    dataset = build_dataset([rig] * 3, motions, json.dumps(LABELS), 'objaverse')
+    raw_dataset = build_dataset([rig] * len(LABELS), motions, json.dumps(LABELS), 'objaverse')
+    dataset, split_report = split_dataset(raw_dataset, 0, 17, SPLIT_OPTIONS)
+    assert split_report['eval_ids'] == ['evaluation']
     expected = [dataset_statistics(dataset, per_dataset=p, balanced=b, tie_std=t) for p, b, t in MODES]
-    assert all(value['clip_count'] == 2 and value['datasets'] == ['mixamo', 'objaverse'] for value in expected)
+    assert all(value['clip_count'] == 4 and value['datasets'] == ['mixamo', 'objaverse'] for value in expected)
+    expected_plans = [sampling_plan(dataset, alpha=a, dataset_alpha=d, epoch=e) for a, d, e in SAMPLING_MODES]
     config = CloudConfig(storage_path=str(workspace / 'worker-store'),
                          queue_db_path=str(workspace / 'worker-queue.db'))
     worker = Worker.__new__(Worker)
@@ -121,6 +142,10 @@ def run_checks(base, args, workspace):
         assert values['dataset'] == dataset
         for key, value in values.items():
             if key == 'dataset':
+                continue
+            if key.startswith('plan_'):
+                validate_sampling(value, dataset)
+                assert value == expected_plans[int(key.removeprefix('plan_'))]
                 continue
             validate_statistics(value)
             target = expected[int(key.removeprefix('stats_'))] if key.startswith('stats_') else expected[0]
@@ -162,7 +187,7 @@ def run_checks(base, args, workspace):
 
     try:
         source_artifacts = {}
-        for key, values in (('rig', [rig] * 3), ('motion', motions)):
+        for key, values in (('rig', [rig] * len(LABELS)), ('motion', motions)):
             path = workspace / 'partition' / ('source-' + key + '.part')
             dump_bundle(pack_execution_values(values), path)
             artifact = worker._upload_partition_artifact(path)
@@ -177,7 +202,8 @@ def run_checks(base, args, workspace):
         direct = submit(base, graph, timeout=300)
         verify_values({key: read_values(path)[0] for key, path in direct_outputs.items()})
         first = execute('build', source_artifacts)
-        execute('restore', {key: first['output_artifacts'][key] for key in ('dataset', 'statistics')})
+        execute('restore', {key: artifact for key, artifact in first['output_artifacts'].items()
+                            if key in ('dataset', 'statistics') or key.startswith('plan_')})
         for file in first['files']:
             suffix = Path(file['filename']).suffix
             data = base64.b64decode(file['data'], validate=True)
@@ -197,6 +223,8 @@ def run_checks(base, args, workspace):
                     rig_id=rig['rig_id'], source_artifact_sha256={key: hashlib.sha256(path.read_bytes()).hexdigest()
                         for key, path in (('rig', args.rig), ('motion', args.motion))},
                     statistics_modes=[dict(per_dataset=p, balanced=b, tie_std=t) for p, b, t in MODES],
+                    split_report=split_report,
+                    sampling_modes=[dict(alpha=a, dataset_alpha=d, epoch=e) for a, d, e in SAMPLING_MODES],
                     scope='Direct and real partition handlers, value capture/restore, archive staging and client retrieval; no provider or container deployment')
     finally:
         folder_paths.set_output_directory(previous_output)

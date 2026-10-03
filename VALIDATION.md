@@ -461,3 +461,47 @@ Independent review found no blockers and ran 27 workflow/adapter tests. Asset
 declarations are supplied directly to runner helpers; coordinator/client
 declaration discovery is not established. Worker cancellation was not injected.
 Provider scheduling and deployed-container execution remain unverified.
+
+
+## Released splits and epoch sampling (2026-10-03)
+
+Split Dataset and Plan Sampling now expose released train/evaluation splitting
+and one/two-level replacement sampling. Pinned AST methods/classes retain
+released computation bodies from revision
+`2c5b384715aa63d8639b1ed7eb74bfe614570c7a`, dataset.py SHA-256
+`413a539e4ad4606e599c502758f9d1a199e5750feb44eebccb28f9845ca6961e`.
+Torch 2.11 removed the deprecated no-op Sampler(data_source) constructor; the
+reference harness supplies that base constructor only. Weight and epoch bodies
+are unchanged. Membership/order matches 36 ratio/seed/override combinations;
+60 sampler comparisons cover five object-balancing exponents, four dataset
+scopes/exponents and three epochs, including the unsigned seed maximum.
+Multi-dataset shared object names remain separate sampling groups. Global RNG
+state is preserved. Malformed values, stale identity, inconsistent source/epoch
+arrays, invalid options and cancellation fail. Independent review caught missing
+reports for explicit objects in absent datasets; the regression failed before
+the fix and passed after it. Review has no remaining findings.
+
+Combined reference/foundation/transport/actual V3 suite: 265 passed, six subtests,
+no skips, 9.38s; changed-file Ruff passed. Command: prior pinned source environment,
+`python -m pytest tests/test_dataset_selection.py tests/test_dataset_workflow.py tests/test_dataset_adapters.py tests/test_dataset_contracts.py tests/test_dataset_io.py tests/test_dataset_stats.py tests/test_dataset_transport.py tests/test_nodes.py -q --tb=short`.
+
+Expanded Windows and headless stadia workflows each passed direct execution,
+three real worker jobs and six restored archives. Five paired clips include
+multiple objects, unequal group sizes, shared object names across datasets and
+a divergent explicit evaluation object. All eight statistics modes and four
+sampling configurations are checked against direct results; four portable plans
+cross capture/restore and are rebuilt after dataset archive reload. Source
+validation recomputes ordered training IDs, weights and epoch indices.
+Reports: `.runtime/dataset-selection-worker-check-1/report.json`,
+`.runtime/stadia-dataset-selection-worker/report.json`; remote source
+`/home/jethac/workspaces/comfy-unimate-e2e-20261001/run-dataset-selection-worker-20261003-1/report.json`.
+The runs used pack `f3ff61e` plus the subsequently committed selection changes.
+The final report-only unmatched-dataset fix does not affect this fixture's
+membership or sampling. ComfyUI/runner/client and device identities match the
+preceding dataset workflow runs; Windows Python 3.11.9/NumPy 2.4.3 and stadia
+Python 3.11.15/NumPy 2.4.6, CPU. No model or Blender process is required.
+
+These are epoch plans and data workflows. Augmentation, collation, text-cache
+consumption and training execution remain open. Explicit declarations use real
+staging helpers; coordinator discovery, injected worker cancellation and
+provider/container deployment remain separate unverified gates.

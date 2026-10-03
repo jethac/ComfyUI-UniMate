@@ -24,6 +24,8 @@ async def comfy_entrypoint():
         UniMatePreviewSkeleton,
         UniMateFootLockMotion,
         UniMateBuildDataset,
+        UniMateSplitDataset,
+        UniMatePlanSampling,
         UniMateLoadDataset,
         UniMateSaveDataset,
         UniMateDatasetStatistics,
@@ -59,6 +61,8 @@ async def comfy_entrypoint():
                 UniMateDatasetStatistics,
                 UniMateLoadStatistics,
                 UniMateSaveStatistics,
+                UniMateSplitDataset,
+                UniMatePlanSampling,
             ]
 
     return UniMateExtension()

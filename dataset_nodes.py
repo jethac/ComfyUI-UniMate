@@ -13,6 +13,7 @@ Dataset = io.Custom('UNIMATE_DATASET')
 Statistics = io.Custom('UNIMATE_STATISTICS')
 Rig = io.Custom('UNIMATE_RIG')
 Motion = io.Custom('UNIMATE_MOTION')
+Sampling = io.Custom('UNIMATE_SAMPLING')
 CATEGORY = '3D/UniMate'
 
 
@@ -55,6 +56,43 @@ class UniMateDatasetStatistics(io.ComfyNode):
         from .unimate_pack.statistics import dataset_statistics
         value = dataset_statistics(dataset, per_dataset=per_dataset, balanced=balanced,
                                    tie_std=tie_std, cancel=_cancel)
+        report = {field: item for field, item in value.items() if field not in ('arrays', 'sha256', 'schema')}
+        return io.NodeOutput(value, json.dumps(report, ensure_ascii=False, allow_nan=False))
+
+
+class UniMateSplitDataset(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name='Split UniMate Dataset', category=CATEGORY,
+                         inputs=[Dataset.Input('dataset'), io.Float.Input('ratio', default=.1, min=0, max=.999999),
+                                 io.Int.Input('seed', default=0, min=0, max=2**64-1),
+                                 io.String.Input('options', default='{}', multiline=True)],
+                         outputs=[Dataset.Output(), io.String.Output(display_name='split report')])
+
+    @classmethod
+    def execute(cls, dataset, ratio=.1, seed=0, options='{}'):
+        from .unimate_pack.dataset_selection import split_dataset
+        value, report = split_dataset(dataset, ratio, seed, options, cancel=_cancel)
+        return io.NodeOutput(value, json.dumps(report, ensure_ascii=False, allow_nan=False))
+
+
+class UniMatePlanSampling(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name='Plan UniMate Sampling', category=CATEGORY,
+                         inputs=[Dataset.Input('dataset'), io.Float.Input('alpha', default=.5, min=-100, max=100),
+                                 io.Boolean.Input('two_level', default=False),
+                                 io.Float.Input('dataset_alpha', default=.25, min=-100, max=100),
+                                 io.Int.Input('epoch', default=0, min=0, max=2**64-1)],
+                         outputs=[Sampling.Output(), io.String.Output(display_name='sampling report')])
+
+    @classmethod
+    def execute(cls, dataset, alpha=.5, two_level=False, dataset_alpha=.25, epoch=0):
+        from .unimate_pack.dataset_selection import sampling_plan
+        if type(two_level) is not bool:
+            raise ValueError('Two-level sampling requires a Boolean option')
+        value = sampling_plan(dataset, alpha=alpha, dataset_alpha=dataset_alpha if two_level else None,
+                              epoch=epoch, cancel=_cancel)
         report = {field: item for field, item in value.items() if field not in ('arrays', 'sha256', 'schema')}
         return io.NodeOutput(value, json.dumps(report, ensure_ascii=False, allow_nan=False))
 

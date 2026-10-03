@@ -29,6 +29,8 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | UniMate Dataset Statistics | Compute training-only normalization and source provenance |
 | Load UniMate Statistics | Read a `.unimatestats` archive from ComfyUI input |
 | Save UniMate Statistics | Save normalization arrays and provenance |
+| Split UniMate Dataset | Assign seeded clip/object holdouts; report unmatched explicit objects |
+| Plan UniMate Sampling | Build one/two-level weights and replacement indices for an epoch |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -110,7 +112,14 @@ normalization options. Saved shards preserve original numeric payloads and label
 Load Dataset accepts numeric topologies with 2–4096 joints; Build Dataset uses
 the existing mesh adapter's limits. These nodes provide data and normalization;
 direct and Windows/headless stadia partition-handler workflows passed, including
-archive staging, capture/restore and file retrieval. Training, curation and
+archive staging, capture/restore and file retrieval.
+
+Split Dataset recomputes membership across all input clips. Defaults hold out
+object types for Truebones/Objaverse and clips for Mixamo. Its `options` accepts
+`modes` and `explicit_eval_objects` mappings; explicit object lists override the
+ratio and cannot empty a dataset's training set. Plan Sampling returns portable
+weights and indices for one epoch, using only training clips. `two_level` adds
+dataset balancing to object balancing. Training execution, curation and
 augmentation remain open.
 
 ## Cloud Offload

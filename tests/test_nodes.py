@@ -62,7 +62,7 @@ class NodeTests(unittest.TestCase):
         module.__dict__.update(functions)
         return patch.dict(sys.modules, {module.__name__: module})
 
-    def test_actual_comfy_extension_has_five_valid_schemas(self):
+    def test_actual_comfy_extension_has_registered_valid_schemas(self):
         extension = asyncio.run(extension_module.comfy_entrypoint())
         classes = asyncio.run(extension.get_node_list())
         self.assertEqual(
@@ -93,6 +93,8 @@ class NodeTests(unittest.TestCase):
                 "UniMateDatasetStatistics",
                 "UniMateLoadStatistics",
                 "UniMateSaveStatistics",
+                "UniMateSplitDataset",
+                "UniMatePlanSampling",
             ],
         )
         for cls in classes:
@@ -103,6 +105,18 @@ class NodeTests(unittest.TestCase):
             ["objaverse", "mixamo", "truebones"],
         )
         self.assertTrue(nodes.UniMateExportGLB.OUTPUT_NODE)
+
+    def test_dataset_selection_nodes_preserve_source_and_return_portable_plan(self):
+        from test_dataset_selection import mixed_dataset
+        from unimate_pack.dataset_selection import split_dataset, sampling_plan
+        dataset = mixed_dataset()
+        expected, report = split_dataset(dataset, .4, 17, '{}')
+        result = nodes.UniMateSplitDataset.execute(dataset, .4, 17, '{}')
+        self.assertEqual(result.result[0], expected)
+        self.assertEqual(json.loads(result.result[1]), report)
+        actual = nodes.UniMatePlanSampling.execute(expected, .5, True, .25, 3)
+        self.assertEqual(actual.result[0], sampling_plan(expected, alpha=.5, dataset_alpha=.25, epoch=3))
+        self.assertEqual(nodes.UniMatePlanSampling.GET_SCHEMA().outputs[0].io_type, 'UNIMATE_SAMPLING')
 
     def test_dataset_nodes_build_compute_save_load_and_declare_inputs(self):
         from test_foot_lock import portable_legged_motion

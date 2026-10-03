@@ -6,6 +6,7 @@ import pytest
 
 from unimate_pack.statistics import dataset_statistics, validate_statistics
 from unimate_pack.dataset_contracts import validate_dataset
+from unimate_pack.dataset_selection import sampling_plan, validate_sampling
 from test_dataset_adapters import paired_dataset
 
 
@@ -29,6 +30,7 @@ def test_actual_client_runner_codecs_preserve_dataset_statistics_execution_value
     for kind, value, validate in (
         ('UNIMATE_DATASET', dataset, validate_dataset),
         ('UNIMATE_STATISTICS', statistics, validate_statistics),
+        ('UNIMATE_SAMPLING', sampling_plan(dataset), validate_sampling),
     ):
         client.validate_boundary_type(kind)
         runner.validate_boundary_type(kind)

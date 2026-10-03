@@ -259,17 +259,25 @@ The [shard contract](docs/superpowers/specs/2026-10-03-dataset-contracts.md) def
 aggregate budgets and validation. Statistics extraction selects training clips
 only and shares read-only arrays for repeated payloads. The numeric statistics
 adapter preserves every released pooling/balancing/tying combination. These
-foundations and six public collection/statistics/save/load nodes have direct V3
+foundations and eight public collection/statistics/selection/file nodes have direct V3
 execution evidence. Values use concrete UNIMATE_DATASET and UNIMATE_STATISTICS
 sockets; actual client/runner codec round trips preserve their original bytes.
 Managed loaders declare input archives and saves return core files descriptors.
 Shared conditioning retains per-clip rig provenance even when meshes differ.
 Statistics payload and archive expansion limits are 8 MiB and 16 MiB, checked
-before numeric decoding. Windows and headless stadia workflows execute all six
+before numeric decoding. Windows and headless stadia workflows execute all eight
 nodes, all eight statistics modes, boundary capture/restore and archive reload.
 Actual runner asset staging and client retrieval pass. These checks supply asset
 declarations directly; coordinator discovery and injected worker cancellation
 remain unverified. Shard collections and training runtime consumption remain open.
+
+Split Dataset preserves released seeded traversal and holdout behavior over all
+input clips, with constructor defaults and explicit object overrides. Reports
+include unmatched objects, including absent dataset labels. Sampling uses ordered
+(dataset,object) groups, float64 weights and a separate CPU Torch generator seeded
+by epoch. Its UNIMATE_SAMPLING value contains only clip IDs, source/options identity
+and bounded numeric weights/indices. Validation with a source dataset additionally
+recomputes weights and sampled indices. This is an epoch plan, not a training run.
 
 ## Cloud Offload implementation
 
