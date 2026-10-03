@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from pathlib import Path
+import hashlib
 import tempfile
 import threading
 
@@ -207,6 +208,8 @@ def generate_motion(
     seed: int,
     guidance: float,
     normalization: str = "objaverse",
+    *, reference: dict | None = None, constraint_mode: str | None = None,
+    selection: str = "",
 ) -> dict:
     import math
     import numpy as np
@@ -219,8 +222,9 @@ def generate_motion(
         decode_arrays,
         encode_arrays,
         make_motion,
+        validate_motion,
     )
-    from .upstream import build_condition, sample_flow
+    from .upstream import build_condition, sample_flow, sample_constrained_flow
 
     validate_model(model)
     validate_rig(rig)
@@ -237,6 +241,25 @@ def generate_motion(
     if normalization not in ("objaverse", "mixamo", "truebones"):
         raise ValueError("Choose objaverse, mixamo, or truebones normalization")
     arrays = decode_arrays(rig["conditioning"])
+    reference_features = None
+    keep = None
+    if reference is not None or constraint_mode is not None:
+        from .motion_selection import frame_mask, joint_mask
+        if reference is None or constraint_mode not in ("inbetween", "edit"):
+            raise ValueError("Select a reference motion and inbetween or edit mode")
+        validate_motion(reference, rig["rig_id"])
+        reference_features = decode_arrays(reference["features"])["features"]
+        if reference_features.shape[1] != len(arrays["parents"]) or not 1 <= len(reference_features) <= 60:
+            raise ValueError("Reference motion must match the rig and fit the 60-frame window")
+        if guidance <= 1:
+            raise ValueError("Constrained generation requires guidance greater than 1")
+        if constraint_mode == "inbetween":
+            keep = frame_mask(selection, len(reference_features), 60)
+        else:
+            aliases = [f"{raw}|{clean}" for raw, clean in zip(
+                arrays["joint_names"], arrays.get("clean_joint_names", arrays["joint_names"])
+            )]
+            keep = joint_mask(selection, aliases, 71)
     with _LOCK:
         mm.throw_exception_if_processing_interrupted()
         runtime = _get_runtime(model)
@@ -259,19 +282,37 @@ def generate_motion(
         }
         progress = ProgressBar(100)
         with torch.inference_mode():
-            samples = sample_flow(
-                runtime.denoiser.model,
-                cond,
-                seed,
-                guidance,
-                device,
-                mm.throw_exception_if_processing_interrupted,
-                lambda value: progress.update_absolute(value, 100),
-            )
+            if reference_features is None:
+                samples = sample_flow(
+                    runtime.denoiser.model, cond, seed, guidance, device,
+                    mm.throw_exception_if_processing_interrupted,
+                    lambda value: progress.update_absolute(value, 100),
+                )
+            else:
+                known = torch.zeros((1, 71, 12, 60), device=device)
+                raw = torch.from_numpy(reference_features).to(device)
+                count = raw.shape[1]
+                normalized = (raw - cond["mean"][0, :count]) / cond["std"][0, :count]
+                known[0, :count, :, :len(raw)] = normalized.permute(1, 2, 0)
+                samples = sample_constrained_flow(
+                    runtime.denoiser.model, cond, known,
+                    torch.from_numpy(keep).to(device), seed, guidance,
+                    mm.throw_exception_if_processing_interrupted,
+                    lambda value: progress.update_absolute(value, 100),
+                )
             joints = len(arrays["parents"])
             features = samples[0, :joints].permute(2, 0, 1)
             features = features * cond["std"][0, :joints] + cond["mean"][0, :joints]
             features = features.cpu().numpy().astype(np.float32)
+            if reference_features is not None:
+                features = features[:len(reference_features)]
+                # Preserve the input features exactly across normalization roundoff.
+                if constraint_mode == "inbetween":
+                    selected = keep[0, 0, 0, :len(features)]
+                    features[selected] = reference_features[selected]
+                else:
+                    selected = keep[0, :joints, 0, 0]
+                    features[:, selected] = reference_features[:, selected]
         mm.throw_exception_if_processing_interrupted()
         if not np.isfinite(features).all():
             raise ValueError("UniMate produced nonfinite motion features")
@@ -281,7 +322,7 @@ def generate_motion(
             seed=seed,
             guidance=float(guidance),
             normalization=normalization,
-            solver=runtime.manifest["solver"],
+            solver=runtime.manifest["solver"] if reference_features is None else {"method": "euler", "num_steps": 50},
             model_sha256=model["sha256"],
             model_revision=runtime.manifest["model_revision"],
             weights="ema",
@@ -289,7 +330,10 @@ def generate_motion(
             upstream_revision=runtime.manifest["upstream_revision"],
             adapter_revision="unimate.inference.v1",
             precision="float32",
-            frames=60,
+            frames=len(features),
             fps=30,
         )
+        if reference is not None:
+            metadata.update(constraint_mode=constraint_mode, selection=selection,
+                            reference_features_sha256=hashlib.sha256(reference["features"]).hexdigest())
         return make_motion(rig["rig_id"], encode_arrays(features=features), metadata)

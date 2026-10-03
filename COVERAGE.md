@@ -65,6 +65,8 @@ The existing five-node tests prove the narrow generation/export path. They do no
 
 ## Execution evidence
 
+2026-10-03: registered In-between Motion and Edit Motion nodes and connected reference motion to the Comfy-managed inference path. Added canonical normalization, same-rig/joint/window validation, original/clean joint aliases, constrained solver provenance, and exact reference-feature preservation across normalization roundoff. Existing node tests and new deterministic inference plumbing tests passed (17 tests plus 6 subtests); lint passed. These checks use a fixture denoiser, not the released model. Real-model constrained generation, source-clip extraction, archive loader/saver nodes, expansion and headless integration remain pending.
+
 2026-10-03: added signed frame selection against valid reference length and case-insensitive joint selection with original/clean aliases. Added locally seeded classifier-free guidance around constrained flow; tests verify global RNG preservation and the explicit guided velocity result. With the pinned upstream checkout enabled, the constrained and selection tests passed (15 tests). Public node wiring and real-model checks are still pending.
 
 2026-10-03: added a constrained Euler kernel with fixed-noise replacement, broadcast frame/joint masks and cancellation checks. Both mask modes match the pinned upstream sampler bit for bit on the deterministic velocity fixture (7 tests passed including cancellation and invalid-step checks). Added safe numeric reference-motion archive save/load with canonical rig identity and Unicode metadata round trips (3 tests passed). These are subsystem interfaces; public IO/edit/in-between/expansion nodes and real-model constrained validation remain pending.

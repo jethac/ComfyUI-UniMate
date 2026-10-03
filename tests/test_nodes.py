@@ -73,6 +73,8 @@ class NodeTests(unittest.TestCase):
                 "UniMateModelLoader",
                 "UniMateGenerateMotion",
                 "UniMateExportGLB",
+                "UniMateInbetweenMotion",
+                "UniMateEditMotion",
             ],
         )
         for cls in classes:
@@ -83,6 +85,20 @@ class NodeTests(unittest.TestCase):
             ["objaverse", "mixamo", "truebones"],
         )
         self.assertTrue(nodes.UniMateExportGLB.OUTPUT_NODE)
+
+    def test_constrained_nodes_forward_reference_and_selection(self):
+        calls = []
+        def generate(*args, **kwargs):
+            calls.append(kwargs)
+            return {"rig_id": "a" * 64}
+        with self.fake_module("inference", generate_motion=generate):
+            for node, mode in ((nodes.UniMateInbetweenMotion, "inbetween"),
+                               (nodes.UniMateEditMotion, "edit")):
+                result = node.execute({}, {"rig_id": "a" * 64}, {"clip": 1}, "walk", 0, 3, "0,-1")
+                self.assertEqual(result.result[0]["rig_id"], "a" * 64)
+                self.assertEqual(calls[-1]["constraint_mode"], mode)
+                self.assertEqual(calls[-1]["reference"], {"clip": 1})
+                self.assertEqual(calls[-1]["selection"], "0,-1")
 
     def test_inputs_reject_escape_missing_and_wrong_extensions(self):
         for filename in (

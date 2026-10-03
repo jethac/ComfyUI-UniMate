@@ -9,8 +9,10 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Load UniMate Model | Read an installed `.unimate` bundle |
 | Generate UniMate Motion | Sample 60 frames at 30 fps |
 | Export UniMate GLB | Add animation to the original GLB; save provenance JSON |
+| In-between UniMate Motion | Preserve selected reference frames and generate the transition |
+| Edit UniMate Motion | Preserve selected joints and regenerate the remaining motion |
 
-The target is complete UniMate capability coverage. The current pack implements one text-to-motion model path; in-betweening, text-guided editing, expansion and other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Existing source clips are ignored and replaced by one generated clip.
+The target is complete UniMate capability coverage. The pack implements one model path, with generation, in-betweening and editing nodes. Real-model validation for the constrained nodes is pending; expansion and other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Existing source clips are ignored and replaced by one generated clip.
 
 ## Install
 

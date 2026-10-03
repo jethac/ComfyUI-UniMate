@@ -303,6 +303,39 @@ class UniMateGenerateMotion(io.ComfyNode):
         return io.NodeOutput(motion)
 
 
+class UniMateInbetweenMotion(io.ComfyNode):
+    MODE = "inbetween"
+
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id=cls.__name__,
+            display_name="In-between UniMate Motion" if cls.MODE == "inbetween" else "Edit UniMate Motion",
+            category=CATEGORY,
+            inputs=[
+                Model.Input("model"), Rig.Input("rig"), Motion.Input("reference"),
+                io.String.Input("prompt", multiline=True),
+                io.Int.Input("seed", default=0, min=0, max=2**64-1),
+                io.Float.Input("guidance", default=3.0, min=1.1, max=10.0),
+                io.String.Input("selection", default="0,-1" if cls.MODE == "inbetween" else "Hips",
+                    tooltip="Comma-separated frame indices (negative from end) or original/clean joint names."),
+                io.Combo.Input("normalization", options=NORMALIZATION, default="objaverse"),
+            ], outputs=[Motion.Output()],
+        )
+
+    @classmethod
+    def execute(cls, model, rig, reference, prompt, seed, guidance, selection, normalization="objaverse"):
+        from .unimate_pack.inference import generate_motion
+        return io.NodeOutput(generate_motion(
+            model, rig, prompt, seed, guidance, normalization,
+            reference=reference, constraint_mode=cls.MODE, selection=selection,
+        ))
+
+
+class UniMateEditMotion(UniMateInbetweenMotion):
+    MODE = "edit"
+
+
 class UniMateExportGLB(io.ComfyNode):
     @classmethod
     def define_schema(cls):
