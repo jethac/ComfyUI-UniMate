@@ -15,7 +15,8 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Save UniMate Motion | Save a numeric motion archive for later reuse |
 | Expand UniMate Motion | Generate an ordered prompt chain with constrained segment overlaps |
 | Extract UniMate Motion | Resample a source GLB clip into the prepared rig's motion features |
-| Generate UniMate Batch | Generate prompt/repetition cases as a typed motion list |
+| Generate UniMate Batch | Generate rig/prompt/repetition cases with parallel motion and rig lists |
+| Combine UniMate Rigs | Collect prepared rigs in order for batch generation |
 | Canonical UniMate Asset | Apply prepared coordinates to the original asset without rewriting skin or mesh data |
 | UniMate Rig Conditioning | Expose numeric topology conditioning, its hash and canonical rig identity |
 | Export UniMate FBX | Bake animation to binary FBX and verify skinning after Blender reimport |
@@ -77,11 +78,13 @@ Extract UniMate Motion selects a zero-based animation clip from the prepared rig
 
 Expand UniMate Motion accepts a JSON array of prompts in segment order. Each segment has 60 frames; overlap must be 1–59 frames. With N prompts and overlap O, the result has `60 + (60 - O) * (N - 1)` frames. Seeds increment per segment modulo uint64. Later segments preserve the preceding tail; duplicated overlap frames are omitted from the output. Expansion requires guidance greater than 1.
 
-Generate UniMate Batch accepts 1–32 JSON prompts and 1–64 repetitions, capped at 256 cases. Cases run in prompt order, then repetition order; seeds increment modulo uint64. Its typed motion list feeds ComfyUI's normal list execution, including export and numeric saving. Sampling runs one case at a time. A four-case batch passed ComfyUI server execution, export, artifact retrieval, provenance and independent playback checks. Cloud Offload list transport still requires validation.
+Generate UniMate Batch accepts prepared rigs, 1–32 JSON prompts and 1–64 repetitions, capped at 256 cases. Cases run in rig, prompt, then repetition order; seeds increment modulo uint64. Sampling runs one case at a time. Model and sampling settings must each contain one value. Combine UniMate Rigs collects two rig lists and can be chained. Connect the batch's matching rigs output and motion output to export; each motion keeps its own skeleton. See [multi-rig API workflow](examples/unimate_multi_rig_api.json).
+
+Eight cases across five- and seven-joint synthetic rigs passed Windows server execution and independent playback across all 480 frames. Cloud Offload passed controlled archived-motion list restoration on Windows and stadia. Multi-rig model worker and headless validation remain pending.
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 
-Export UniMate FBX writes binary FBX and provenance JSON. The external Blender job bakes at 30 fps without leaf bones, embeds images, reimports at frame zero and checks bone identity and evaluated skinning for every frame. Constant glTF base-color multipliers are folded into 16-bit PNG textures; embedded pixels are checked after reimport. Other material expressions and server/cloud execution remain unverified. FBX input is not supported.
+Export UniMate FBX writes binary FBX and provenance JSON. The external Blender job bakes at 30 fps without leaf bones, embeds images, reimports at frame zero and checks bone identity and evaluated skinning for every frame. Constant glTF base-color multipliers are folded into 16-bit PNG textures; embedded pixels are checked after reimport. Windows and headless stadia partition-handler export passed on synthetic assets. Other material expressions remain unverified. FBX input is not supported.
 
 ## Skeleton recovery
 

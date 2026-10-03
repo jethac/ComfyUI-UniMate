@@ -63,6 +63,19 @@ def validate_batch_cases(cases, prompts, repetitions):
         raise ValueError("Batch export provenance does not match the requested cases")
 
 
+def validate_multi_rig_batch_cases(cases, prompts, repetitions, sources):
+    if not sources or len(set(sources)) != len(sources):
+        raise ValueError('Multi-rig fixture requires distinct source assets')
+    expected = [(i, prompt, 60, source) for i, (source, prompt) in enumerate(
+        (source, prompt) for source in sources for prompt in prompts for _ in range(repetitions))]
+    actual = sorted((case['seed'], case['prompt'], case['frames'], case['source_sha256']) for case in cases)
+    if actual != expected:
+        raise ValueError('Multi-rig batch provenance has missing or misassigned cases')
+    identities = [{case['rig_id'] for case in cases if case['source_sha256'] == source} for source in sources]
+    if any(len(group) != 1 for group in identities) or len(set.union(*identities)) != len(sources):
+        raise ValueError('Multi-rig batch does not retain distinct, stable rig identities')
+
+
 def bundle_inventory(path):
     """Compare restored artifacts without loading multi-GB model bytes again."""
     with zipfile.ZipFile(path) as archive:
@@ -135,6 +148,11 @@ def install_link(source, target):
 
 
 def verify(args):
+    if getattr(args, 'batch_worker', False) and not (
+            getattr(args, 'multi_rig', False) and args.cloud_root and getattr(args, 'cloud_client_root', None)):
+        raise ValueError('Batch worker verification requires multi-rig mode and cloud/client checkouts')
+    if getattr(args, 'multi_rig', False) and not (getattr(args, 'batch', False) and args.branching):
+        raise ValueError('Multi-rig verification requires batch mode and a branching first rig')
     if getattr(args, 'worker_lists', False) and not getattr(args, 'worker', False):
         raise ValueError('Execution-list verification requires worker mode')
     if getattr(args, 'worker', False) and not (
@@ -193,12 +211,20 @@ def verify(args):
             graph[f'save_{method}'] = {'class_type': 'SaveImage', 'inputs': {
                 'images': [f'preview_{method}', 0], 'filename_prefix': f'verified/{method}'}}
     if getattr(args, "batch", False):
-        if args.cloud_root or getattr(args, "extended", False):
+        if (args.cloud_root and not getattr(args, 'batch_worker', False)) or getattr(args, "extended", False):
             raise ValueError("Run batch verification separately from bridge or expanded verification")
         graph["4"] = {"class_type": "UniMateGenerateBatch", "inputs": {
             "model": ["3", 0], "rig": ["2", 0], "seed": 0, "guidance": 3.0,
             "normalization": "objaverse", "repetitions": 2,
             "prompts": json.dumps(["A character stands still.", "A character walks forward."])}}
+        if getattr(args, 'multi_rig', False):
+            (workspace / 'input/chain rig.glb').write_bytes(module.synthetic_glb(False))
+            graph['6'] = {'class_type': 'UniMateLoadRig', 'inputs': {'asset': 'chain rig.glb'}}
+            graph['7'] = {'class_type': 'UniMatePrepareRig', 'inputs': {'asset': ['6', 0], 'facing': '+Z',
+                'left_joint': '', 'right_joint': ''}}
+            graph['8'] = {'class_type': 'UniMateCombineRigs', 'inputs': {'rig_a': ['2', 0], 'rig_b': ['7', 0]}}
+            graph['4']['inputs']['rig'] = ['8', 0]
+            graph['5']['inputs']['rig'] = ['4', 1]
     if getattr(args, "extended", False):
         for mode, selection in (("inbetween", "0,-1"), ("edit", "Joint_1")):
             graph[mode] = {
@@ -296,7 +322,15 @@ def verify(args):
             "UniMate nodes failed registration"
         )
         report["system_stats"] = json.loads(request(base, "/system_stats"))
-        if getattr(args, 'worker', False):
+        if getattr(args, 'batch_worker', False):
+            sys.path.insert(0, str(args.comfy_root.resolve()))
+            from tools.cloud_batch_workflow import run_batch_worker_workflows
+            entries, evidence = run_batch_worker_workflows(base, graph, workspace, args.cloud_root,
+                                                          args.cloud_client_root, bundle)
+            report['worker_execution'] = evidence
+            report['graphs'].extend({'kind': 'real-batch-worker-partition', 'graph': job['partition']['workflow'],
+                'status': job['status']} for job in evidence['jobs'])
+        elif getattr(args, 'worker', False):
             sys.path.insert(0, str(args.comfy_root.resolve()))
             from tools.cloud_workflow import run_worker_workflows
             entries, evidence = run_worker_workflows(base, graph, workspace, args.cloud_root,
@@ -419,7 +453,9 @@ def verify(args):
                         data = request(base, "/view?" + urllib.parse.urlencode(file))
                         validate_output(file["filename"], data)
                         if getattr(args, "batch", False) and file["filename"].endswith(".json"):
-                            batch_cases.append(json.loads(data)["generation"])
+                            manifest = json.loads(data)
+                            batch_cases.append({**manifest['generation'], 'rig_id': manifest['rig_id'],
+                                                'source_sha256': manifest['source_sha256']})
                         exports.append({**file, "bytes": len(data)})
         assert len(exports) >= 2
         if getattr(args, 'skeleton_reference', None):
@@ -430,9 +466,19 @@ def verify(args):
                 10 if getattr(args, 'worker_lists', False) else 6 if getattr(args, 'worker', False) else 2)
             report['skeleton_frames_per_mode'] = frames
         if getattr(args, "batch", False):
-            assert sum(f["filename"].endswith(".glb") for f in exports) == 4
-            assert len(exports) == 8
-            validate_batch_cases(batch_cases, json.loads(graph["4"]["inputs"]["prompts"]), 2)
+            multi_rig = getattr(args, 'multi_rig', False)
+            jobs = 2 if getattr(args, 'batch_worker', False) else 1
+            assert sum(f["filename"].endswith(".glb") for f in exports) == (8 if multi_rig else 4) * jobs
+            assert len(exports) == (16 if multi_rig else 8) * jobs
+            prompts = json.loads(graph['4']['inputs']['prompts'])
+            if multi_rig:
+                sources = [hashlib.sha256((workspace / 'input' / name).read_bytes()).hexdigest()
+                           for name in ('rig with spaces.glb', 'chain rig.glb')]
+                for offset in range(0, len(batch_cases), 8):
+                    validate_multi_rig_batch_cases(batch_cases[offset:offset + 8], prompts, 2, sources)
+                report['batch_source_sha256'] = sources
+            else:
+                validate_batch_cases(batch_cases, prompts, 2)
             report["batch_cases_verified"] = batch_cases
         report["retrieved_outputs"] = exports
         report["status"] = "passed"
@@ -467,6 +513,8 @@ def main():
     parser.add_argument("--branching", action="store_true")
     parser.add_argument("--extended", action="store_true", help="Exercise constrained modes, expansion and numeric saving")
     parser.add_argument("--batch", action="store_true", help="Exercise typed motion-list export for four cases")
+    parser.add_argument('--multi-rig', action='store_true', help='Generate eight paired cases on two topologies; requires --batch --branching')
+    parser.add_argument('--batch-worker', action='store_true', help='Stage models/assets and run paired batch worker jobs; requires multi-rig/cloud/client options')
     parser.add_argument('--skeleton-reference', type=Path, help='Verify archive loading, both recovery modes and every preview frame')
     parser.add_argument('--worker', action='store_true', help='Execute preprocessing/recovery through the real partition worker')
     parser.add_argument('--worker-lists', action='store_true', help='Also verify two distinct mapped motion cases; requires --worker')

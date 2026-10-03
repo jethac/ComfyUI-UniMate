@@ -31,3 +31,15 @@ def test_execution_list_graph_consumes_and_captures_mapped_motion_cases():
     for method in ('fk', 'ric'):
         assert graph['recover_' + method]['inputs']['motion'] == ['in_motion', 0]
         assert graph['out_skeleton_' + method]['inputs']['value'] == ['recover_' + method, 0]
+
+
+def test_batch_worker_restores_both_paired_execution_lists():
+    from tools.cloud_batch_workflow import batch_boundaries, restored_batch_graph
+    boundaries = batch_boundaries()
+    assert boundaries == [{'key': 'motions', 'type_name': 'UNIMATE_MOTION'},
+                          {'key': 'rigs', 'type_name': 'UNIMATE_RIG'}]
+    graph = restored_batch_graph()
+    assert graph['export']['inputs'] == {'rig': ['in_rigs', 0], 'motion': ['in_motions', 0],
+                                        'filename_prefix': 'verified/restored-batch'}
+    for key in ('motions', 'rigs'):
+        assert graph['out_' + key]['inputs']['value'] == ['in_' + key, 0]

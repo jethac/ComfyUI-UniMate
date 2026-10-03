@@ -1,0 +1,89 @@
+{
+  "1": {
+    "class_type": "UniMateLoadRig",
+    "inputs": {
+      "asset": "unimate/branching.glb"
+    }
+  },
+  "2": {
+    "class_type": "UniMatePrepareRig",
+    "inputs": {
+      "asset": [
+        "1",
+        0
+      ],
+      "facing": "+Z",
+      "left_joint": "",
+      "right_joint": ""
+    }
+  },
+  "3": {
+    "class_type": "UniMateModelLoader",
+    "inputs": {
+      "bundle": "unimate-v2.unimate"
+    }
+  },
+  "4": {
+    "class_type": "UniMateGenerateBatch",
+    "inputs": {
+      "model": [
+        "3",
+        0
+      ],
+      "rig": [
+        "8",
+        0
+      ],
+      "prompts": "[\"A character walks forward.\", \"A character sits down.\"]",
+      "repetitions": 2,
+      "seed": 0,
+      "guidance": 3.0,
+      "normalization": "objaverse"
+    }
+  },
+  "5": {
+    "class_type": "UniMateExportGLB",
+    "inputs": {
+      "rig": [
+        "4",
+        1
+      ],
+      "motion": [
+        "4",
+        0
+      ],
+      "filename_prefix": "unimate/multi-rig"
+    }
+  },
+  "6": {
+    "class_type": "UniMateLoadRig",
+    "inputs": {
+      "asset": "unimate/chain.glb"
+    }
+  },
+  "7": {
+    "class_type": "UniMatePrepareRig",
+    "inputs": {
+      "asset": [
+        "6",
+        0
+      ],
+      "facing": "+Z",
+      "left_joint": "",
+      "right_joint": ""
+    }
+  },
+  "8": {
+    "class_type": "UniMateCombineRigs",
+    "inputs": {
+      "rig_a": [
+        "2",
+        0
+      ],
+      "rig_b": [
+        "7",
+        0
+      ]
+    }
+  }
+}

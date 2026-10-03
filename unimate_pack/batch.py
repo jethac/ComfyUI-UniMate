@@ -28,3 +28,10 @@ def generate_batch(model, rigs, prompts, repetitions, seed, guidance, normalizat
                                          guidance, normalization)
                 motions.append(motion)
     return motions
+
+
+def generate_batch_with_rigs(model, rigs, prompts, repetitions, seed, guidance, normalization="objaverse"):
+    """Return parallel execution lists for motion generation and rig-aware consumers."""
+    motions = generate_batch(model, rigs, prompts, repetitions, seed, guidance, normalization)
+    matched = [rig for rig in rigs for _ in prompts for _ in range(repetitions)]
+    return motions, matched

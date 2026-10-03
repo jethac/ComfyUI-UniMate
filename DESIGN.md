@@ -90,6 +90,23 @@ Fields: `schema="unimate.motion.v1"`, `rig_id`, NPZ bytes `features`, `fps=30`, 
 
 ## Runtime architecture
 
+### Multi-rig cases
+
+`UniMateCombineRigs` receives both ComfyUI execution lists once, validates their
+portable rigs and concatenates them without reordering. Collections contain
+1–256 rigs and can be chained. `UniMateGenerateBatch` also receives lists once:
+rigs form the case axis; every model/sampling control must have one value.
+Cases expand in rig → prompt → repetition order with incrementing uint64 seeds.
+The existing motion output remains slot 0. Slot 1 contains the corresponding
+rig for each motion. Both sockets are list outputs; downstream exports map them
+together. Shared prompts across different skeletons expose text-mediated behavior
+transfer. This does not infer a caption from a reference clip.
+
+Cloud Offload carries complete execution lists in versioned envelopes. It must
+preserve both batch outputs and their order, including list-valued scalar entries.
+Client and runner envelope revisions must be deployed together. Verification of
+controlled archived cases is distinct from multi-rig model execution.
+
 ```mermaid
 flowchart LR
     A[Rigged GLB] --> L[Load asset]
@@ -177,7 +194,10 @@ If importing a new rig requires rebuilding the entire dataset, or export cannot 
 
 ## Later extensions
 
-Motion preview can render an IMAGE batch or add a frontend viewer once its cost and animation support are understood. Motion import plus frame/joint constraints can expose upstream in-betweening and editing. Expansion can chain fixed windows while preserving root continuity. These need separate contracts and acceptance tests.
+Numeric motion import, GLB clip extraction, frame/joint constraints, expansion and
+IMAGE skeleton previews are implemented in separate modules. Their reference and
+workflow checks are recorded in VALIDATION.md. Training, dataset processing and
+paper-described postprocessing remain coverage gaps.
 
 ## Skeleton recovery and rendering
 

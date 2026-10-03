@@ -6,29 +6,29 @@ Audit date: 2026-10-03. This is a capability inventory, not a claim of complete 
 
 - [Project page](https://linzhanmou.com/unimate/) and [paper, arXiv v1](https://arxiv.org/html/2609.05415v1).
 - [Released source](https://github.com/Friedrich-M/UniMate/tree/2c5b384715aa63d8639b1ed7eb74bfe614570c7a), inspected locally at that commit. Current pack remains pinned to `5d6aabedd947297b5ba6706d8e9113e68c0c3e4f`.
-- [Model repository](https://huggingface.co/Linzhan/UniMate/tree/971da7cfc1c8d99c2af6c00be9d2ed5700f99073), file inventory checked through the Hub API. Model weights other than the existing v2 bundle were not downloaded or tested during this audit.
+- [Model repository](https://huggingface.co/Linzhan/UniMate/tree/971da7cfc1c8d99c2af6c00be9d2ed5700f99073), file inventory checked through the Hub API. The initial inventory audit did not test other families; subsequent checks below cover installed bundles for all four families.
 - Local implementation: `nodes.py`, `unimate_pack/upstream.py`, `inference.py`, `contracts.py`, and `bundle.py`. Existing validation is recorded in `VALIDATION.md`.
 
 ## User-facing capability mapping
 
-| Capability | Released evidence | Current pack | Required node surface |
+| Capability | Released evidence | Current pack / remaining validation | Public surface |
 | --- | --- | --- | --- |
-| Text-conditioned motion on a target skeleton | `unimate/inference/sample.py`, `generate.py` | Implemented for one v2 graph/AdaLN configuration | Generate Motion |
-| Unconditional generation | `sample.py`: text-list cases and guidance 1 | Implemented through guidance 1; needs explicit UI explanation | Generation mode |
-| Multiple seeds, repetitions, cases and inference chunks | `sample.py` | One prompt/sample per invocation | Batch/repetition inputs and motion collection outputs |
-| Cross-topology behavior transfer through text | Paper §5.5; same behavior prompt drives each target skeleton | Possible by repeating generation on different rigs; no dedicated workflow | Shared prompt → target rig collection example |
-| In-betweening | `motion_inbetweening.py`, `sample.py --inbetween --keep_frames` | Node and constrained inference implemented; offline synthetic-rig model/export check passed; server/cloud checks pending | In-between Motion, reference motion and frame selection |
-| Text-guided editing with selected joints held fixed | `motion_editing.py`, `sample.py --motion_edit --keep_joints` | Node and constrained inference implemented; offline synthetic-rig model/export check passed; server/cloud checks pending | Edit Motion, reference motion and joint selection |
-| Multi-prompt motion expansion | `motion_expansion.py`, `sample.py --motion_expand --expand_overlap` | Node and overlap stitching implemented; real-model 110-frame synthetic-rig export/playback check passed; server/cloud checks pending | Expand Motion, ordered prompts and overlap |
-| Known-motion input needed by editing/in-betweening | `sample.py` reads a selected dataset clip | Numeric archive loader implemented; source GLB animation extraction missing | Load Motion Features and Extract Asset Motion |
-| Rest-pose rig conditioning | `data_process/mesh_animation/preprocess_char.py` | Implemented for restricted GLB assets, explicit facing | Prepare Rig; expose inspected joint names and mapping |
-| Canonical asset and conditioning export | `preprocess_char.py`: GLB/FBX, conditioning and optional visualization | Missing as outputs; internal conditioning exists | Export Conditioning / Canonical Asset |
-| Generated numeric motion export/reload | `sample.py`: `(T,J,12)` motion files and caption ledger | Safe numeric archive load/save nodes implemented; upstream plain-feature interchange pending | Save/Load Motion Features with rig identity |
-| Animated mesh export | `data_process/mesh_animation/animate_motion.py`: GLB and FBX | GLB only | Export Animation with supported format selection |
-| Skeleton visualization, FK and RIC recovery | `sample.py --save_ric`, visualization utilities | Both recovery modes and fixed-frame IMAGE rendering implemented; upstream comparisons, Windows and headless stadia ComfyUI retrieval passed; cloud runner execution pending | Recover Skeleton (`fk`/`ric`) → Render Skeleton → Preview Image / Save Image |
-| Released model selection | Hub inventory: Mixamo, UniML3D preview, v2 graph/AdaLN, v2 full/cross-attention | Only v2 graph/AdaLN accepted | Config-driven Model Loader and converter |
-| Checkpoint selection | `sample.py --model_path`; Hub includes multiple training steps | Bundle selects one EMA checkpoint during conversion | Explicit installed checkpoint/bundle selection and metadata |
-| Model-dependent dimensions and normalization | Config/schema, dataset statistics, model factory | Hardcoded 60 frames, 71 padded joints, narrow architecture | Derive supported dimensions from validated model config |
+| Text-conditioned motion on a target skeleton | `unimate/inference/sample.py`, `generate.py` | All four families passed direct model/export checks; v2 server and headless CPU workflows passed; remaining cloud/model paths are open | Generate Motion |
+| Unconditional generation | `sample.py`: text-list cases and guidance 1 | Guidance 1 matches upstream; all four families passed direct free-generation checks | Generate Motion / Batch, guidance 1 |
+| Multiple seeds, repetitions, cases and inference chunks | `sample.py` | Eight-case, two-rig Windows model/server/playback passed; controlled cloud lists passed; multi-rig worker/headless checks remain open | Generate Batch, Combine Rigs |
+| Cross-topology behavior transfer through text | Paper §5.5; same behavior prompt drives each target skeleton | Shared-prompt five-/seven-joint Windows workflow passed; broader asset quality and headless/worker validation remain open | Combine Rigs → Generate Batch → paired Export |
+| In-betweening | `motion_inbetweening.py`, `sample.py --inbetween --keep_frames` | Pinned comparisons, four-family direct checks and v2 headless server playback passed; expanded cloud sampling remains open | In-between Motion, reference motion and frame selection |
+| Text-guided editing with selected joints held fixed | `motion_editing.py`, `sample.py --motion_edit --keep_joints` | Pinned comparisons, four-family direct checks and v2 headless server playback passed; expanded cloud sampling remains open | Edit Motion, reference motion and joint selection |
+| Multi-prompt motion expansion | `motion_expansion.py`, `sample.py --motion_expand --expand_overlap` | 110-frame real-model and headless server export/playback passed; expanded cloud sampling remains open | Expand Motion, ordered prompts and overlap |
+| Known-motion input needed by editing/in-betweening | `sample.py` reads a selected dataset clip | Numeric archives and GLB clip extraction implemented; extraction passed actual partition handlers on Windows/stadia; other source formats remain open | Load Motion, Extract Motion |
+| Rest-pose rig conditioning | `data_process/mesh_animation/preprocess_char.py` | Restricted GLB preparation implemented with facing/shoulder/body-axis options; complete CLI/input coverage remains open | Prepare Rig |
+| Canonical asset and conditioning export | `preprocess_char.py`: GLB/FBX, conditioning and visualization | Portable outputs and re-preparation passed Windows/stadia partition handlers; broader assets/formats remain open | Canonical Asset, Rig Conditioning |
+| Generated numeric motion export/reload | `sample.py`: `(T,J,12)` motion files and caption ledger | Safe archive nodes and cross-platform identity checks passed; upstream plain-feature interchange remains open | Save / Load Motion |
+| Animated mesh export | `data_process/mesh_animation/animate_motion.py`: GLB and FBX | GLB and FBX implemented; headless partition exports passed; other FBX PBR expressions and real assets remain open | Export GLB / FBX |
+| Skeleton visualization, FK and RIC recovery | `sample.py --save_ric`, visualization utilities | Pinned comparisons, server retrieval, Windows/stadia partition handlers and distinct mapped cases passed; deployed containers remain open | Recover Skeleton → Render Skeleton → Preview / Save Image |
+| Released model selection | Hub inventory: Mixamo, UniML3D preview, v2 graph/AdaLN, v2 full/cross-attention | All four loaders/checkpoints passed direct tests; server/cloud family matrix remains open | Model Loader, bundle converter |
+| Checkpoint selection | `sample.py --model_path`; Hub includes multiple training steps | Explicit installed bundles and selected EMA conversion supported; full checkpoint inventory validation remains open | Model Loader, bundle converter |
+| Model-dependent dimensions and normalization | Config/schema, dataset statistics, model factory | Config-driven reconstruction across four families passed; joint/depth capacities and all applicable statistics remain open | Model Loader / generation normalization |
 
 ## Sampling details that affect implementation
 

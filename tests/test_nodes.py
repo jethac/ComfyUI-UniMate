@@ -80,6 +80,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateExpandMotion",
                 "UniMateExtractMotion",
                 "UniMateGenerateBatch",
+                "UniMateCombineRigs",
                 "UniMateCanonicalAsset",
                 "UniMateRigConditioning",
                 "UniMateExportFBX",
@@ -121,12 +122,38 @@ class NodeTests(unittest.TestCase):
         calls = []
         def batch(*args):
             calls.append(args)
-            return [{"seed": 0}, {"seed": 1}]
-        with self.fake_module("batch", generate_batch=batch):
-            output = nodes.UniMateGenerateBatch.execute({}, {"rig_id": "rig"}, '["walk", "sit"]', 2, 0, 3)
-        self.assertEqual(output.result[0], [{"seed": 0}, {"seed": 1}])
+            return ([{"seed": i} for i in range(4)], [args[1][0]] * 4)
+        with self.fake_module("batch", generate_batch_with_rigs=batch):
+            output = nodes.UniMateGenerateBatch.execute([{}], [{"rig_id": "rig"}], ['["walk", "sit"]'], [2], [0], [3], ["objaverse"])
+        self.assertEqual(output.result[0], [{"seed": i} for i in range(4)])
+        self.assertEqual(output.result[1], [{"rig_id": "rig"}] * 4)
         self.assertEqual(calls[0][1:4], ([{"rig_id": "rig"}], ["walk", "sit"], 2))
-        self.assertEqual(nodes.UniMateGenerateBatch.GET_NODE_INFO_V1()["output_is_list"], [True])
+        self.assertEqual(nodes.UniMateGenerateBatch.GET_NODE_INFO_V1()["output_is_list"], [True, True])
+        self.assertTrue(nodes.UniMateGenerateBatch.GET_SCHEMA().is_input_list)
+
+    def test_batch_consumes_multiple_rigs_once_and_rejects_mapped_controls(self):
+        calls = []
+        rigs = [{"rig_id": "a"}, {"rig_id": "b"}]
+        def batch(*args):
+            calls.append(args)
+            return ([{"rig_id": "a"}, {"rig_id": "b"}], rigs)
+        with self.fake_module("batch", generate_batch_with_rigs=batch):
+            result = nodes.UniMateGenerateBatch.execute([{}], rigs, ['["walk"]'], [1], [3], [3], ["objaverse"])
+            self.assertEqual(calls[0][1], rigs)
+            self.assertEqual(result.result[1], rigs)
+            with self.assertRaisesRegex(ValueError, 'one'):
+                nodes.UniMateGenerateBatch.execute([{}, {}], rigs, ['["walk"]'], [1], [3], [3], ["objaverse"])
+            self.assertEqual(len(calls), 1)
+
+    def test_rig_collection_validates_and_preserves_input_order(self):
+        rigs = [{"rig_id": "a"}, {"rig_id": "b"}, {"rig_id": "c"}]
+        checked = []
+        with self.fake_module("contracts", validate_rig=lambda rig: checked.append(rig)):
+            result = nodes.UniMateCombineRigs.execute(rigs[:2], rigs[2:])
+        self.assertEqual(result.result[0], rigs)
+        self.assertEqual(checked, rigs)
+        self.assertTrue(nodes.UniMateCombineRigs.GET_SCHEMA().is_input_list)
+        self.assertEqual(nodes.UniMateCombineRigs.GET_NODE_INFO_V1()["output_is_list"], [True])
 
     def test_expansion_node_parses_prompt_array_without_reordering(self):
         calls = []

@@ -496,18 +496,48 @@ class UniMateGenerateBatch(io.ComfyNode):
                 io.Int.Input("seed", default=0, min=0, max=2**64-1),
                 io.Float.Input("guidance", default=3.0, min=1.0, max=10.0),
                 io.Combo.Input("normalization", options=NORMALIZATION, default="objaverse")],
-            outputs=[Motion.Output(is_output_list=True)])
+            outputs=[Motion.Output(is_output_list=True), Rig.Output(display_name="matching rigs", is_output_list=True)],
+            is_input_list=True)
 
     @classmethod
-    def execute(cls, model, rig, prompts, repetitions, seed, guidance, normalization="objaverse"):
-        from .unimate_pack.batch import generate_batch
+    def execute(cls, model, rig, prompts, repetitions, seed, guidance, normalization):
+        from .unimate_pack.batch import generate_batch_with_rigs
+        controls = {}
+        for name, values in (('model', model), ('prompts', prompts), ('repetitions', repetitions),
+                             ('seed', seed), ('guidance', guidance), ('normalization', normalization)):
+            if not isinstance(values, list) or len(values) != 1:
+                raise ValueError(f'Batch setting {name} must contain exactly one value')
+            controls[name] = values[0]
+        prompts = controls['prompts']
         if not isinstance(prompts, str) or len(prompts) > 512 * 1024:
             raise ValueError("Prompts must be a bounded JSON array")
         try:
             sequence = json.loads(prompts)
         except json.JSONDecodeError as error:
             raise ValueError("Prompts must be a JSON array") from error
-        return io.NodeOutput(generate_batch(model, [rig], sequence, repetitions, seed, guidance, normalization))
+        motions, matched = generate_batch_with_rigs(controls['model'], rig, sequence,
+            controls['repetitions'], controls['seed'], controls['guidance'], controls['normalization'])
+        return io.NodeOutput(motions, matched)
+
+
+class UniMateCombineRigs(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name="Combine UniMate Rigs", category=CATEGORY,
+            inputs=[Rig.Input("rig_a"), Rig.Input("rig_b")],
+            outputs=[Rig.Output(display_name="rigs", is_output_list=True)], is_input_list=True)
+
+    @classmethod
+    def execute(cls, rig_a, rig_b):
+        from .unimate_pack.contracts import validate_rig
+        if not isinstance(rig_a, list) or not isinstance(rig_b, list):
+            raise ValueError('Rig collection inputs must be execution lists')
+        rigs = rig_a + rig_b
+        if not 1 <= len(rigs) <= 256:
+            raise ValueError('Rig collection must contain 1–256 prepared rigs')
+        for rig in rigs:
+            validate_rig(rig)
+        return io.NodeOutput(rigs)
 
 
 class UniMateExtractMotion(io.ComfyNode):

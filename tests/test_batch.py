@@ -25,3 +25,14 @@ def test_invalid_or_excessive_batch_is_rejected_before_sampling(monkeypatch, pro
     monkeypatch.setattr(inference, "generate_motion", lambda *a: pytest.fail("Invalid batch sampled"))
     with pytest.raises(ValueError):
         generate_batch({}, ["rig"], prompts, repetitions, 0, 3)
+
+
+def test_batch_returns_matching_rigs_in_case_order(monkeypatch):
+    from unimate_pack import batch, inference
+    rigs = [{'rig_id': 'a'}, {'rig_id': 'b'}]
+    monkeypatch.setattr(inference, 'generate_motion',
+        lambda model, rig, prompt, seed, guidance, normalization: {'rig_id': rig['rig_id'], 'prompt': prompt, 'seed': seed})
+    motions, matched = batch.generate_batch_with_rigs({}, rigs, ['walk', 'sit'], 2, 9, 3)
+    assert matched == [rigs[0]] * 4 + [rigs[1]] * 4
+    assert all(motion['rig_id'] == rig['rig_id'] for motion, rig in zip(motions, matched))
+    assert [motion['seed'] for motion in motions] == list(range(9, 17))

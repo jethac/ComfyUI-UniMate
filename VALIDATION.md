@@ -240,3 +240,33 @@ units and had different preview pixels at every frame, for both FK and RIC.
 Remote evidence: `run-mapped-execution-lists-20261003/independent-list-check.json`.
 The second case is a controlled velocity change to the earlier model archive;
 this run does not generate a new batch or establish multiple-rig support.
+
+### Multi-rig model batching, 2026-10-03
+
+Combine Rigs and paired Batch outputs passed the Windows ComfyUI model workflow
+on original five-joint chain and seven-joint branching fixtures: two prompts,
+two repetitions per rig, seeds 0–7, eight 60-frame GLBs and eight provenance files.
+The verifier checked every seed/prompt/source assignment and two distinct,
+stable rig IDs. Independent skinning evaluated all 480 frames: finite, changing
+vertices; original mesh, skin, material, image and texture structures and binary
+prefixes preserved. Evidence: `.runtime/multi-rig-model-check/report.json` and
+`independent-playback.json`.
+
+The two-job batch worker workflow also passed. It staged both declared GLBs and
+the selected model bundle from digest-keyed storage, then generated and published
+eight paired rig/motion cases. A second handler job restored both lists and
+exported all eight cases. Complete artifact inventories matched across transport;
+client-restored files matched their published bytes. Independent skinning checked
+all 16 GLBs / 960 frames, with zero difference between each original and restored
+case. Evidence: `.runtime/multi-rig-worker-model-check/report.json` and
+`independent-playback.json`.
+
+Runtime: Windows, Python 3.11, PyTorch 2.11.0+cu128, RTX 5060 Ti, Blender 5.1.1,
+ComfyUI `84ba85773925f071c516f0208184773802b4d44a`. Model bundle SHA256:
+`3d4420752e64b873f98c8aec2d6f01edf7be861c704920dfc095bd1d700664b8`.
+Source/model/T5 pins match the earlier v2 records. Focused checks: 39 tests plus
+six subtests passed; changed code lint passed. Review found no blocker.
+
+Staging is explicitly invoked before the actual partition handler. Provider
+dispatch, gateway submission/extraction and deployed containers are not exercised
+by this harness. Headless multi-rig model validation remains open.

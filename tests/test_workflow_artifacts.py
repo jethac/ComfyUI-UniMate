@@ -41,3 +41,16 @@ def test_batch_artifact_provenance_detects_duplicate_or_misassigned_cases():
     cases[3] = cases[2]
     with pytest.raises(ValueError):
         validate_batch_cases(cases, prompts, 2)
+
+
+def test_multi_rig_batch_provenance_detects_crossed_rig_pairings():
+    from tools.verify_workflow import validate_multi_rig_batch_cases
+    prompts = ['stand', 'walk']
+    sources = ['a' * 64, 'b' * 64]
+    cases = [{'seed': i, 'prompt': prompts[(i % 4) // 2], 'frames': 60,
+              'source_sha256': sources[i // 4], 'rig_id': ('c' if i < 4 else 'd') * 64}
+             for i in range(8)]
+    validate_multi_rig_batch_cases(cases, prompts, 2, sources)
+    cases[4]['source_sha256'] = sources[0]
+    with pytest.raises(ValueError):
+        validate_multi_rig_batch_cases(cases, prompts, 2, sources)
