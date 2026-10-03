@@ -11,6 +11,17 @@ from unimate_pack.contracts import make_asset, make_rig, encode_arrays, decode_a
 from unimate_pack.source_motion import extract_motion
 
 
+@pytest.mark.parametrize("body_axis", [False, True])
+def test_prepare_four_joint_facing_retains_extraction_mode(body_axis):
+    source = synthetic_glb(True)
+    document, _ = parse_glb(source)
+    cond, mapping = prepare_document(document, "joint_pair", "Joint_2", "Joint_1",
+        left_shoulder="Joint_4", right_shoulder="Joint_3", body_axis=body_axis)
+    assert cond["face_joint_idxs"].shape == (4,)
+    rig = make_rig(make_asset(source, "rig.glb"), encode_arrays(**cond), mapping)
+    assert rig["mapping"]["body_axis"] == body_axis
+
+
 def test_joint_pair_extraction_facing_matches_upstream():
     import importlib.util
     import os

@@ -34,7 +34,7 @@ def extract_motion(rig, clip_index=0, *, check_cancel=lambda: None):
         rest_local[joint] = rest_global[parent].T @ rest_global[joint]
         animated_local[:, joint] = animated_global[:, parent].swapaxes(-1, -2) @ animated_global[:, joint]
     rotations = rebase_rotations(rest_local, animated_local, parents)
-    facing = facing_rotations(positions, conditioning["face_joint_idxs"])
+    facing = facing_rotations(positions, conditioning["face_joint_idxs"], rig["mapping"].get("body_axis", False))
     features = encode_motion_features(positions, rotations, parents, facing)
     check_cancel()
     return make_motion(rig["rig_id"], encode_arrays(features=features), dict(

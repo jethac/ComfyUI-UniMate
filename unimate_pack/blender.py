@@ -150,11 +150,12 @@ def _job(operation, asset, **extra):
         return (folder / "output.glb").read_bytes()
 
 
-def prepare_rig(asset, facing, left_joint="", right_joint=""):
+def prepare_rig(asset, facing, left_joint="", right_joint="", *, left_shoulder="", right_shoulder="", body_axis=False):
     validate_asset(asset)
     validate_glb(asset["glb"])
     conditioning, mapping = _job(
-        "prepare", asset, facing=facing, left_joint=left_joint, right_joint=right_joint
+        "prepare", asset, facing=facing, left_joint=left_joint, right_joint=right_joint,
+        left_shoulder=left_shoulder, right_shoulder=right_shoulder, body_axis=body_axis,
     )
     # Keep spectral decomposition in the inference NumPy runtime. Blender's
     # bundled LAPACK can choose different eigenvector signs from the server.

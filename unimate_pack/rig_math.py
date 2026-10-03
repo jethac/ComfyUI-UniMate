@@ -152,7 +152,8 @@ def _ordering(parents, offsets):
 
 
 def prepare_document(
-    doc, facing, left_joint="", right_joint="", name="character", blender_rest=None
+    doc, facing, left_joint="", right_joint="", name="character", blender_rest=None,
+    *, left_shoulder="", right_shoulder="", body_axis=False,
 ):
     worlds, local, node_parents = world_matrices(doc)
     joints = list(doc["skins"][0]["joints"])
@@ -197,11 +198,14 @@ def prepare_document(
         ):
             raise ValueError("Select two distinct existing left/right joints")
         face_idxs = [names.index(right_joint), names.index(left_joint)]
-        across = rest[face_idxs[0], :3, 3] - rest[face_idxs[1], :3, 3]
-        forward = np.cross([0, 1, 0], across)
-        if np.linalg.norm(forward) < 1e-8:
-            raise ValueError("Facing pair has no horizontal separation")
-        angle = -np.arctan2(forward[0], forward[2])
+        if left_shoulder or right_shoulder:
+            selected = [right_joint, left_joint, right_shoulder, left_shoulder]
+            if len(set(selected)) != 4 or any(joint not in names for joint in selected):
+                raise ValueError("Select four distinct existing facing joints")
+            face_idxs = [names.index(joint) for joint in selected]
+        from .facing import facing_rotations
+        rotation = facing_rotations(rest[None, :, :3, 3], face_idxs, body_axis)[0]
+        angle = np.arctan2(rotation[0, 2], rotation[0, 0])
     else:
         angles = {"+Z": 0.0, "-Z": np.pi, "+X": -np.pi / 2, "-X": np.pi / 2}
         if facing not in angles:
@@ -299,6 +303,8 @@ def prepare_document(
         right_joint=right_joint,
         quaternion_order="wxyz conditioning; xyzw glTF",
     )
+    if left_shoulder or right_shoulder or body_axis:
+        mapping.update(left_shoulder=left_shoulder, right_shoulder=right_shoulder, body_axis=body_axis)
     return cond, mapping
 
 

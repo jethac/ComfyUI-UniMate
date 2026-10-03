@@ -114,6 +114,9 @@ def main():
             request["right_joint"],
             request["name"],
             rest_matrices(armature, names),
+            left_shoulder=request.get("left_shoulder", ""),
+            right_shoulder=request.get("right_shoulder", ""),
+            body_axis=request.get("body_axis", False),
         )
         (folder / "conditioning.npz").write_bytes(encode_arrays(**cond))
         report = {

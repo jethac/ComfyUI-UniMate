@@ -435,12 +435,12 @@ def validate_rig(value: dict) -> None:
     if "face_joint_idxs" in arrays:
         face = arrays["face_joint_idxs"]
         if (
-            face.shape != (2,)
+            face.shape not in ((2,), (4,))
             or face.dtype.kind not in "iu"
             or not (np.all(face == -1) or np.all((face >= 0) & (face < joint_count)))
         ):
             raise ValueError(
-                "Rig face_joint_idxs requires two valid indices or paired -1 sentinel"
+                "Rig face_joint_idxs requires two or four valid indices or -1 sentinel"
             )
     if "spectral_feats" in arrays and (
         arrays["spectral_feats"].shape != (joint_count, 8)

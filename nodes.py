@@ -181,12 +181,15 @@ class UniMatePrepareRig(io.ComfyNode):
                 io.Combo.Input("facing", options=FACING, default="+Z"),
                 io.String.Input("left_joint", default="", optional=True),
                 io.String.Input("right_joint", default="", optional=True),
+                io.String.Input("left_shoulder", default="", optional=True),
+                io.String.Input("right_shoulder", default="", optional=True),
+                io.Boolean.Input("body_axis", default=False, optional=True),
             ],
             outputs=[Rig.Output()],
         )
 
     @classmethod
-    def execute(cls, asset, facing, left_joint="", right_joint="") -> io.NodeOutput:
+    def execute(cls, asset, facing, left_joint="", right_joint="", left_shoulder="", right_shoulder="", body_axis=False) -> io.NodeOutput:
         from .unimate_pack.blender import prepare_rig
         from .unimate_pack.contracts import validate_asset, validate_rig
 
@@ -199,7 +202,11 @@ class UniMatePrepareRig(io.ComfyNode):
             raise ValueError(
                 "Joint-pair facing requires distinct left_joint and right_joint names."
             )
-        rig = prepare_rig(asset, facing, left_joint, right_joint)
+        if left_shoulder or right_shoulder or body_axis:
+            rig = prepare_rig(asset, facing, left_joint, right_joint,
+                left_shoulder=left_shoulder, right_shoulder=right_shoulder, body_axis=body_axis)
+        else:
+            rig = prepare_rig(asset, facing, left_joint, right_joint)
         validate_rig(rig)
         return io.NodeOutput(rig)
 
