@@ -969,3 +969,56 @@ These are internal kernel checks, not public training, installed-checkpoint
 training, distributed execution, resume or ComfyUI/worker training evidence.
 Learned-variance backbone output integration and all session/workflow gates remain
 open. Environment: Windows Python 3.11.9, Torch 2.11.0+cu128, NumPy 2.4.3.
+
+## Single-process training sessions (2026-10-03)
+
+`training_session.py` follows pinned `training/train.py` AdamW, cosine/minimum-LR
+warmup, gradient clipping and EMA update order. Source revision is
+`2c5b384715aa63d8639b1ed7eb74bfe614570c7a`; train source SHA256
+`a90e6befaffad54b8848530b0bf6a39f2f8509880df76a997add573e0bbbdb33`,
+config schema SHA256
+`e03a53ede299f28de811ea54baa25164e56f5922e02a82001935fb6114ce06a3`.
+Accumulation counts one, two and three match reference model, optimizer, scheduler
+and EMA state after four updates. Reference LR uses the installed Transformers
+function selected by the released trainer.
+
+Uninterrupted and interrupted/restored flow and diffusion sessions match every
+internal state tensor and counter exactly within each tested runtime. Four small
+backbones also match after dropout/conditioning-mask RNG consumption. These are
+the same one-layer/latent-64/fixture-text models used by kernel tests, not installed
+released checkpoints. CPU BF16 and caller-selected CUDA none/BF16/FP16 runs
+preserve process RNG; Linear fixtures verify actual autocast output dtype and
+resumed state equality. FP16 scaler state is included in internal snapshots.
+
+Failure on the second microbatch restores persistent buffers, gradients, RNG and
+counters. Cancellation after an optimizer update restores all session state.
+Corrupt model tensors, nonfinite optimizer updates and source EMA overflow fail
+before accepting a group. OrderedDict traversal and EMA-overflow regressions both
+failed before their fixes. Backup budget rejects before copying/updating. Partial
+final groups require explicit selection and retain the configured loss divisor.
+The adapter rejects whole nonfinite groups instead of upstream microbatch skips;
+dataset advancement/retry policy must be explicit in public/distributed jobs.
+
+Windows full suite: 1,047 passed, 50 skipped, six subtests, 76.36s. Six warnings:
+two existing JIT, two imported SentencePiece/SWIG, and two deliberate optimizer
+hook warnings from injected update failures. Changed-file Ruff and diff checks
+passed. Review's important EMA finding is fixed through RED→GREEN. Deferred minor
+checks: numeric partial-group divisor comparison; injected scheduler/EMA
+exceptions and cancellation before optimizer update.
+
+Headless stadia CPU: 30 passed, five CUDA checks skipped, 8.14s. Python 3.11.15,
+Torch 2.14.1+cpu, NumPy 2.4.6, Transformers 5.18.0; `OMP_NUM_THREADS=2`.
+An isolated worktree at `training-session-audit-20261003` uses baseline `a2b75fa`
+plus the two session files. Tests ran with explicit worktree `PYTHONPATH` and
+pytest plugin autoload disabled. Local/remote session source SHA256 matches
+`a0cd4b4091e10d15615ae3554481fe5c9736fa51d1a67cfc66124325d979db9a`;
+test source matches
+`9da31080d129da95a480f027abbfbab3def84f9f438e0ae1b36e6d2f0e6dcb5e`.
+The first invocation omitted PYTHONPATH and
+failed collection before training. This is headless library evidence, not a
+ComfyUI server or Cloud Offload training run.
+
+Internal snapshots are trusted tensor trees. Portable untrusted serialization,
+dataset/epoch binding, distributed behavior, public nodes, model residency,
+installed-model updates/export/inference and actual-worker cancellation/resume
+remain required. No cross-runtime byte equality is claimed.

@@ -379,6 +379,26 @@ policy matches the flow adapter. Invalid or unrepresentable schedules fail
 before model execution. RNG, device, batch and finite-loss boundaries match the
 flow kernel; neither kernel owns optimizer state or concurrent execution.
 
+`TrainingSession` now owns single-process AdamW, source cosine/minimum-LR warmup,
+EMA and accumulation groups. Models remain float32; optional CPU/CUDA BF16
+autocast and CUDA FP16 scaling wrap forward/backward. Each microbatch loss is
+divided by the configured accumulation count, including explicitly selected
+partial final groups. Update order is clipping, AdamW, LR scheduler, zero grad,
+EMA. Inference's shared lock serializes model/RNG use. The session advances its
+own CPU/selected-CUDA streams and restores process streams after execution.
+
+Groups retain a CPU snapshot of persistent model tensors, optimizer, scheduler,
+EMA, scaler, RNG, module modes and update/batch counters. Cancellation or invalid
+loss, gradient or resulting state restores the entire group; the adapter rejects
+nonfinite groups rather than reproducing source microbatch skipping. All state,
+including EMA, must be finite before counters advance. The copy budget reserves
+eight persistent-model copies before snapshotting; it does not bound activation
+memory or initialize ComfyUI residency. Internal snapshots are trusted tensor
+trees, not a portable untrusted checkpoint format. Exact dataset/epoch binding,
+portable validation, distributed execution, model residency and public ownership
+remain required. Caller must keep architecture, device and trainability fixed
+during a session.
+
 ## Cloud Offload implementation
 
 Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries registered UniMate values unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.

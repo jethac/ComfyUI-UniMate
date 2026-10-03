@@ -46,9 +46,32 @@ Ruling: default `timestep_policy=mapped` wraps respaced training inputs; explici
 MSE; explicit `released` reproduces the omitted upstream objective term. These
 corrections affect training trajectories and must remain recorded in job state.
 
+### Task 3: Optimizer session
+
+`TrainingSession(model, *, paradigm, loss_options, options, seed)` owns AdamW,
+source warmup/cosine-min LR and EMA. The caller selects model/device; float32
+parameters support none/bf16 autocast and CUDA fp16 scaling. `step(batches)`
+executes an explicit accumulation group, divides each loss by configured
+accumulation, clips after backward/unscale, updates AdamW → scheduler → EMA.
+Partial final groups require an explicit flag and keep the source divisor.
+
+Serialize execution with inference's model/RNG lock. Keep an advancing private
+CPU/selected-CUDA RNG stream while preserving process streams. Snapshot model,
+optimizer, LR, EMA, scaler, RNG and batch/update position at group entry; rollback
+on cancellation, invalid loss/gradient or update failure. State-copy budget
+preflight precedes cloning. Internal snapshots support exact uninterrupted vs
+restore tests; portable untrusted checkpoint validation is Task 4 and must not
+be claimed here. Compare source optimizer/scheduler/EMA update order and values;
+exercise partial groups, rollback, RNG, clipping and CPU/CUDA precision.
+
+Task 3 foundation is single-process. Distributed reduction/skip/accumulation,
+public session ownership and ComfyUI memory-management integration remain
+mandatory before full training coverage.
+
 ### Subsequent required tasks
 
 - [x] Diffusion schedule/loss kernel and reference comparisons.
+- [x] Single-process optimizer session, internal resume, accumulation and precision foundation.
 - [ ] AdamW, LR schedule, EMA, accumulation/precision/distributed sessions and exact resume comparisons.
 - [ ] Bounded portable model/optimizer/scheduler/EMA/RNG/data-position checkpoint contracts.
 - [ ] Model architecture/job configuration and public training/progress/checkpoint nodes.
@@ -73,3 +96,14 @@ small backbone updates and selected-CUDA source equality passed. Full suite:
 1,012 passed, 50 skipped, six subtests. Final review: no actionable correctness
 findings. Final: minor (deferred): direct diffusion valid-rotation geodesic
 reference comparison; shared helpers already independently compared in flow.
+
+Task 3 foundation: missing module RED → session/reference tests GREEN. Internal
+OrderedDict finite/copy traversal failed corruption/update tests before fix.
+Final: fixed EMA overflow — `test_ema_overflow_rolls_back_complete_state`
+RED→GREEN; full suite 1,047 passed, 50 skipped, six subtests. Four backbone
+dropout resumes and actual Linear autocast output dtype/restore checks pass.
+Ruling: reject nonfinite accumulation groups atomically rather than applying
+source microbatch skipping — avoids invalid partial updates; cost is different
+data consumption on failures, which public/distributed jobs must make explicit.
+Final: minor (deferred): compare partial final-group divisor numerically.
+Final: minor (deferred): inject scheduler/EMA exceptions and pre-update cancellation.
