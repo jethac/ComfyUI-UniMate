@@ -326,5 +326,22 @@ ComfyUI `84ba85773925f071c516f0208184773802b4d44a`, cloud runner `43bd1a0`, clie
 `4a7a937`. Evidence: `.runtime/stadia-foot-lock-worker/report.json` and
 `independent-playback.json`. Provider dispatch and deployed containers are outside
 this harness. Windows worker verification stopped before submission at a core
-runner-identity Git wait timeout that escaped through `/system_stats`; it remains
-open pending that fix and a successful run.
+runner-identity Git wait timeout that escaped through `/system_stats`; at that
+point it was open pending a fix and a successful run.
+
+
+Windows worker verification subsequently passed at pack `9f0437c` with ComfyUI
+`e2f44d7fe65e270ac111237366b03e396b94dcea`, cloud runner `43bd1a0` and client
+`4a7a937`. Two actual partition jobs retrieved 369 files (360 PNGs, two GLBs,
+two FBXs, four provenance JSONs and one corrected NPZ). Independent playback
+checked both GLBs across 120 frames: restored skinning matched exactly, source
+appearance was preserved, maximum joint error was 1.758e-7 and maximum interior
+anchor error was 6.624e-7. Runtime: Python 3.11.9, PyTorch 2.11.0+cu128,
+RTX 5060 Ti, Blender 5.1.1; the numeric correction uses NumPy on CPU. Evidence:
+`.runtime/foot-lock-worker-check-2/report.json` and `independent-playback.json`.
+
+The ComfyUI prerequisite fix catches the bounded Git wait timeout and closes
+the Windows process job, output stream and reader during cleanup. Core runner
+identity and endpoint tests passed (23 tests); changed-file Ruff passed. The
+core worktree retains an unrelated untracked launcher, so no clean-worktree
+identity claim is made. Provider dispatch and deployed containers remain open.
