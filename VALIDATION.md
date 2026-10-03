@@ -129,6 +129,8 @@ This does not establish fidelity for other PBR material expressions or cloud exe
 
 ### Remaining gates
 
+- Skeleton recovery/rendering: pinned FK/RIC numerical comparisons and Windows server PNG retrieval passed. Focused tests: 109 passed, 6 subtests passed. Server evidence: `.runtime/skeleton-server-fixture-check/report.json`, with 17 frames per mode and 34 retrieved PNGs. Actual cloud runner and stadia execution remain open. Re-preparing the stadia source asset locally produced a different rig identity, so its archive was correctly rejected; identity stability across environments remains under investigation.
+
 - Linux GPU inference, worker-container execution, and live provider provisioning.
 - Redistributable real characters, arbitrary-rig motion quality, and the complete upstream preprocessing CLI.
 - Independent graphical glTF viewer playback/appearance review; current independent verification is numeric.

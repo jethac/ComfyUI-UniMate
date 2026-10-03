@@ -179,6 +179,25 @@ If importing a new rig requires rebuilding the entire dataset, or export cannot 
 
 Motion preview can render an IMAGE batch or add a frontend viewer once its cost and animation support are understood. Motion import plus frame/joint constraints can expose upstream in-betweening and editing. Expansion can chain fixed windows while preserving root continuity. These need separate contracts and acceptance tests.
 
+## Skeleton recovery and rendering
+
+`UniMateRecoverSkeleton` takes a prepared rig, motion and explicit `fk`/`ric` mode.
+FK reverses parent-shifted 6D rotations and propagates canonical `tpos_offsets` through
+the ordered hierarchy. RIC unrotates facing-relative joint positions and adds root XZ.
+Both integrate velocities using destination-frame facing, preserve reference-motion
+canonical root origins and reject rig identity mismatches.
+
+`unimate.skeleton.v1` carries rig identity, fps 30, recovery mode, SHA-256 and an NPZ
+containing float32 `(T,J,3)` positions, ordered parents and joint names. Validation checks
+the digest, shape, finite values and topology. No local paths or live objects cross sockets.
+
+`UniMatePreviewSkeleton` renders every frame to an IMAGE batch through a fixed orthographic
+front/side/top projection. Clip-wide bounds preserve trajectory; the renderer never
+recenters individual frames. Allocation is checked before rendering and capped at 256 MiB.
+IMAGE batches do not carry fps; the skeleton value does. Cancellation is checked during
+recovery and between rendered frames. Pinned upstream comparisons validate both recovery
+paths; server and cloud evidence is tracked separately in COVERAGE.md.
+
 ## Cloud Offload implementation
 
 Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries all four sockets unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.

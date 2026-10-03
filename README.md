@@ -19,8 +19,10 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Canonical UniMate Asset | Apply prepared coordinates to the original asset without rewriting skin or mesh data |
 | UniMate Rig Conditioning | Expose numeric topology conditioning, its hash and canonical rig identity |
 | Export UniMate FBX | Bake animation to binary FBX and verify skinning after Blender reimport |
+| Recover UniMate Skeleton | Recover canonical joint positions through FK or RIC |
+| Render UniMate Skeleton | Render every recovered frame as a ComfyUI IMAGE batch |
 
-The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
+The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
 ## Install
 
@@ -80,6 +82,10 @@ Generate UniMate Batch accepts 1–32 JSON prompts and 1–64 repetitions, cappe
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 
 Export UniMate FBX writes binary FBX and provenance JSON. The external Blender job bakes at 30 fps without leaf bones, embeds images, reimports at frame zero and checks bone identity and evaluated skinning for every frame. Constant glTF base-color multipliers are folded into 16-bit PNG textures; embedded pixels are checked after reimport. Other material expressions and server/cloud execution remain unverified. FBX input is not supported.
+
+## Skeleton recovery
+
+Skeleton recovery exposes canonical joint positions, ordered parents and joint names in a portable `UNIMATE_SKELETON` value with the motion's rig identity. `fk` uses rest offsets and recovered rotations; `ric` uses facing-relative position channels. Render UniMate Skeleton returns all frames as an IMAGE batch, with front, side or top projection and fixed bounds across the clip. Connect it to ComfyUI Preview Image or Save Image. Frames remain at 30 fps; the IMAGE socket does not carry timing. Output allocation is capped at 256 MiB; reduce resolution for long clips.
 
 ## Cloud Offload
 

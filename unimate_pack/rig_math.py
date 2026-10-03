@@ -312,9 +312,8 @@ def prepare_document(
     return cond, mapping
 
 
-def decode_features(features, parents):
-    features = np.asarray(features, dtype=np.float64)
-    raw = features[..., 3:9]
+def rotation_6d_matrices(raw):
+    raw = np.asarray(raw, dtype=np.float64)
     x = raw[..., :3]
     y = raw[..., 3:]
     xn = np.linalg.norm(x, axis=-1, keepdims=True)
@@ -327,7 +326,12 @@ def decode_features(features, parents):
         raise ValueError("Motion contains collinear 6D rotation axes")
     z = z / zn
     y = np.cross(z, x)
-    hml = np.stack([x, y, z], axis=-1)
+    return np.stack([x, y, z], axis=-1)
+
+
+def decode_features(features, parents):
+    features = np.asarray(features, dtype=np.float64)
+    hml = rotation_6d_matrices(features[..., 3:9])
     rotations = np.broadcast_to(np.eye(3), (*features.shape[:2], 3, 3)).copy()
     for j, p in enumerate(parents[1:], 1):
         rotations[:, p] = hml[:, j]

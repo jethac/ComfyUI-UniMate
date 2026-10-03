@@ -20,6 +20,7 @@ Rig = io.Custom("UNIMATE_RIG")
 Model = io.Custom("UNIMATE_MODEL")
 Motion = io.Custom("UNIMATE_MOTION")
 Conditioning = io.Custom("UNIMATE_CONDITIONING")
+Skeleton = io.Custom("UNIMATE_SKELETON")
 CATEGORY = "3D/UniMate"
 FACING = ["+Z", "-Z", "+X", "-X", "joint_pair"]
 NORMALIZATION = ["objaverse", "mixamo", "truebones"]
@@ -168,6 +169,42 @@ class UniMateLoadRig(io.ComfyNode):
         _input_path(selected)
         name, _ = folder_paths.annotated_filepath(selected)
         return [{"category": "__input__", "filename": _relative_name(name)}]
+
+
+class UniMateRecoverSkeleton(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id='UniMateRecoverSkeleton', display_name='Recover UniMate Skeleton',
+            category=CATEGORY, inputs=[Rig.Input('rig'), Motion.Input('motion'),
+                io.Combo.Input('method', options=['fk', 'ric'], default='fk')],
+            outputs=[Skeleton.Output()])
+
+    @classmethod
+    def execute(cls, rig, motion, method) -> io.NodeOutput:
+        from comfy.model_management import throw_exception_if_processing_interrupted
+        from .unimate_pack.skeleton import recover_skeleton
+
+        return io.NodeOutput(recover_skeleton(rig, motion, method,
+            check_cancel=throw_exception_if_processing_interrupted))
+
+
+class UniMatePreviewSkeleton(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id='UniMatePreviewSkeleton', display_name='Render UniMate Skeleton',
+            category=CATEGORY, inputs=[Skeleton.Input('skeleton'),
+                io.Combo.Input('projection', options=['front', 'side', 'top'], default='front'),
+                io.Int.Input('resolution', default=256, min=64, max=1024, step=64)],
+            outputs=[io.Image.Output()])
+
+    @classmethod
+    def execute(cls, skeleton, projection, resolution) -> io.NodeOutput:
+        import torch
+        from comfy.model_management import throw_exception_if_processing_interrupted
+        from .unimate_pack.skeleton_preview import render_skeleton
+
+        return io.NodeOutput(torch.from_numpy(render_skeleton(skeleton, projection, resolution,
+            check_cancel=throw_exception_if_processing_interrupted)))
 
 
 class UniMatePrepareRig(io.ComfyNode):

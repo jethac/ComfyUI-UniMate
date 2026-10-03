@@ -563,6 +563,34 @@ def validate_model(value: dict) -> None:
         raise ValueError("Invalid model bundle") from exc
 
 
+def validate_skeleton(value: dict, rig_id: str | None = None) -> None:
+    _record(value, 'unimate.skeleton.v1', ('rig_id', 'arrays', 'sha256', 'fps', 'method'))
+    _digest(value['rig_id'], 'rig')
+    if rig_id is not None and value['rig_id'] != rig_id:
+        raise ValueError('Skeleton and prepared rig identities do not match')
+    _digest(value['sha256'], 'skeleton')
+    _bytes(value['arrays'], MAX_ARRAY_BYTES, 'Skeleton arrays')
+    if hashlib.sha256(value['arrays']).hexdigest() != value['sha256']:
+        raise ValueError('Skeleton arrays digest mismatch')
+    if type(value['fps']) is not int or value['fps'] != 30 or value['method'] not in ('fk', 'ric'):
+        raise ValueError('Skeleton requires fps 30 and fk or ric recovery mode')
+    arrays = decode_arrays(value['arrays'])
+    if set(arrays) != {'positions', 'parents', 'joint_names'}:
+        raise ValueError('Skeleton requires positions, parents and joint names')
+    positions, parents, names = (arrays[key] for key in ('positions', 'parents', 'joint_names'))
+    if (positions.dtype != np.dtype('float32') or positions.ndim != 3
+            or positions.shape[0] < 1 or positions.shape[2] != 3
+            or not 5 <= positions.shape[1] <= 70):
+        raise ValueError('Skeleton requires float32 (T>=1,5–70,3) positions')
+    joints = positions.shape[1]
+    if (parents.shape != (joints,) or parents.dtype.kind not in 'iu'
+            or parents[0] != -1 or np.any(parents[1:] < 0)
+            or np.any(parents[1:] >= np.arange(1, joints))
+            or names.shape != (joints,) or names.dtype.kind != 'U'
+            or any(not name for name in names) or len(set(names)) != joints):
+        raise ValueError('Skeleton requires ordered parents and unique joint names')
+
+
 def make_motion(rig_id: str, features: bytes, metadata: dict) -> dict:
     value = {
         "schema": "unimate.motion.v1",

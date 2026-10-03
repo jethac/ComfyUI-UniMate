@@ -25,7 +25,7 @@ Audit date: 2026-10-03. This is a capability inventory, not a claim of complete 
 | Canonical asset and conditioning export | `preprocess_char.py`: GLB/FBX, conditioning and optional visualization | Missing as outputs; internal conditioning exists | Export Conditioning / Canonical Asset |
 | Generated numeric motion export/reload | `sample.py`: `(T,J,12)` motion files and caption ledger | Safe numeric archive load/save nodes implemented; upstream plain-feature interchange pending | Save/Load Motion Features with rig identity |
 | Animated mesh export | `data_process/mesh_animation/animate_motion.py`: GLB and FBX | GLB only | Export Animation with supported format selection |
-| Skeleton visualization, FK and RIC recovery | `sample.py --save_ric`, visualization utilities | No preview/render nodes | Preview Skeleton / Render Motion; distinguish recovery paths |
+| Skeleton visualization, FK and RIC recovery | `sample.py --save_ric`, visualization utilities | Both recovery modes and fixed-frame IMAGE rendering implemented; upstream comparisons and Windows ComfyUI retrieval passed; cloud execution and stadia pending | Recover Skeleton (`fk`/`ric`) → Render Skeleton → Preview Image / Save Image |
 | Released model selection | Hub inventory: Mixamo, UniML3D preview, v2 graph/AdaLN, v2 full/cross-attention | Only v2 graph/AdaLN accepted | Config-driven Model Loader and converter |
 | Checkpoint selection | `sample.py --model_path`; Hub includes multiple training steps | Bundle selects one EMA checkpoint during conversion | Explicit installed checkpoint/bundle selection and metadata |
 | Model-dependent dimensions and normalization | Config/schema, dataset statistics, model factory | Hardcoded 60 frames, 71 padded joints, narrow architecture | Derive supported dimensions from validated model config |
@@ -75,6 +75,8 @@ Cross-topology text-mediated transfer is supported technology. Conventional corr
 The existing five-node tests prove the narrow generation/export path. They do not prove complete UniMate coverage.
 
 ## Execution evidence
+
+2026-10-03: added Recover Skeleton and Render Skeleton. Both FK and RIC match pinned upstream on a rotating 17-frame branching case within 1e-9. Origin, identity, topology, archive digest, cancellation, fixed framing and bounded image allocation checks pass; actual Cloud Offload codec round trips preserve the skeleton value. Focused tests passed (109 plus 6 subtests). Windows ComfyUI execution loaded a locally prepared 17-frame synthetic archive, recovered both modes, retrieved all 34 PNGs through `/view`, and exported GLB/provenance. The first rendered frame was inspected. Evidence is local at `.runtime/skeleton-server-fixture-check/report.json`. Cloud runner and stadia execution remain pending. A stadia archive was rejected when paired with a separately prepared Windows rig; cross-environment re-preparation identity stability requires investigation, with no identity bypass introduced.
 
 2026-10-03: the corrected expanded inference graph passed headlessly on stadia-testbed using CPU inference, offline v2 EMA/T5 and Blender 5.1.1. ComfyUI retrieved four GLBs, four provenance JSON files and three motion archives. Independent skinning evaluation checked all 290 frames (60 generation, 60 in-betweening, 60 editing, 110 expansion), with finite changing vertices and unchanged source meshes, skins, materials, images and textures. Numeric archives decoded with the expected frame counts. This run does not cover the newer extraction, canonical, conditioning, batch, FBX or Cloud Offload paths.
 

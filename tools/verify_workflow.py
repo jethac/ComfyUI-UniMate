@@ -37,6 +37,16 @@ def validate_output(filename, data):
     elif filename.endswith(".npz"):
         from unimate_pack.motion_io import load_motion
         load_motion(data)
+    elif filename.endswith('.png'):
+        import io
+        from PIL import Image
+        try:
+            with Image.open(io.BytesIO(data)) as image:
+                if image.format != 'PNG' or not (0 < image.width <= 1024 and 0 < image.height <= 1024):
+                    raise ValueError('Unexpected skeleton image dimensions or format')
+                image.load()
+        except OSError as error:
+            raise ValueError('Invalid preview PNG') from error
     else:
         if json.loads(data).get("schema") != "unimate.export.v1":
             raise ValueError("Unexpected export metadata schema")
@@ -160,6 +170,19 @@ def verify(args):
     graph["1"]["inputs"]["asset"] = "rig with spaces.glb"
     graph["3"]["inputs"]["bundle"] = bundle.name
     graph["5"]["inputs"]["filename_prefix"] = "verified/local"
+    if getattr(args, 'skeleton_reference', None):
+        if args.cloud_root or getattr(args, 'extended', False) or getattr(args, 'batch', False):
+            raise ValueError('Run archive skeleton verification separately from inference or bridges')
+        shutil.copyfile(args.skeleton_reference, workspace / 'input/reference.npz')
+        graph['4'] = {'class_type': 'UniMateLoadMotion', 'inputs': {'archive': 'reference.npz'}}
+        graph.pop('3')
+        for method in ('fk', 'ric'):
+            graph[f'recover_{method}'] = {'class_type': 'UniMateRecoverSkeleton', 'inputs': {
+                'rig': ['2', 0], 'motion': ['4', 0], 'method': method}}
+            graph[f'preview_{method}'] = {'class_type': 'UniMatePreviewSkeleton', 'inputs': {
+                'skeleton': [f'recover_{method}', 0], 'projection': 'front', 'resolution': 128}}
+            graph[f'save_{method}'] = {'class_type': 'SaveImage', 'inputs': {
+                'images': [f'preview_{method}', 0], 'filename_prefix': f'verified/{method}'}}
     if getattr(args, "batch", False):
         if args.cloud_root or getattr(args, "extended", False):
             raise ValueError("Run batch verification separately from bridge or expanded verification")
@@ -363,14 +386,17 @@ def verify(args):
         else:
             entry = submit(base, graph)
             report["graphs"].append(
-                {"kind": "local-five-nodes", "graph": graph, "status": entry["status"]}
+                {"kind": ('archive-skeleton' if getattr(args, 'skeleton_reference', None)
+                          else 'local-batch' if getattr(args, 'batch', False)
+                          else 'local-expanded' if getattr(args, 'extended', False)
+                          else 'local-five-nodes'), "graph": graph, "status": entry["status"]}
             )
             entries = [entry]
         exports = []
         batch_cases = []
         for entry in entries:
             for output in entry["outputs"].values():
-                for key in ("3d", "files"):
+                for key in ("3d", "files", "images"):
                     for file in output.get(key, []):
                         data = request(base, "/view?" + urllib.parse.urlencode(file))
                         validate_output(file["filename"], data)
@@ -378,6 +404,12 @@ def verify(args):
                             batch_cases.append(json.loads(data)["generation"])
                         exports.append({**file, "bytes": len(data)})
         assert len(exports) >= 2
+        if getattr(args, 'skeleton_reference', None):
+            from unimate_pack.motion_io import load_motion
+            from unimate_pack.contracts import decode_arrays
+            frames = len(decode_arrays(load_motion(args.skeleton_reference.read_bytes())['features'])['features'])
+            assert sum(f['filename'].endswith('.png') for f in exports) == frames * 2
+            report['skeleton_frames_per_mode'] = frames
         if getattr(args, "batch", False):
             assert sum(f["filename"].endswith(".glb") for f in exports) == 4
             assert len(exports) == 8
@@ -416,6 +448,7 @@ def main():
     parser.add_argument("--branching", action="store_true")
     parser.add_argument("--extended", action="store_true", help="Exercise constrained modes, expansion and numeric saving")
     parser.add_argument("--batch", action="store_true", help="Exercise typed motion-list export for four cases")
+    parser.add_argument('--skeleton-reference', type=Path, help='Verify archive loading, both recovery modes and every preview frame')
     parser.add_argument("--cpu", action="store_true", help="Run ComfyUI on CPU")
     args = parser.parse_args()
     print(json.dumps(verify(args), indent=2))
