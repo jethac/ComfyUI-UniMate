@@ -16,7 +16,8 @@ from unimate_pack.contracts import encode_arrays, make_motion, decode_arrays
 
 
 @pytest.mark.parametrize("mode,selection", [("inbetween", "0,-1"), ("edit", "joint1")])
-def test_constrained_inference_normalizes_reference_and_preserves_selected_features(monkeypatch, mode, selection):
+@pytest.mark.parametrize('weights',['raw','ema'])
+def test_constrained_inference_normalizes_reference_and_preserves_selected_features(monkeypatch, mode, selection,weights):
     from comfy import model_management as mm
     joints, frames = 5, 7
     names = np.asarray([f"joint{i}" for i in range(joints)])
@@ -34,7 +35,7 @@ def test_constrained_inference_normalizes_reference_and_preserves_selected_featu
     runtime = SimpleNamespace(
         encode=lambda texts: ([np.ones((2, 768), np.float32) for _ in texts], np.ones((len(texts), 768))),
         config={}, stats={}, denoiser=SimpleNamespace(load_device=torch.device("cpu"), model=lambda x,t,cond=None,force_mask=False: x*0.01),
-        manifest={"solver": {}, "model_revision": "fixture", "text_encoder": {}, "upstream_revision": "fixture"},
+        manifest={"solver": {}, "model_revision": "fixture", "text_encoder": {}, "upstream_revision": "fixture",'weights':weights},
     )
     monkeypatch.setattr(inference, "_get_runtime", lambda model: runtime)
     result = inference.generate_motion({"sha256": "b" * 64}, rig, "walk", 0, 3,
@@ -46,6 +47,7 @@ def test_constrained_inference_normalizes_reference_and_preserves_selected_featu
     else:
         np.testing.assert_array_equal(actual[:, 1], raw[:, 1])
     assert result["metadata"]["solver"]["method"] == "euler"
+    assert result['metadata']['weights']==weights
     assert cond["motion_length"].tolist() == [frames]
     assert cond["lengths_mask"].shape == (1, 1, 1, 60)
     assert cond["lengths_mask"].reshape(-1).tolist() == [True] * frames + [False] * (60 - frames)

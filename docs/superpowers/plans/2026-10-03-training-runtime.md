@@ -27,6 +27,32 @@ the next dependencies; this increment does not close Task 5/full training.
 
 ## Review focus
 
+Next trained-inference dependencies (inline execution):
+
+1. Factor the released conditioning arithmetic behind validated capacities,
+   text width and spectral width. Add a training-options/statistics wrapper;
+   compare to the pinned collator and all four real backbone forwards. Preserve
+   released-config acceptance and numerical outputs.
+2. Assemble a versioned trained bundle from selected weights, matching portable
+   statistics/cache and an installed encoder artifact. Bind source identities;
+   retain safe extraction and offline licensed encoder assets. Add public node
+   and managed artifact retrieval.
+3. Load trained backbones through Comfy-managed runtime, dispatch the recorded
+   flow/diffusion schedule, and propagate selected-weight provenance. Support
+   configured windows/topologies/normalizations in generation and constraints.
+4. Run real trained generation, constrained sampling/export and independent
+   playback locally and headlessly, including worker staging/retrieval. Resolve
+   learned-variance output and remaining text-encoder/precision paths; never
+   call a partial supported matrix complete training or full UniMate coverage.
+
+Dependency 1 implemented: eight actual backbone forwards, complete pinned
+numeric-pipeline and released-wrapper comparisons. Review's configured-padding
+allocation finding fixed with preflight/cancellation before topology (RED→GREEN).
+Finite-source float32 overflow and raw-as-EMA provenance reproduced and fixed.
+Headless source checks required staging and CRLF/LF-normalized provenance;
+62 final checks passed. Final full-suite result is recorded in the validation
+document. Dependencies 2–4 remain open, including public trained generation.
+
 Zero valid lengths; auxiliary-loss path incompatibility; RNG leakage; malformed resume state; partial optimizer updates during cancellation.
 
 ### Task 1: Flow and EMA kernel

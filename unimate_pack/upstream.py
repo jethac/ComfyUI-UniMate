@@ -126,27 +126,68 @@ def build_condition(
     caption_tokens: np.ndarray,
     joint_embeddings: np.ndarray,
 ):
-    from ._vendor.collate import mixture_batch_collate
-    from ._vendor.transforms import apply_normalization, build_parent_features
-    from ._vendor import topology_utils as topology
-
     validate_config(config)
     validate_stats(stats)
     if normalization not in ("objaverse", "mixamo", "truebones"):
         raise ValueError("Choose objaverse, mixamo, or truebones normalization")
     if f"{normalization}_mean_root" not in stats:
         raise ValueError("Selected normalization is absent from this checkpoint")
-    parents = arrays["parents"].astype(np.int64)
+    selected={name:stats[f'{normalization}_{name}'] for name in
+        ('mean_root','std_root','mean_local','std_local')}
+    options={**config['dataset'],**config['model'],'text_dim':768}
+    return _build_condition(arrays,options,selected,caption_tokens,joint_embeddings,min_joints=5)
+
+
+def build_training_condition(arrays,options,statistics,normalization,caption_tokens,joint_embeddings,*,
+    max_workspace_bytes=512*1024**2,cancel=None):
+    """Use the trained model's capacities and explicitly selected statistics row."""
+    from .training_model import model_options
+    from .statistics import validate_statistics
+    from .contracts import decode_arrays
+    from .training_transforms import _check
+    _check(cancel)
+    options=model_options(options)
+    validate_statistics(statistics)
+    if normalization not in statistics['datasets']:
+        raise ValueError('Selected normalization is absent from trained statistics')
+    index=statistics['datasets'].index(normalization)
+    selected={name:value[index] for name,value in decode_arrays(statistics['arrays']).items()}
+    return _build_condition(arrays,options,selected,caption_tokens,joint_embeddings,min_joints=1,
+        max_workspace_bytes=max_workspace_bytes,cancel=cancel)
+
+
+def _build_condition(arrays,options,stats,caption_tokens,joint_embeddings,*,min_joints,
+    max_workspace_bytes=512*1024**2,cancel=None):
+    import torch
+    from .training_transforms import _check,_integer
+    from ._vendor.collate import mixture_batch_collate
+    from ._vendor.transforms import apply_normalization, build_parent_features
+    from ._vendor import topology_utils as topology
+
+    _check(cancel)
+    _integer(max_workspace_bytes,'max_workspace_bytes',1)
+    raw_parents=np.asarray(arrays['parents'])
+    if raw_parents.ndim!=1 or raw_parents.dtype.kind not in 'iu':
+        raise ValueError('Expected integer parent indices')
+    parents = raw_parents.astype(np.int64)
     joints = len(parents)
     if (
         parents.shape != (joints,)
-        or not 5 <= joints <= config["dataset"]["max_joints"]
+        or not min_joints <= joints <= options["max_joints"]
         or parents[0] != -1
         or any(not 0 <= parents[j] < j for j in range(1, joints))
     ):
         raise ValueError("Conditioning requires connected joints within this checkpoint's capacity")
+    frames,capacity=options['max_motion_length'],options['max_joints']
+    # Reserve padded/discarded collate motion, pairwise outputs, dense spectral
+    # work and numeric copies. This bounds conditioning, not model activations.
+    elements=(frames*12*(joints+capacity)+4*(joints*joints+capacity*capacity)
+        +options['max_freqs']*(joints+capacity)+options['text_dim']*(joints+capacity+512))
+    if 64*1024**2+64*elements>max_workspace_bytes:
+        raise ValueError('Conditioning exceeds workspace budget')
+    _check(cancel)
     depth = topology.compute_joint_depths(parents)
-    if depth.max() > config["dataset"]["max_depth"]:
+    if depth.max() > options["max_depth"]:
         raise ValueError("Skeleton exceeds this checkpoint's maximum depth")
     tpos = np.asarray(arrays["tpos_first_frame"], dtype=np.float64)
     if tpos.shape != (joints, 3) or not np.isfinite(tpos).all():
@@ -159,26 +200,35 @@ def build_condition(
     mean = np.empty((joints, 12), dtype=np.float64)
     std = np.empty_like(mean)
     for name, target in (("mean", mean), ("std", std)):
-        target[0] = stats[f"{normalization}_{name}_root"]
-        target[1:] = stats[f"{normalization}_{name}_local"]
+        target[0] = stats[f"{name}_root"]
+        target[1:] = stats[f"{name}_local"]
     normalized = apply_normalization(padded, mean, std)
+    _check(cancel)
     relations, distances = topology.compute_edge_relations_and_distances(parents)
+    _check(cancel)
     spectral = arrays.get("spectral_feats")
-    if spectral is None:
-        spectral = topology.compute_laplacian_eigenvectors(parents)[0]
-    if spectral.shape != (joints, 8) or not np.isfinite(spectral).all():
+    if spectral is not None and (spectral.ndim!=2 or spectral.shape[0]!=joints
+        or not np.isfinite(spectral).all()):
         raise ValueError("Invalid spectral topology conditioning")
+    if spectral is None or spectral.shape[1]!=options['max_freqs']:
+        _check(cancel)
+        spectral = topology.compute_laplacian_eigenvectors(parents,max_freqs=options['max_freqs'])[0]
+        _check(cancel)
     if (
-        joint_embeddings.shape != (joints, 768)
+        joint_embeddings.shape != (joints, options['text_dim'])
         or caption_tokens.ndim != 2
-        or caption_tokens.shape[1] != 768
+        or caption_tokens.shape[1] != options['text_dim']
+        or not 1<=len(caption_tokens)<=512
+        or not np.isfinite(caption_tokens).all()
+        or not np.isfinite(joint_embeddings).all()
     ):
-        raise ValueError("Invalid local T5 embeddings")
+        raise ValueError("Invalid local text embeddings")
+    _check(cancel)
     batch = dict(
-        motion=np.zeros((60, joints, 12)),
-        max_motion_length=60,
-        motion_length=60,
-        max_joints=config["dataset"]["max_joints"],
+        motion=np.zeros((frames, joints, 12)),
+        max_motion_length=frames,
+        motion_length=frames,
+        max_joints=options["max_joints"],
         parents=parents,
         edge_indexs=topology.compute_edge_indexs(parents),
         tpos_first_frame=normalized,
@@ -194,7 +244,12 @@ def build_condition(
         caption_emb=caption_tokens.mean(axis=0),
         caption_tokens=caption_tokens,
     )
-    return mixture_batch_collate([batch])[1]
+    condition=mixture_batch_collate([batch])[1]
+    _check(cancel)
+    if any(torch.is_tensor(value) and value.is_floating_point() and not torch.isfinite(value).all()
+        for value in condition.values()):
+        raise ValueError('Nonfinite float32 conditioning')
+    return condition
 
 
 def sample_constrained_flow(model, cond, known, mask, seed, guidance, check_cancel, progress=None):

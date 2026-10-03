@@ -487,6 +487,23 @@ records. Complete checkpoint-to-inference workflows remain open.
 
 ### Selected inference weights
 
+Conditioning now has a separate training-options/statistics entry point. It
+uses the same pinned normalization, topology and collator operations as the
+released wrapper, with configured window, joint/depth capacity, text width and
+spectral width. Normalization selects an explicit row of the portable training
+statistics. Cached spectral features are recomputed at a differing configured
+width; malformed cached features are rejected. Float32 collation rejects
+overflow even when the original float64 statistics/text values were finite.
+Workspace preflight includes discarded padded motion and pairwise/spectral
+work, before topology allocation. The default is 512 MiB; callers may provide
+a larger budget. Cancellation is cooperative around heavy stages; model
+activation memory is outside this conditioning budget.
+
+This is an internal trained-inference dependency. The current public generation
+runtime still uses released configurations; complete trained-bundle assembly,
+schedule dispatch and configured-window constraints remain open. Motion
+provenance now takes raw/EMA selection from the loaded manifest.
+
 Export/Load Inference Weights use `UNIMATE_INFERENCE_WEIGHTS` portable values
 and `.unimateweights` files. The `UMWEIGHT` header contains a little-endian
 uint64 JSON length, bounded JSON metadata and named safetensors. Metadata binds

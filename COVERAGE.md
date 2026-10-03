@@ -2,6 +2,15 @@
 
 Audit date: 2026-10-03. This is a capability inventory, not a claim of complete support.
 
+Trained conditioning now follows configured window, joint/depth capacity,
+text width, spectral width and a selected portable statistics row. Actual
+forwards cover all four backbone axes; complete numeric conditions match the
+pinned pipeline. Workspace and cancellation preflight precede topology work,
+and float32 overflow is rejected. Generated motion weight provenance now uses
+the bundle's raw/EMA selection. See [validation](docs/2026-10-03-trained-conditioning-validation.md).
+This helper is not yet connected to a public trained-generation runtime;
+complete trained bundles and flow/diffusion sampling/export/playback remain open.
+
 Selected trained weights: Export/Load Inference Weights now expose explicit raw
 or EMA extraction and managed `.unimateweights` IO. All four backbone axes and
 both training paradigms passed exact selected-state/forward checks. Headless

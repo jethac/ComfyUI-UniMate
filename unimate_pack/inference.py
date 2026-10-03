@@ -332,7 +332,7 @@ def generate_motion(
             solver=runtime.manifest["solver"] if reference_features is None else {"method": "euler", "num_steps": 50},
             model_sha256=model["sha256"],
             model_revision=runtime.manifest["model_revision"],
-            weights="ema",
+            weights=runtime.manifest['weights'],
             text_encoder=runtime.manifest["text_encoder"],
             upstream_revision=runtime.manifest["upstream_revision"],
             adapter_revision="unimate.inference.v1",

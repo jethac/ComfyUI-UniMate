@@ -20,8 +20,11 @@ def reference():
     if not root:
         pytest.skip('Explicit pinned source required')
     path=Path(root)/'unimate/dataset/mixture/collate.py'
-    assert hashlib.sha256(path.read_bytes()).hexdigest() == '7cb7672ba97572282ec7a3153abd21aeb4917ecf7f77bf7d3079e13a9f888eb2'
-    assert hashlib.sha256(Path(training_collation._source_collate.__code__.co_filename).read_bytes()).hexdigest() == hashlib.sha256(path.read_bytes()).hexdigest()
+    # Git checkouts may use CRLF or LF; pin the complete normalized source.
+    source=path.read_bytes().replace(b'\r\n',b'\n')
+    assert hashlib.sha256(source).hexdigest() == '512600e6dfe9193256c2ee4087892c0fd658f9f803d14a0757ba5f502ba9dd34'
+    actual=Path(training_collation._source_collate.__code__.co_filename).read_bytes().replace(b'\r\n',b'\n')
+    assert actual==source
     spec=importlib.util.spec_from_file_location('reference_collate',path)
     module=importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

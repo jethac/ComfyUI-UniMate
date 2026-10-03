@@ -157,6 +157,7 @@ same initialization bundle. Use a sufficient workspace on both nodes; the v2
 installed-model checks use 32,768 MiB. Optimizer and EMA state start fresh unless
 a training checkpoint is connected. The converter's `--weights raw` selects raw
 weights; its default is `--weights ema`, with no fallback.
+Generated motion metadata records the bundle's selected raw/EMA weights.
 Installed v2 raw/EMA training, socket/file resume and client retrieval passed
 Windows and stadia CPU server/handler checks; see [initialization validation](docs/2026-10-03-training-initialization-validation.md).
 Current execution is single-process, using balanced epoch sampling.
