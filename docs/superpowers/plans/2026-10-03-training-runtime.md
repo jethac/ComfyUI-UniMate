@@ -28,11 +28,27 @@ Interfaces: `create_flow_schedule(options)` validates explicit options and retur
 - [x] Vendor licensed math with recorded hashes; add validation and batch/device adapter.
 - [x] Compare all paths, parameterizations and weightings, auxiliary losses and gradients; test invalid input and cancellation/RNG restoration.
 - [x] Run suite, review and record exact scope.
-- [ ] Commit/push.
+- [x] Commit/push (`a5b0ba0`).
+
+### Task 2: Diffusion kernel
+
+Vendor pinned Gaussian diffusion, respacing and probability losses with retained
+MIT notices. `create_diffusion_schedule(options)` reconstructs the released
+factory. `diffusion_training_loss` follows the flow kernel's portable batch,
+caller-owned device/mode, scoped RNG, cancellation and finite-loss boundaries.
+Compare masked losses and gradients against independently loaded pinned source.
+Test timestep mapping, rescaling, variance training, stable geodesic handling,
+invalid options and RNG restoration before documenting or committing.
+
+Ruling: default `timestep_policy=mapped` wraps respaced training inputs; explicit
+`released` reproduces the omitted upstream training wrapper. Default
+`variance_policy=trained` adds the computed variational bound to learned-variance
+MSE; explicit `released` reproduces the omitted upstream objective term. These
+corrections affect training trajectories and must remain recorded in job state.
 
 ### Subsequent required tasks
 
-- [ ] Diffusion schedule/loss kernel and reference comparisons.
+- [x] Diffusion schedule/loss kernel and reference comparisons.
 - [ ] AdamW, LR schedule, EMA, accumulation/precision/distributed sessions and exact resume comparisons.
 - [ ] Bounded portable model/optimizer/scheduler/EMA/RNG/data-position checkpoint contracts.
 - [ ] Model architecture/job configuration and public training/progress/checkpoint nodes.
@@ -50,3 +66,10 @@ the source failure observable; nonfinite outputs are rejected before updates.
 Evidence: full suite 961 passed, 50 skipped, six subtests. Four small backbone
 updates and caller-selected CUDA passed; no public or installed-checkpoint
 training claim. Review's reduced-mean overflow finding fixed through RED/GREEN.
+
+Task 2: source/loss/gradient tests RED (missing module) → GREEN, 51 focused
+checks. Cumulative schedule underflow RED → guarded ValueError GREEN. Four
+small backbone updates and selected-CUDA source equality passed. Full suite:
+1,012 passed, 50 skipped, six subtests. Final review: no actionable correctness
+findings. Final: minor (deferred): direct diffusion valid-rotation geodesic
+reference comparison; shared helpers already independently compared in flow.

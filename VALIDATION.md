@@ -934,3 +934,38 @@ review rechecked the overflow fix and found no remaining actionable findings.
 Diffusion, optimizer sessions, precision/accumulation/distributed execution,
 portable resume, public progress/checkpoint nodes, installed-model training and
 server/headless/worker training remain open.
+
+## Diffusion training kernel (2026-10-03)
+
+Pinned Gaussian diffusion, timestep respacing and likelihood loss bodies are
+retained unchanged apart from imports; AST comparisons verify this. Source
+revision `2c5b384715aa63d8639b1ed7eb74bfe614570c7a` and original file hashes are
+recorded in `_vendor/SOURCES.json`. Parent UniMate and guided-diffusion MIT notices
+cover these ports; no original TensorFlow code was copied.
+
+Twenty-four fixed-variance cases (x-start/epsilon × small/large variance ×
+full/section/DDIM respacing × rescaling) match pinned masked MSE, scalar metrics
+and parameter gradients exactly. Tests reproduce the source training wrapper
+omission and missing variance objective, verify mapped original timestep inputs,
+and compare learned-range variance gradients after adding the source VB term.
+Explicit released policies retain both omissions. The VB reduction remains the
+source's unmasked reduction; epsilon geodesics retain the source target semantics.
+
+All four small CPU backbone families completed finite diffusion backprop and
+AdamW updates using fixture text embeddings. A caller-selected RTX 5060 Ti
+CUDA test matches reference loss/metrics and preserves CPU/CUDA RNG states.
+Default stable geodesics produce finite gradients on padded/degenerate fixture
+rotations. Model failure and cancellation after forward restore RNG. Malformed
+options and unrepresentable schedules reject; cumulative underflow was reproduced
+before the guard and passed afterward.
+
+Focused checks: 51 passed. Full suite: 1,012 passed, 50 skipped, six subtests,
+42.39s, two existing Torch JIT warnings. Changed-file Ruff and whitespace checks
+passed. Independent review found no actionable correctness issues. Deferred minor:
+repeat the valid-rotation geodesic source/gradient comparison directly in diffusion
+(shared helper/source comparisons already pass in flow tests).
+
+These are internal kernel checks, not public training, installed-checkpoint
+training, distributed execution, resume or ComfyUI/worker training evidence.
+Learned-variance backbone output integration and all session/workflow gates remain
+open. Environment: Windows Python 3.11.9, Torch 2.11.0+cu128, NumPy 2.4.3.

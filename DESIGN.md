@@ -359,9 +359,25 @@ rotation calculations match the pinned source exactly. `released` policy exposes
 unchanged source behavior; nonfinite results fail before backward/update. This
 deviation is explicit and reference-tested. The unchanged EMA warmup/update class
 is retained. Flow loss/EMA foundations and small-backbone update tests do not
-establish a public training workflow. Diffusion, session/accumulation/precision,
+establish a public training workflow. Session/accumulation/precision,
 distributed execution, portable resume, progress/checkpoint nodes and installed
 model/server/headless/worker training remain required.
+
+The diffusion kernel reconstructs the released cosine/linear scheduler, retained
+timesteps, timestep rescaling, x-start/epsilon predictions and fixed-small,
+fixed-large or learned-range variance. Masked MSE and optional geodesic losses
+use pinned source computation. Learned variance outputs double the joint axis;
+the public architecture/job adapter must supply that output before claiming
+learned-variance training on released backbones.
+
+Two source corrections are explicit options: `timestep_policy=mapped` supplies
+original indices to respaced training models; `variance_policy=trained` includes
+the computed variational bound in learned-variance MSE. `released` preserves
+each upstream omission for comparison. These policies change training and must
+be persisted in job/checkpoint configuration. The stable/released geodesic
+policy matches the flow adapter. Invalid or unrepresentable schedules fail
+before model execution. RNG, device, batch and finite-loss boundaries match the
+flow kernel; neither kernel owns optimizer state or concurrent execution.
 
 ## Cloud Offload implementation
 

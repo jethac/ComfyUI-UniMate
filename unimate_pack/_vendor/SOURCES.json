@@ -119,6 +119,24 @@
       },
       "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
       "changes": "Unchanged named helper bodies extracted; Torch imports retained; unused Motion-free helpers omitted."
+    },
+    "diffusion/gaussian_diffusion.py": {
+      "source": "unimate/models/diffusion/gaussian_diffusion.py",
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "sha256": "98be2fd835926c1bde21017cf72b707f641230c1066315938bcd98b0b579b629",
+      "changes": "Imports made package-relative; unchanged computation. UniMate and guided-diffusion MIT notices retained."
+    },
+    "diffusion/respace.py": {
+      "source": "unimate/models/diffusion/respace.py",
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "sha256": "16c2d1a477d9859d4e3ea24b57e0601c0669989e9dda49530086224a587cb13e",
+      "changes": "Imports made package-relative; unchanged computation. UniMate and guided-diffusion MIT notices retained."
+    },
+    "diffusion/losses.py": {
+      "source": "unimate/models/diffusion/losses.py",
+      "revision": "2c5b384715aa63d8639b1ed7eb74bfe614570c7a",
+      "sha256": "21f29634e38f6e647248075d4f61e3beb5e7a6f287db1936af1a99a8c3227607",
+      "changes": "Imports made package-relative; unchanged computation. UniMate and guided-diffusion MIT notices retained."
     }
   },
   "adapters": {

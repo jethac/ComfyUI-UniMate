@@ -49,3 +49,4 @@ select = ["E4", "E7", "E9", "F"]
 
 [tool.ruff.lint.per-file-ignores]
 "unimate_pack/_vendor/flow/transport.py" = ["E731"]
+"unimate_pack/_vendor/diffusion/gaussian_diffusion.py" = ["F401", "E712"]
