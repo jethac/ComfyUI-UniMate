@@ -14,6 +14,7 @@ async def comfy_entrypoint():
         UniMateLoadMotion,
         UniMateSaveMotion,
         UniMateExpandMotion,
+        UniMateExtractMotion,
     )
 
     class UniMateExtension(ComfyExtension):
@@ -29,6 +30,7 @@ async def comfy_entrypoint():
                 UniMateLoadMotion,
                 UniMateSaveMotion,
                 UniMateExpandMotion,
+                UniMateExtractMotion,
             ]
 
     return UniMateExtension()

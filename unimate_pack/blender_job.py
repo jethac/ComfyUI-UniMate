@@ -124,7 +124,8 @@ def main():
     elif request["operation"] == "export":
         cond = decode_arrays((folder / "conditioning.npz").read_bytes())
         features = decode_arrays((folder / "features.npz").read_bytes())["features"]
-        output = animate_document(source, cond, request["mapping"], features)
+        output = animate_document(source, cond, request["mapping"], features,
+                                  root_origin=request.get("root_origin", [0, 0, 0]))
         (folder / "output.glb").write_bytes(output)
         armature = load(folder / "output.glb")
         scene = bpy.context.scene

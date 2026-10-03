@@ -334,6 +334,8 @@ def generate_motion(
             fps=30,
         )
         if reference is not None:
+            if "canonical_root_origin" in reference["metadata"]:
+                metadata["canonical_root_origin"] = reference["metadata"]["canonical_root_origin"]
             metadata.update(constraint_mode=constraint_mode, selection=selection,
                             reference_features_sha256=hashlib.sha256(reference["features"]).hexdigest())
         return make_motion(rig["rig_id"], encode_arrays(features=features), metadata)

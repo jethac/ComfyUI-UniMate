@@ -329,7 +329,7 @@ def decode_features(features, parents):
     return rotations, root
 
 
-def animate_document(source, cond, mapping, features):
+def animate_document(source, cond, mapping, features, root_origin=(0, 0, 0)):
     frames = len(features)
     document, binary = parse_glb(source)
     document = copy.deepcopy(document)
@@ -339,6 +339,10 @@ def animate_document(source, cond, mapping, features):
     sim = np.asarray(mapping["source_to_canonical"])
     facing = rotation_part(sim)
     rotations, root = decode_features(features, cond["parents"])
+    origin = np.asarray(root_origin, dtype=np.float64)
+    if origin.shape != (3,) or not np.isfinite(origin).all() or origin[1] != 0:
+        raise ValueError("Canonical root origin must be finite XZ with zero Y")
+    root += origin
     if len(joints) != features.shape[1]:
         raise ValueError("Motion joint count does not match prepared skeleton")
 

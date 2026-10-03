@@ -178,6 +178,7 @@ def export_glb(rig, motion):
         conditioning=rig["conditioning"],
         features=motion["features"],
         mapping=rig["mapping"],
+        root_origin=motion["metadata"].get("canonical_root_origin", [0, 0, 0]),
     )
     validate_glb(output)
     return output

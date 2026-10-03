@@ -417,6 +417,20 @@ class UniMateEditMotion(UniMateInbetweenMotion):
     MODE = "edit"
 
 
+class UniMateExtractMotion(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name="Extract UniMate Motion", category=CATEGORY,
+            inputs=[Rig.Input("rig"), io.Int.Input("clip_index", default=0, min=0, max=127,
+                tooltip="Zero-based source GLB animation index. F sampled poses produce F-1 feature frames.")],
+            outputs=[Motion.Output()])
+
+    @classmethod
+    def execute(cls, rig, clip_index=0):
+        from .unimate_pack.source_motion import extract_motion
+        return io.NodeOutput(extract_motion(rig, clip_index))
+
+
 class UniMateExpandMotion(io.ComfyNode):
     @classmethod
     def define_schema(cls):
