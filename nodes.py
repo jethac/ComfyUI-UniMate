@@ -25,6 +25,11 @@ from .dataset_nodes import (
     UniMateSaveStatistics as UniMateSaveStatistics,
 )
 
+from .training_nodes import (
+    UniMateBuildTextCache as UniMateBuildTextCache,
+    UniMatePrepareTrainingSample as UniMatePrepareTrainingSample,
+)
+
 Asset = io.Custom("UNIMATE_ASSET")
 Rig = io.Custom("UNIMATE_RIG")
 Model = io.Custom("UNIMATE_MODEL")

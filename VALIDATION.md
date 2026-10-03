@@ -748,3 +748,40 @@ check, while these producer fixtures use controlled numeric views.
 Public nodes, portable batches, Windows/stadia/Cloud Offload producer workflows,
 raw dataset processing and training runtime remain required open work.
 Combined suite: 610 passed, six subtests, no skips, 22.56s; two existing warnings. Command: preceding 590-test command plus tests/test_training_dataset_samples.py. Changed-file Ruff and git diff --check passed; independent review has no actionable findings.
+
+## Public text-cache and encoded-sample nodes (2026-10-03)
+
+Build UniMate Text Cache and Prepare UniMate Training Sample register through
+the actual V3 extension, bringing the node count to 29. Text production derives
+encoder identity from the selected bundle's verified text-file inventory and
+revision. It gathers cleaned joint vocabulary with source fallback and captions;
+complete matching caches skip runtime creation. Missing strings use the existing
+ComfyUI-managed offline encoder. Sample execution exposes crop/condition modes,
+separate seeds, all augmentation choices and random flags, released/neutral_fk,
+rest/text policies, spectral width and workspace budget. Individual numeric
+augmentation parameters still use released defaults through this node.
+
+Four node/codec tests verify schemas, actual sample execution, text delegation
+and both directions of the installed client/runner codecs. Portable text/sample
+values retain exact bytes and validate after restore. Generic socket support
+already accepts concrete custom types; no sibling protocol mutation was needed.
+A builder regression verifies complete-cache reuse without runtime creation.
+These are codec/unit checks, not worker-handler or coordinator execution.
+
+The installed offline source-math test was extended through actual bundle →
+dataset text cache → dataset-bound portable sample. Seven joint embeddings and
+caption tokens have dimension 768; complete matching dataset cache reuse needs
+no runtime. Existing exact source token/pooled/fresh checks remain. One passed,
+53.27s, CUDA:0; model/text source/runtime identities match the preceding installed
+text check. Network connections forbidden; models unloaded/private runtime cleaned.
+The harness reuses its already loaded actual runtime through _get_runtime to avoid
+a second model instantiation; server node runtime instantiation remains a workflow
+gate. No server/headless/cloud sample workflow or training run is claimed.
+
+Review found duplicate registration introduced during extension editing.
+Uniqueness regression failed (31 entries/29 IDs), then the extra pair was removed.
+Combined suite: 615 passed, six subtests, no skips, 46.92s; two existing Torch JIT
+warnings. Command: preceding 610-test command plus tests/test_training_nodes.py
+and the extended tests/test_training_text.py. Changed-file Ruff and diff check
+passed. Public schemas are unique after registration correction.
+Independent review rechecked registration: 29 unique node IDs, no remaining actionable findings.

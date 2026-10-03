@@ -87,3 +87,24 @@ def test_fresh_pooling_rejects_overflow_without_changing_source_arithmetic():
     cache=training_text.build_text_cache(['root'],overflowing,IDENTITY)
     with pytest.raises(ValueError,match='pooled'):
         training_text.text_views(cache,'root',policy='fresh')
+
+
+def test_dataset_cache_builder_reuses_complete_cache_without_runtime(monkeypatch):
+    from test_training_dataset_samples import inputs
+    from unimate_pack import training_text_model as builder,inference,bundle
+    dataset,_,_=inputs()
+    manifest=dict(text_encoder={'id':'google/flan-t5-base','revision':'a'*40},
+                  files={'text_encoder/model.safetensors':{'sha256':'b'*64,'size':10}})
+    monkeypatch.setattr(builder,'validate_model',lambda model:None)
+    monkeypatch.setattr(bundle,'inspect_bundle',lambda payload:manifest)
+    class Runtime:
+        def encode(self,texts):
+            return encoder(texts)
+    monkeypatch.setattr(inference,'_get_runtime',lambda model:Runtime())
+    model={'bundle':b'test'}
+    first=builder.build_dataset_text_cache(model,dataset)
+    def forbidden(model):
+        raise AssertionError('Runtime created for complete cache')
+    monkeypatch.setattr(inference,'_get_runtime',forbidden)
+    second=builder.build_dataset_text_cache(model,dataset,existing=first)
+    assert first==second

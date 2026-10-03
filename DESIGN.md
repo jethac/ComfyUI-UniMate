@@ -309,8 +309,13 @@ Portable text-cache production stores ragged tokens and encoder-pooled vectors
 separately, with explicit encoder artifact identity and bounded numeric bytes.
 Fresh dataset views use trimmed-token means; cached views retain their stored
 pooled vector. Installed FLAN-T5 production and source arithmetic were compared
-offline on Windows. Additional encoders, persisted sample/batch identities and public
-sample workflows are still required; these modules do not establish
+offline on Windows. Encoded samples have portable numeric bytes and
+dataset/clip/statistics/cache provenance. Build Text Cache and Prepare Training
+Sample expose the prepared-feature path as V3 nodes. The sample node uses
+independent augmentation/crop seeds and supports all released augmentation
+choices plus explicit neutral FK insertion. It changes rest grounding only;
+raw motion feature extraction remains separate. Additional encoders, portable
+batches and headless/cloud sample workflows are still required; these modules do not establish
 training or Cloud Offload execution coverage.
 
 ## Cloud Offload implementation

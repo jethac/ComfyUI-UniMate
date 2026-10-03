@@ -56,6 +56,23 @@ def test_installed_training_cache_math_offline(monkeypatch):
             np.testing.assert_array_equal(fresh,namespace['pool'](expected_tokens[index]))
         rebuilt=build_text_cache(texts,forbidden,identity,existing=cache)
         assert rebuilt['arrays']==cache['arrays']
+        from test_dataset_adapters import paired_dataset
+        from unimate_pack import inference
+        from unimate_pack.statistics import dataset_statistics
+        from unimate_pack.training_text_model import build_dataset_text_cache
+        from unimate_pack.training_dataset_samples import produce_training_sample
+        from unimate_pack.training_sample_contracts import validate_training_sample
+        dataset,_,_=paired_dataset()
+        monkeypatch.setattr(inference,'_get_runtime',lambda selected: runtime)
+        dataset_cache=build_dataset_text_cache(model,dataset)
+        assert dataset_cache['encoder']==identity
+        encoded=produce_training_sample(dataset,dataset_statistics(dataset),dataset_cache,'a',
+            max_motion_length=8,max_joints=16)
+        numeric=validate_training_sample(encoded)
+        assert numeric['joint_names_emb'].shape==(7,768)
+        assert numeric['caption_tokens'].shape[-1]==768
+        monkeypatch.setattr(inference,'_get_runtime',forbidden)
+        assert build_dataset_text_cache(model,dataset,existing=dataset_cache)==dataset_cache
         print(json.dumps(dict(device=str(runtime.encoder.load_device),torch=torch.__version__,
             numpy=np.__version__,bundle=model['sha256'],encoder=identity,text_count=len(texts),
             cache_sha256=cache['sha256']),sort_keys=True))

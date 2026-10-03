@@ -95,6 +95,8 @@ class NodeTests(unittest.TestCase):
                 "UniMateSaveStatistics",
                 "UniMateSplitDataset",
                 "UniMatePlanSampling",
+                "UniMateBuildTextCache",
+                "UniMatePrepareTrainingSample",
             ],
         )
         for cls in classes:

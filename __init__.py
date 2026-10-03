@@ -31,6 +31,8 @@ async def comfy_entrypoint():
         UniMateDatasetStatistics,
         UniMateLoadStatistics,
         UniMateSaveStatistics,
+        UniMateBuildTextCache,
+        UniMatePrepareTrainingSample,
     )
 
     class UniMateExtension(ComfyExtension):
@@ -63,6 +65,8 @@ async def comfy_entrypoint():
                 UniMateSaveStatistics,
                 UniMateSplitDataset,
                 UniMatePlanSampling,
+                UniMateBuildTextCache,
+                UniMatePrepareTrainingSample,
             ]
 
     return UniMateExtension()

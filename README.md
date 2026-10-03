@@ -31,6 +31,8 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Save UniMate Statistics | Save normalization arrays and provenance |
 | Split UniMate Dataset | Assign seeded clip/object holdouts; report unmatched explicit objects |
 | Plan UniMate Sampling | Build one/two-level weights and replacement indices for an epoch |
+| Build UniMate Text Cache | Encode dataset joint names and captions with the installed bundle's encoder |
+| Prepare UniMate Training Sample | Bind a training clip, statistics and text cache; augment, crop and normalize |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
