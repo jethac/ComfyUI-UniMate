@@ -424,6 +424,18 @@ class UniMateEditMotion(UniMateInbetweenMotion):
     MODE = "edit"
 
 
+class UniMateCanonicalAsset(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__, display_name="Canonical UniMate Asset", category=CATEGORY,
+            inputs=[Rig.Input("rig")], outputs=[Asset.Output()])
+
+    @classmethod
+    def execute(cls, rig):
+        from .unimate_pack.canonical_asset import canonical_asset
+        return io.NodeOutput(canonical_asset(rig))
+
+
 class UniMateGenerateBatch(io.ComfyNode):
     @classmethod
     def define_schema(cls):

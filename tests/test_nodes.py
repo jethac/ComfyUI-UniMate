@@ -80,6 +80,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateExpandMotion",
                 "UniMateExtractMotion",
                 "UniMateGenerateBatch",
+                "UniMateCanonicalAsset",
             ],
         )
         for cls in classes:
@@ -95,6 +96,12 @@ class NodeTests(unittest.TestCase):
         with self.fake_module("source_motion", extract_motion=lambda rig, clip_index, **kwargs: {"rig_id": rig["rig_id"], "clip_index": clip_index}):
             output = nodes.UniMateExtractMotion.execute({"rig_id": "a" * 64}, 2)
             self.assertEqual(output.result[0], {"rig_id": "a" * 64, "clip_index": 2})
+
+    def test_canonical_node_uses_existing_portable_asset_type(self):
+        asset = {"glb": b"fixture"}
+        with self.fake_module("canonical_asset", canonical_asset=lambda rig: asset):
+            self.assertEqual(nodes.UniMateCanonicalAsset.execute({}).result, (asset,))
+        self.assertEqual(nodes.UniMateCanonicalAsset.GET_NODE_INFO_V1()["output"], ["UNIMATE_ASSET"])
 
     def test_batch_node_emits_typed_list_and_preserves_prompt_order(self):
         calls = []

@@ -16,6 +16,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Expand UniMate Motion | Generate an ordered prompt chain with constrained segment overlaps |
 | Extract UniMate Motion | Resample a source GLB clip into the prepared rig's motion features |
 | Generate UniMate Batch | Generate prompt/repetition cases as a typed motion list |
+| Canonical UniMate Asset | Apply prepared coordinates to the original asset without rewriting skin or mesh data |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -59,6 +60,8 @@ Put a rigged GLB under `ComfyUI/input/`, then connect Load Rigged GLB → Prepar
 Choose the source facing direction explicitly. Joint-pair facing requires raw left/right joint names. Generate exposes prompt, seed, guidance, and normalization family (`objaverse`, `mixamo`, `truebones`). Guidance 1 is unconditional, matching upstream. Solver settings follow the pinned model. A clip has 60 keys at `i/30` seconds and is not automatically looped.
 
 With `joint_pair`, optional left/right shoulder names add a second lateral pair. Set `body_axis` for a head-to-tail pair instead of a lateral pair. The selected mode is retained for source-motion extraction. Four-joint and body-axis preparation passed external Blender rest-preservation checks; server/cloud checks for these options remain pending.
+
+Canonical UniMate Asset returns a portable asset in the prepared coordinate system. A scene-parent transform preserves the source binary, skin, materials and textures. It has a new asset identity; prepare it again before generating motion for it. Independent coordinate and skinning checks passed. Server/cloud execution remains pending.
 
 ## Supported assets
 
