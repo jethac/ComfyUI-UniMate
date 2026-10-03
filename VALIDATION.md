@@ -229,3 +229,14 @@ also passed, preserving motion payloads and recovering different FK/RIC skeleton
 All 170 PNGs and eight GLB/FBX/provenance files were retrieved across three jobs.
 Evidence: `.runtime/preprocessing-mapped-list-check/report.json`. This verifies
 same-rig mapped values, not multiple rigs, new model inference or deployment.
+
+Headless stadia passed the three-job mapped-list workflow at pack `3ce0237`,
+worker `43bd1a0` and client `4a7a937`: 600 PNGs, two GLBs, two FBXs and four
+provenance files retrieved. Runtime matches the preceding stadia record. Remote
+report: `run-mapped-execution-lists-20261003/report.json`. Independent checks
+compared both recovered cases at all 60 frames: first-case positions and pixels
+matched the original capture; the second case differed by up to 0.5846864 position
+units and had different preview pixels at every frame, for both FK and RIC.
+Remote evidence: `run-mapped-execution-lists-20261003/independent-list-check.json`.
+The second case is a controlled velocity change to the earlier model archive;
+this run does not generate a new batch or establish multiple-rig support.

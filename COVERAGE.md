@@ -145,3 +145,10 @@ conditioning, motion extraction, FK/RIC rendering and GLB/FBX export passed. Sta
 retrieved 368 files; independent playback and all 360 preview images matched after
 restoration. See VALIDATION.md for revisions and evidence. Provider scheduling,
 deployed containers, inference/batch paths and remaining capability gaps are open.
+
+2026-10-03: corrected partition execution-list loss (repeated captures overwrote
+earlier cases). New client/runner envelopes preserve ordered mapped values and
+nested list-valued scalar data. Windows and headless stadia three-job tests passed;
+stadia restored two distinct 60-frame cases, recovered both skeleton modes and
+retrieved all 600 preview frames. Independent position and pixel checks confirmed
+case preservation. New model batches and multi-rig public workflows remain open.
