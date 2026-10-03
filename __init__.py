@@ -32,6 +32,7 @@ async def comfy_entrypoint():
         UniMateLoadStatistics,
         UniMateSaveStatistics,
         UniMateBuildTextCache,
+        UniMateTrainingJob,
         UniMateCollateTrainingSamples,
         UniMatePrepareTrainingSample,
     )
@@ -67,6 +68,7 @@ async def comfy_entrypoint():
                 UniMateSplitDataset,
                 UniMatePlanSampling,
                 UniMateBuildTextCache,
+                UniMateTrainingJob,
                 UniMateCollateTrainingSamples,
                 UniMatePrepareTrainingSample,
             ]

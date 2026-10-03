@@ -342,6 +342,19 @@ No training execution is established by these workflows.
 
 ## Training runtime foundation
 
+`UniMateTrainingJob` returns a portable `unimate.training_job.v1` configuration
+bound to validated dataset, statistics and text-cache identities. Prepared datasets
+may contain multiple source dataset labels. Text dimensions come from cache arrays;
+sampling uses the released balanced epoch sampler and explicit `drop_last` (source
+default true). Epoch plans bind job identity, epoch, sampled order and batch layout.
+The separate training factory reconstructs all four attention/conditioning axes
+and source ablations. CPU float32 initialization preserves process CPU/CUDA RNG
+streams; meta construction bounds parameters and buffers before real allocation.
+Activation, optimizer and lazy RoPE-cache budgets belong to execution, not this
+factory. The configuration node does not own a live model or run optimization.
+Managed execution, unbalanced/distributed loaders, selected-weight initialization,
+learned-variance backbone output and checkpoint I/O nodes remain open.
+
 The flow training kernel consumes portable batches and returns a differentiable
 mean loss plus scalar metrics. The caller owns model mode, device and optimizer.
 All three released interpolant paths, velocity/noise/score prediction and loss

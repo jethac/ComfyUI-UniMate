@@ -93,6 +93,49 @@ precision state; malformed tree/header/budget rejection before decode; corrupt
 optimizer/LR/EMA/scaler/RNG/config/dataset position rejection without mutation;
 binary integrity, cancellation and transport dictionary/bytes compatibility.
 
+### Task 5: Public training ownership and job execution
+
+Reconstruct all four source factory axes through a separate validated training
+factory; the inference factory's restricted configuration matrix is not suitable.
+Compare source initialization, ablation switches, CPU RNG preservation, cancellation
+and parameter/buffer allocation budgets. Text dimension must come from validated
+job/cache binding rather than an unverified user label. Keep live objects private.
+
+Build portable job configuration binding actual dataset/statistics/cache identities,
+model configuration, initialization selection, sampling, augmentation, optimizer
+and loss policies. Generate deterministic epoch plans and accumulation groups from
+validated source data; record epoch position and reject incompatible resume before
+mutation. Use ComfyUI-selected device and managed full model residency. Run chunks
+return portable checkpoint and progress, and release only owned model resources.
+Add atomic checkpoint save/load nodes, explicit raw/EMA inference export and actual
+installed-model inference verification. Exercise public schemas and real headless
+Windows/stadia/worker training, resume, cancellation and output retrieval.
+
+Current intermediate work: `training_model.py` provides scratch reconstruction,
+meta-device allocation preflight and isolated CPU initialization. Backbone audit
+against training revision 2c5b384 found identical numerical bodies; differences
+are package imports and a package-name docstring. Public job/device ownership,
+mixed-dataset execution, distributed training, selected-weight initialization and
+learned-variance model output integration remain required open work.
+
+Task 5 configuration increment: missing factory/job/public node RED → GREEN.
+Source factory initialization matches eight attention/conditioning/positional
+combinations; automated AST comparison checks every vendored backbone body against
+the pinned training source. Mixed-label epoch plans match the validated sampler.
+Actual V3 node execution and client/runner job codec round trips pass.
+Review found two Important accepted-but-unusable configurations. Both fixed in
+one pass: direct/linear/random insertion capacity (three RED→GREEN cases), and
+missing/malformed training topology (ten RED→GREEN cases). Job and sample producers
+share the existing augmentation-layer topology validation. Initial topology test
+fixtures failed before reaching job creation; corrected content-addressed topology
+IDs, observed all ten missing-rejection failures, then verified integration GREEN.
+Whole suite: 1,152 passed, 50 skipped, six subtests. Headless stadia configuration
+checks: 58 passed, one CUDA skip. Evidence: docs/2026-10-03-training-job-validation.md.
+Final minor (deferred): independent numerical forward/gradient comparisons for
+every ablation combination; source bodies and factory wiring are checked, but
+these do not establish every ablation's training trajectory. Public execution
+and the remaining Task 5 requirements are not complete.
+
 ### Subsequent required tasks
 
 - [x] Diffusion schedule/loss kernel and reference comparisons.

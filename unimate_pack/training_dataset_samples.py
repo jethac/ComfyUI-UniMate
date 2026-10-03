@@ -13,7 +13,7 @@ from .contracts import _members, decode_arrays
 from .dataset_contracts import _label, manifest_bytes, validate_dataset
 from .dataset_selection import _identity as dataset_identity
 from .statistics import validate_statistics
-from .training_augmentation import augment_sample
+from .training_augmentation import augment_sample,_validate_sample
 from .training_samples import assemble_sample
 from .training_sample_contracts import make_training_sample
 from .training_text import validate_text_cache
@@ -28,6 +28,32 @@ def text_cache_identity(value):
 
 def statistics_identity(value):
     return hashlib.sha256(manifest_bytes({key:item for key,item in value.items() if key!='arrays'})).hexdigest()
+
+
+def validate_training_conditioning(cond,*,cancel=None,max_workspace_bytes=512*1024*1024):
+    """Check the source augmentation topology contract without motion/text IO.
+
+    Reuse the owning augmentation validator with one-frame shape placeholders;
+    real motion/statistics/embeddings are validated during sample assembly.
+    """
+    required={'parents','offsets','tpos_first_frame','spectral_feats','edge_indexs',
+        'joint_graph_dists','joint_relations','joint_depths'}
+    if type(cond) is not dict or not required<=cond.keys():
+        raise ValueError('Prepared conditioning lacks required training topology fields')
+    parents,spectral=cond['parents'],cond['spectral_feats']
+    if (type(parents) is not np.ndarray or parents.ndim!=1 or not 1<=len(parents)<=4096
+        or type(spectral) is not np.ndarray or spectral.ndim!=2 or not 1<=spectral.shape[1]<=4096):
+        raise ValueError('Invalid training topology dimensions')
+    joints=len(parents)
+    if 96*joints**2+512*joints>max_workspace_bytes:
+        raise ValueError('Training topology validation exceeds workspace budget')
+    _validate_sample(dict(motion=np.zeros((1,joints,12),dtype=np.float32),parents=parents,
+        tpos=cond['tpos_first_frame'],offsets=cond['offsets'],spectral_feats=spectral,
+        edge_indexs=cond['edge_indexs'],joint_graph_dist=cond['joint_graph_dists'],
+        joint_relations=cond['joint_relations'],joint_depths=cond['joint_depths'],
+        joint_names_emb=np.zeros((joints,1),dtype=np.float32),
+        mean=np.zeros((joints,12),dtype=np.float32),std=np.ones((joints,12),dtype=np.float32)),
+        spectral.shape[1],cancel)
 
 
 def _preflight(dataset,statistics,cache,workspace):
@@ -82,6 +108,7 @@ def produce_training_sample(dataset,statistics,cache,clip_id,*,mode='tpos',
         raise ValueError('Statistics do not cover selected dataset')
     top=next(entry for entry in dataset['manifest']['topologies'] if entry['id']==clip['topology_id'])
     cond=decode_arrays(dataset['files'][top['conditioning']])
+    validate_training_conditioning(cond,cancel=cancel,max_workspace_bytes=max_workspace_bytes)
     features=decode_arrays(dataset['files'][clip['features']])['features']
     cleaned=cond['clean_joint_names'].tolist()
     clean=all(str(name).strip() for name in cleaned)

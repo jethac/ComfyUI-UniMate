@@ -9,6 +9,30 @@ Model=io.Custom('UNIMATE_MODEL')
 TextCache=io.Custom('UNIMATE_TEXT_CACHE')
 TrainingSample=io.Custom('UNIMATE_TRAINING_SAMPLE')
 TrainingBatch=io.Custom('UNIMATE_TRAINING_BATCH')
+TrainingJob=io.Custom('UNIMATE_TRAINING_JOB')
+
+
+class UniMateTrainingJob(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__,display_name='Configure UniMate Training',category=CATEGORY,
+            inputs=[Dataset.Input('dataset'),Statistics.Input('statistics'),TextCache.Input('text_cache'),
+                io.String.Input('options',default='{}',multiline=True),
+                io.Int.Input('workspace_mib',default=512,min=1,max=65536)],
+            outputs=[TrainingJob.Output(),io.String.Output(display_name='job configuration')])
+
+    @classmethod
+    def execute(cls,dataset,statistics,text_cache,options='{}',workspace_mib=512):
+        from .unimate_pack.bundle import _json
+        from .unimate_pack.contracts import MAX_JSON_BYTES
+        from .unimate_pack.training_job import make_training_job
+        if type(options) is not str or len(options)>MAX_JSON_BYTES or len(options.encode('utf-8'))>MAX_JSON_BYTES:
+            raise ValueError('Training options require bounded JSON')
+        if type(workspace_mib) is not int or not 1<=workspace_mib<=65536:
+            raise ValueError('Invalid workspace budget')
+        value=make_training_job(dataset,statistics,text_cache,_json(options.encode('utf-8')),
+            cancel=_cancel,max_workspace_bytes=workspace_mib*1024*1024)
+        return io.NodeOutput(value,json.dumps(value,ensure_ascii=False,allow_nan=False))
 
 
 class UniMateCollateTrainingSamples(io.ComfyNode):
