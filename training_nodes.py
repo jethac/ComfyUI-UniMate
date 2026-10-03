@@ -10,6 +10,34 @@ TextCache=io.Custom('UNIMATE_TEXT_CACHE')
 TrainingSample=io.Custom('UNIMATE_TRAINING_SAMPLE')
 TrainingBatch=io.Custom('UNIMATE_TRAINING_BATCH')
 TrainingJob=io.Custom('UNIMATE_TRAINING_JOB')
+TrainingCheckpoint=io.Custom('UNIMATE_TRAINING_CHECKPOINT')
+
+
+class UniMateTrain(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__,display_name='Train UniMate',category=CATEGORY,
+            inputs=[TrainingJob.Input('job'),Dataset.Input('dataset'),Statistics.Input('statistics'),
+                TextCache.Input('text_cache'),io.Int.Input('updates',default=1,min=1,max=10000),
+                io.Int.Input('workspace_mib',default=8192,min=1,max=65536),
+                TrainingCheckpoint.Input('checkpoint',optional=True)],
+            outputs=[TrainingCheckpoint.Output(),io.String.Output(display_name='training progress')])
+
+    @classmethod
+    def execute(cls,job,dataset,statistics,text_cache,updates=1,workspace_mib=8192,checkpoint=None):
+        from functools import partial
+        from comfy.utils import ProgressBar
+        from .unimate_pack.training_execution import run_training_job
+        from .unimate_pack.training_residency import managed_training_residency
+        if type(workspace_mib) is not int or not 1<=workspace_mib<=65536:
+            raise ValueError('Invalid workspace budget')
+        if type(updates) is not int or not 1<=updates<=10000:
+            raise ValueError('Invalid training chunk size')
+        bar=ProgressBar(updates)
+        value,report=run_training_job(job,dataset,statistics,text_cache,updates=updates,
+            checkpoint=checkpoint,residency=partial(managed_training_residency,cancel=_cancel),
+            cancel=_cancel,progress=lambda _:bar.update(1),max_workspace_bytes=workspace_mib*1024*1024)
+        return io.NodeOutput(value,json.dumps(report,ensure_ascii=False,allow_nan=False))
 
 
 class UniMateTrainingJob(io.ComfyNode):

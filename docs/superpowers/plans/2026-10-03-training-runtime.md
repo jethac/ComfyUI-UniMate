@@ -136,6 +136,28 @@ every ablation combination; source bodies and factory wiring are checked, but
 these do not establish every ablation's training trajectory. Public execution
 and the remaining Task 5 requirements are not complete.
 
+Task 5 execution increment: missing execution module/public node RED → GREEN.
+Actual prepared datasets execute source session updates and resume with matching
+checkpoint bytes. Mid-epoch three-batch/accumulation-two tests cross a partial
+group and next epoch. Public node API uses Comfy-selected residency, releases
+owned models, and resumes through a different installation package namespace.
+Stable known-backbone source identities supplement legacy qualified identities.
+Comfy outer inference-mode failure reproduced → explicit gradient context GREEN.
+Independent review's two Important findings fixed in one RED→GREEN pass: null
+loss options canonicalized, and full-attention activation preflight before model
+allocation. Full suite: 1,168 passed, 50 skipped, six subtests; headless focused
+execution/job/node/checkpoint checks: 97 passed, three CUDA skips.
+Evidence: docs/2026-10-03-training-execution-validation.md.
+Ruling: use conservative math-SDP activation estimates even on CUDA, rather than
+assuming fused kernels; cost is rejection under a budget that a fused kernel
+might fit, resolved by an explicit larger workspace. Independent sample RNG
+streams are an adapter policy, already required by sample contracts, rather than
+a claim of source DataLoader global-random trajectory equality.
+Remaining Task 5: selected installed raw/EMA initialization; checkpoint file IO;
+trained inference export; actual headless server/partition handler execution,
+artifact retrieval, injected cancellation and cleanup. Distributed/unbalanced
+loaders and learned-variance model output remain required full-goal work.
+
 ### Subsequent required tasks
 
 - [x] Diffusion schedule/loss kernel and reference comparisons.

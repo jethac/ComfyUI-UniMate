@@ -60,6 +60,8 @@ def make_training_job(dataset,statistics,cache,options=None,*,cancel=None,
     if paradigm not in ('flow','diffusion'):
         raise ValueError('Invalid training paradigm')
     loss=options.get('loss',{})
+    if loss is None:
+        loss={}
     (create_flow_schedule if paradigm=='flow' else create_diffusion_schedule)(loss)
     batch_size=options.get('batch_size',1)
     _integer(batch_size,'batch_size',1)

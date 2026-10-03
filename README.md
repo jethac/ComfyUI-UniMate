@@ -35,6 +35,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Prepare UniMate Training Sample | Bind a training clip, statistics and text cache; augment, crop and normalize |
 | Collate UniMate Training Samples | Collect a sample list into a portable batch with source masks and padding |
 | Configure UniMate Training | Bind architecture, losses, optimizer and epoch sampling to prepared artifacts |
+| Train UniMate | Run scratch-training optimizer groups; return a resumable checkpoint and progress |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -138,8 +139,13 @@ passed. Windows and headless stadia server/partition-handler workflows collected
 Configure Training takes a dataset, statistics and text cache plus JSON options.
 It derives text dimensions from the cache and records artifact identities. Options
 include `model`, `optimizer`, `paradigm`, `loss`, `sample`, `sampling`, `batch_size`,
-`drop_last` and `seed`. The configuration node does not execute training.
-Training execution and raw-data curation remain open.
+`drop_last` and `seed`. Train runs a selected number of optimizer updates on
+ComfyUI's CPU/CUDA device. Connect its checkpoint to a subsequent Train node to
+resume with the same job and runtime. Current execution is single-process,
+from scratch, using balanced epoch sampling. Installed-weight initialization,
+distributed/unbalanced loaders, learned-variance backbone output, checkpoint
+file nodes, exported inference state and server/worker workflows remain open.
+Raw-data curation remains open.
 
 ## Cloud Offload
 

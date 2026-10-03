@@ -11,7 +11,8 @@ from unimate_pack.training_text import build_text_cache
 def test_registered_training_schemas():
     extension=asyncio.run(extension_module.comfy_entrypoint())
     ids=[cls.GET_SCHEMA().node_id for cls in asyncio.run(extension.get_node_list())]
-    assert len(ids)==len(set(ids))==31
+    assert len(ids)==len(set(ids))==32
+    assert 'UniMateTrain' in ids
     assert 'UniMateTrainingJob' in ids
     assert 'UniMateBuildTextCache' in ids
     assert 'UniMatePrepareTrainingSample' in ids
@@ -42,6 +43,30 @@ def test_actual_training_job_node():
     assert validate_training_job(job,dataset,stats,cache)==job
     assert json.loads(result.result[1])['sha256']==job['sha256']
     assert nodes.UniMateTrainingJob.GET_NODE_INFO_V1()['output']==['UNIMATE_TRAINING_JOB','STRING']
+
+
+def test_actual_managed_training_node_and_portable_resume():
+    from test_training_job import config
+    from unimate_pack.training_execution import run_training_job
+    from comfy import model_management as mm
+    dataset,stats,cache=inputs()
+    job=nodes.UniMateTrainingJob.execute(dataset,stats,cache,json.dumps(config())).result[0]
+    before=set(mm.loaded_models())
+    first=nodes.UniMateTrain.execute(job,dataset,stats,cache,updates=1)
+    checkpoint=first.result[0]
+    assert json.loads(first.result[1])['updates']==1
+    assert set(mm.loaded_models())==before
+    # Recreate/restore through a different Python package namespace on the same
+    # ComfyUI-selected device, as partition installations may rename the pack.
+    from contextlib import contextmanager
+    @contextmanager
+    def selected(model):
+        yield model.to(mm.get_torch_device())
+    resumed,report=run_training_job(job,dataset,stats,cache,residency=selected,checkpoint=checkpoint)
+    full,_=run_training_job(job,dataset,stats,cache,residency=selected,updates=2)
+    assert resumed==full
+    assert report['updates']==2
+    assert nodes.UniMateTrain.GET_NODE_INFO_V1()['output']==['UNIMATE_TRAINING_CHECKPOINT','STRING']
 
 
 def test_actual_training_sample_node():

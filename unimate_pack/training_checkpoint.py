@@ -86,7 +86,7 @@ def _binding(value,session):
     architecture=value['architecture']
     _fields(architecture,{'class_name','config','initial_weights_sha256'})
     cls=type(session.model)
-    if architecture['class_name']!=cls.__module__+'.'+cls.__qualname__ or type(architecture['config']) is not dict:
+    if architecture['class_name'] not in (cls.__module__+'.'+cls.__qualname__,model_class_identity(session.model)) or type(architecture['config']) is not dict:
         raise ValueError('Mismatched checkpoint architecture')
     if architecture['initial_weights_sha256'] is not None:
         _digest(architecture['initial_weights_sha256'],'initial weights')
@@ -101,6 +101,16 @@ def _binding(value,session):
         raise ValueError('Invalid checkpoint sampling binding')
     _json_value(value)
     manifest_bytes(value)
+
+
+def model_class_identity(model):
+    """Stable source identity for known backbones; no dynamic class imports."""
+    from ._vendor import denoiser
+    cls=type(model)
+    for name in ('UniMateFullAdaLN','UniMateFullCrossAttn','UniMateGraphAdaLN','UniMateGraphCrossAttn'):
+        if cls is getattr(denoiser,name):
+            return 'unimate.denoiser.'+name
+    return cls.__module__+'.'+cls.__qualname__
 
 
 def _position(value,batches):

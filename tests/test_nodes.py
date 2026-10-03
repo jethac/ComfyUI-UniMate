@@ -102,6 +102,7 @@ class NodeTests(unittest.TestCase):
                 "UniMatePlanSampling",
                 "UniMateBuildTextCache",
                 "UniMateTrainingJob",
+                "UniMateTrain",
                 "UniMateCollateTrainingSamples",
                 "UniMatePrepareTrainingSample",
             ],

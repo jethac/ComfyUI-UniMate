@@ -352,8 +352,31 @@ and source ablations. CPU float32 initialization preserves process CPU/CUDA RNG
 streams; meta construction bounds parameters and buffers before real allocation.
 Activation, optimizer and lazy RoPE-cache budgets belong to execution, not this
 factory. The configuration node does not own a live model or run optimization.
-Managed execution, unbalanced/distributed loaders, selected-weight initialization,
-learned-variance backbone output and checkpoint I/O nodes remain open.
+`UniMateTrain` executes complete optimizer groups and returns portable checkpoint
+bytes and JSON progress. It constructs a private scratch model, uses ComfyUI's
+selected CPU/CUDA device and full ModelPatcher residency, creates the optimizer
+after residency, and unloads only its own patcher. Lazy plain-object RoPE tables
+are cleared during cleanup. Execution explicitly disables ComfyUI's outer
+inference mode and enables gradients, restoring those contexts afterward.
+
+Epoch plans determine sample order and batch layout. Augmentation and cropping
+use independent local seeds derived from job seed, epoch, batch, sample index and
+stream name. This is an adapter policy, not the source DataLoader's global RNG
+trajectory. Partial final accumulation groups retain the source's configured
+divisor. Checkpoints record the next epoch/batch position; resume verifies the
+actual epoch plan and optimizer-group boundary before restoring or updating.
+Known backbone checkpoint identities use stable source names across installation
+package namespaces; legacy qualified-name bindings retain their original limits.
+
+Workspace checks cover encoded accumulation groups, persistent state and a
+conservative saved-activation/math-SDP estimate. Fused CUDA kernels may use less
+memory; the guard is not a hardware peak prediction or a guarantee against OOM.
+Cancellation/failure discards the node-owned session without publishing a new
+checkpoint. Existing input checkpoints remain usable.
+
+Unbalanced/distributed loaders, selected-weight initialization, learned-variance
+backbone output, checkpoint I/O, exported inference state and actual server/worker
+execution remain open.
 
 The flow training kernel consumes portable batches and returns a differentiable
 mean loss plus scalar metrics. The caller owns model mode, device and optimizer.

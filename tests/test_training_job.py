@@ -30,6 +30,12 @@ def test_actual_bindings_and_epoch_batch():
     assert (dataset,stats,cache)==original
 
 
+@pytest.mark.parametrize('paradigm',['flow','diffusion'])
+def test_null_loss_normalizes_to_canonical_default_options(paradigm):
+    job=jobs.make_training_job(*inputs(),{**config(),'loss':None,'paradigm':paradigm})
+    assert job['loss']=={}
+
+
 @pytest.mark.parametrize('change',[
     dict(batch_size=True),dict(batch_size=0),dict(seed=-1),dict(extra='path'),
     dict(paradigm='invalid'),dict(drop_last=1),dict(model=dict(text_dim=768)),
