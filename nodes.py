@@ -171,6 +171,25 @@ class UniMateLoadRig(io.ComfyNode):
         return [{"category": "__input__", "filename": _relative_name(name)}]
 
 
+class UniMateFootLockMotion(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id='UniMateFootLockMotion', display_name='Foot Lock UniMate Motion',
+            category=CATEGORY, inputs=[Rig.Input('rig'), Motion.Input('motion'),
+                io.String.Input('joint_names', default='',
+                    tooltip='Comma-separated contact joints. Empty selects distal canonical foot names.')],
+            outputs=[Motion.Output(), io.String.Output(display_name='report')])
+
+    @classmethod
+    def execute(cls, rig, motion, joint_names='') -> io.NodeOutput:
+        from comfy.model_management import throw_exception_if_processing_interrupted
+        from .unimate_pack.foot_lock import lock_motion
+
+        corrected, report = lock_motion(rig, motion, joint_names,
+            check_cancel=throw_exception_if_processing_interrupted)
+        return io.NodeOutput(corrected, json.dumps(report, allow_nan=False))
+
+
 class UniMateRecoverSkeleton(io.ComfyNode):
     @classmethod
     def define_schema(cls):

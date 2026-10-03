@@ -159,6 +159,8 @@ def verify(args):
             args.cloud_root and getattr(args, 'cloud_client_root', None)
             and getattr(args, 'skeleton_reference', None)):
         raise ValueError('Worker verification requires cloud/client checkouts and a skeleton reference archive')
+    if getattr(args, 'foot_lock', False) and not getattr(args, 'skeleton_reference', None):
+        raise ValueError('Foot-lock verification requires a matching legged skeleton reference archive')
     workspace = args.workdir.resolve()
     if workspace.exists() and any(workspace.iterdir()):
         raise ValueError("Workflow verification requires a new empty directory")
@@ -191,7 +193,7 @@ def verify(args):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     (workspace / "input" / "rig with spaces.glb").write_bytes(
-        module.synthetic_glb(args.branching)
+        module.legged_glb() if getattr(args, 'foot_lock', False) else module.synthetic_glb(args.branching)
     )
     graph = json.loads((ROOT / "examples/unimate_api.json").read_text())
     graph["1"]["inputs"]["asset"] = "rig with spaces.glb"
@@ -210,6 +212,9 @@ def verify(args):
                 'skeleton': [f'recover_{method}', 0], 'projection': 'front', 'resolution': 128}}
             graph[f'save_{method}'] = {'class_type': 'SaveImage', 'inputs': {
                 'images': [f'preview_{method}', 0], 'filename_prefix': f'verified/{method}'}}
+    if getattr(args, 'foot_lock', False):
+        from tools.foot_workflow import configure_foot_graph
+        configure_foot_graph(graph)
     if getattr(args, "batch", False):
         if (args.cloud_root and not getattr(args, 'batch_worker', False)) or getattr(args, "extended", False):
             raise ValueError("Run batch verification separately from bridge or expanded verification")
@@ -305,7 +310,7 @@ def verify(args):
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     try:
-        deadline = time.monotonic() + 180
+        deadline = time.monotonic() + getattr(args, 'startup_timeout', 180)
         while time.monotonic() < deadline:
             if process.poll() is not None:
                 raise RuntimeError(
@@ -438,7 +443,8 @@ def verify(args):
         else:
             entry = submit(base, graph)
             report["graphs"].append(
-                {"kind": ('archive-skeleton' if getattr(args, 'skeleton_reference', None)
+                {"kind": ('archive-foot-lock' if getattr(args, 'foot_lock', False)
+                          else 'archive-skeleton' if getattr(args, 'skeleton_reference', None)
                           else 'local-batch' if getattr(args, 'batch', False)
                           else 'local-expanded' if getattr(args, 'extended', False)
                           else 'local-five-nodes'), "graph": graph, "status": entry["status"]}
@@ -452,12 +458,18 @@ def verify(args):
                     for file in output.get(key, []):
                         data = request(base, "/view?" + urllib.parse.urlencode(file))
                         validate_output(file["filename"], data)
+                        if getattr(args, 'foot_lock', False) and file['filename'].endswith('.npz'):
+                            from tools.foot_workflow import validate_foot_archive
+                            report['foot_correction_verified'] = validate_foot_archive(
+                                args.skeleton_reference.read_bytes(), data)
                         if getattr(args, "batch", False) and file["filename"].endswith(".json"):
                             manifest = json.loads(data)
                             batch_cases.append({**manifest['generation'], 'rig_id': manifest['rig_id'],
                                                 'source_sha256': manifest['source_sha256']})
                         exports.append({**file, "bytes": len(data)})
         assert len(exports) >= 2
+        if getattr(args, 'foot_lock', False):
+            assert report.get('foot_correction_verified'), 'Foot correction archive was not retrieved'
         if getattr(args, 'skeleton_reference', None):
             from unimate_pack.motion_io import load_motion
             from unimate_pack.contracts import decode_arrays
@@ -516,10 +528,12 @@ def main():
     parser.add_argument('--multi-rig', action='store_true', help='Generate eight paired cases on two topologies; requires --batch --branching')
     parser.add_argument('--batch-worker', action='store_true', help='Stage models/assets and run paired batch worker jobs; requires multi-rig/cloud/client options')
     parser.add_argument('--skeleton-reference', type=Path, help='Verify archive loading, both recovery modes and every preview frame')
+    parser.add_argument('--foot-lock', action='store_true', help='Correct a matching original legged archive before preview/export/save')
     parser.add_argument('--worker', action='store_true', help='Execute preprocessing/recovery through the real partition worker')
     parser.add_argument('--worker-lists', action='store_true', help='Also verify two distinct mapped motion cases; requires --worker')
     parser.add_argument('--cloud-client-root', type=Path, help='Cloud Offload node checkout for client artifact restoration')
     parser.add_argument("--cpu", action="store_true", help="Run ComfyUI on CPU")
+    parser.add_argument('--startup-timeout', type=int, default=180, help='Seconds to wait for isolated ComfyUI startup')
     args = parser.parse_args()
     print(json.dumps(verify(args), indent=2))
 

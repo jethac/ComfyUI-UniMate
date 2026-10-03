@@ -19,7 +19,7 @@ def pack_glb(doc, binary):
     )
 
 
-def synthetic_glb(branching=True):
+def synthetic_glb(branching=True, *, legged=False):
     parents = [-1, 0, 0, 1, 2, 3, 4] if branching else [-1, 0, 1, 2, 3]
     positions = (
         [
@@ -41,8 +41,14 @@ def synthetic_glb(branching=True):
         ]
     )
     j = len(parents)
+    if legged:
+        if not branching:
+            raise ValueError('Legged fixture requires branching topology')
+        positions = [[0, 1, 0], [-.3, -.1, 0], [.3, -.1, 0],
+                     [0, -.5, .15], [0, -.5, .15], [0, -.4, -.15], [0, -.4, -.15]]
+    names = ['Root', 'LeftHip', 'RightHip', 'LeftKnee', 'RightKnee', 'LeftFoot', 'RightFoot']
     # Nonidentity bind rotations and a transformed uniform scene ancestor.
-    angle = 0.25
+    angle = 0. if legged else 0.25
     q = [0, 0, float(np.sin(angle / 2)), float(np.cos(angle / 2))]
     nodes = [
         {
@@ -71,7 +77,7 @@ def synthetic_glb(branching=True):
         local.append(m)
         world.append(m if p < 0 else world[p] @ m)
         n = {
-            "name": f"Joint_{i}",
+            "name": names[i] if legged else f"Joint_{i}",
             "translation": positions[i],
             "children": [k + 1 for k, x in enumerate(parents) if x == i],
         }
@@ -185,3 +191,8 @@ def synthetic_glb(branching=True):
     ]
     doc["buffers"][0]["byteLength"] = len(binary)
     return pack_glb(doc, bytes(binary))
+
+
+def legged_glb():
+    """Original bent-leg seven-joint fixture with two ground contact joints."""
+    return synthetic_glb(True, legged=True)

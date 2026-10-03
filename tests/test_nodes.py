@@ -86,6 +86,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateExportFBX",
                 "UniMateRecoverSkeleton",
                 "UniMatePreviewSkeleton",
+                "UniMateFootLockMotion",
             ],
         )
         for cls in classes:
@@ -96,6 +97,18 @@ class NodeTests(unittest.TestCase):
             ["objaverse", "mixamo", "truebones"],
         )
         self.assertTrue(nodes.UniMateExportGLB.OUTPUT_NODE)
+
+    def test_foot_lock_node_forwards_names_and_returns_portable_motion_and_report(self):
+        corrected, report = {"rig_id": "a" * 64}, {"segments": []}
+        calls = []
+        def lock(rig, motion, joint_names, **kwargs):
+            calls.append(joint_names)
+            self.assertTrue(callable(kwargs["check_cancel"]))
+            return corrected, report
+        with self.fake_module("foot_lock", lock_motion=lock):
+            result = nodes.UniMateFootLockMotion.execute({}, {}, "LeftToe, RightToe")
+        self.assertEqual(result.result, (corrected, json.dumps(report, allow_nan=False)))
+        self.assertEqual(calls, ["LeftToe, RightToe"])
 
     def test_extract_node_forwards_selected_clip_and_preserves_identity(self):
         with self.fake_module("source_motion", extract_motion=lambda rig, clip_index, **kwargs: {"rig_id": rig["rig_id"], "clip_index": clip_index}):

@@ -228,6 +228,24 @@ paths; server and cloud evidence is tracked separately in COVERAGE.md.
 
 ## Cloud Offload implementation
 
+Foot Lock Motion independently implements Appendix E.5 contact postprocessing.
+FK drives height/displacement contact detection, five-frame median filtering and
+mean ground-plane anchors. Damped IK rotates at most three non-root ancestors,
+stopping before a branch that would affect another chain. Manual overlapping
+chains are rejected. Local quaternion corrections blend over five frames with
+endpoint weights zero and one. Parent rotations are written to all child feature
+slots; root features and origin remain unchanged. Corrected limb position/velocity
+features follow the existing facing convention. The terminal velocity retains
+its source value because no next stored pose exists.
+
+Median endpoint padding, damping 0.01, 40 iterations, normalized tolerance 1e-6,
+angular limit 0.2 radians and ramp endpoint weights are adapter choices; the paper
+does not specify those details. The portable motion metadata includes selected
+joints, segment anchors, solver residuals and the source feature digest. Numeric
+workspace estimation uses 20 times feature bytes plus 128 bytes per frame, capped
+at 512 MiB before FK allocation. This is an allocation budget, not measured peak
+process memory. Server/worker evidence is tracked separately from numeric checks.
+
 Cloud Offload is mandatory. Existing `comfy.partition.bundle.v1` dictionary/bytes transport carries all four sockets unchanged. A model crosses in full when its loader is outside a box; the reference bundle is approximately 706 MiB. This accepts transfer/host-memory costs for portability.
 
 Trusted loaded node classes declare selected files via `cloud_offload_assets(inputs)`: GLBs use `__input__`; bundles use `unimate`. Exact declarations override generic discovery at their uniquely matching input. Preflight checks local file identities and uploads only unresolved declared artifacts. Workers stage inputs under ComfyUI/input and bundles under registered model paths. Missing runner requirements fail instead of falling back to local execution.

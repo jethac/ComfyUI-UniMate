@@ -22,6 +22,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Export UniMate FBX | Bake animation to binary FBX and verify skinning after Blender reimport |
 | Recover UniMate Skeleton | Recover canonical joint positions through FK or RIC |
 | Render UniMate Skeleton | Render every recovered frame as a ComfyUI IMAGE batch |
+| Foot Lock UniMate Motion | Detect ground contacts, anchor limb chains and return corrected motion/report |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -81,6 +82,8 @@ Expand UniMate Motion accepts a JSON array of prompts in segment order. Each seg
 Generate UniMate Batch accepts prepared rigs, 1–32 JSON prompts and 1–64 repetitions, capped at 256 cases. Cases run in rig, prompt, then repetition order; seeds increment modulo uint64. Sampling runs one case at a time. Model and sampling settings must each contain one value. Combine UniMate Rigs collects two rig lists and can be chained. Connect the batch's matching rigs output and motion output to export; each motion keeps its own skeleton. See [multi-rig API workflow](examples/unimate_multi_rig_api.json).
 
 Eight cases across five- and seven-joint synthetic rigs passed Windows and headless stadia server execution. The partition handler staged the model/assets, generated the cases and restored both paired lists; all 16 original/restored exports matched across 960 frames on each platform. Provider dispatch and deployed containers remain unverified.
+
+Foot Lock UniMate Motion applies the contact filter and damped limb IK described in the paper's Appendix E.5. Empty `joint_names` selects distal canonical foot names; explicit names are comma-separated. Overlapping correction chains fail. Root channels and unrelated chains are preserved. Corrections blend over five boundary frames; unreachable anchors are reported. The numeric workspace estimate is capped at 512 MiB. Synthetic numeric and 60-frame Blender playback checks passed; server, stadia and worker execution remain unverified.
 
 One skin, one connected skeleton with 5–70 joints, triangle primitives, dense accessors, up to four skin influences, embedded PNG/JPEG textures, and positive uniform scales. Unsupported content fails validation. No FBX, sparse/compressed geometry, morph targets, unskinned scene meshes, glTF extensions, shear, negative scale, or nonuniform scale. Asset limit: 256 MiB.
 

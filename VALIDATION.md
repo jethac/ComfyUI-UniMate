@@ -281,3 +281,25 @@ changing vertices. Runtime: Linux, Python 3.11.15, PyTorch 2.14.1+cpu, Blender
 record above. Evidence: `.runtime/stadia-multi-rig-worker/report.json` and
 `independent-playback.json`. Provider dispatch, gateway submission/extraction and
 deployed containers remain outside this harness.
+
+### Foot-lock numeric and Blender checks, 2026-10-03
+
+Foot Lock Motion implements Appendix E.5 contact selection/filtering, anchoring,
+bounded damped IK and boundary quaternion blending independently. Focused checks:
+52 tests plus six subtests passed; the Blender-dependent test was skipped in that
+run and passed separately with Blender 5.1.1 (60-frame legged clip, 92.18 seconds).
+Independent glTF skinning and Blender evaluated vertices agree at every frame
+within 2e-5 using bidirectional nearest-vertex checks. Original materials, textures,
+skins and source binary are preserved in numeric export checks.
+
+Portable correction tests cover moving root/facing, nonzero origin, exact root
+channels, FK/RIC agreement, velocity re-encoding, cancellation during correction,
+invalid/overlapping contact overrides and positive rest-height requirements. A
+512 MiB estimated workspace budget rejects oversized work before FK allocation.
+Review found and closed overlapping manual-chain overwrite behavior.
+
+Windows server verification timed out during core ComfyUI startup before the node
+loaded. A startup trace locates the delay in Transformers 5.8.0 package metadata
+scanning (`importlib.metadata.packages_distributions`). Server, headless stadia and
+actual partition-handler foot-lock execution remain unverified. The separately
+verified multi-rig worker run does not prove foot-lock worker support.

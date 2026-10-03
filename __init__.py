@@ -22,6 +22,7 @@ async def comfy_entrypoint():
         UniMateExportFBX,
         UniMateRecoverSkeleton,
         UniMatePreviewSkeleton,
+        UniMateFootLockMotion,
     )
 
     class UniMateExtension(ComfyExtension):
@@ -45,6 +46,7 @@ async def comfy_entrypoint():
                 UniMateExportFBX,
                 UniMateRecoverSkeleton,
                 UniMatePreviewSkeleton,
+                UniMateFootLockMotion,
             ]
 
     return UniMateExtension()
