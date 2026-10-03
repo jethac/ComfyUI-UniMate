@@ -16,7 +16,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Expand UniMate Motion | Generate an ordered prompt chain with constrained segment overlaps |
 | Extract UniMate Motion | Resample a source GLB clip into the prepared rig's motion features |
 
-The target is complete UniMate capability coverage. The pack implements one model path, with generation, in-betweening, editing and expansion nodes. These paths passed offline real-model inference and Blender export on synthetic rigs; expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
+The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction; their constrained inference and Blender export passed on synthetic rigs. Full free-generation checks for the additional families, expanded ComfyUI server and Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
 ## Install
 
@@ -39,7 +39,7 @@ The pack does not install Blender or download models during execution.
 
 ## Model bundle
 
-The supported model is official `unimate_uniml3d_f60_v2`, graph attention/AdaLN, with FLAN-T5-base. Download the pinned files explicitly:
+Conversion accepts the official Mixamo, uniml3d preview, v2 and v2 full-cross-attention configs, all with FLAN-T5-base. The example below uses `unimate_uniml3d_f60_v2`, graph attention/AdaLN. Download the pinned files explicitly:
 
 ```sh
 hf download Linzhan/UniMate --revision 387a344c3031299bc25fcbef35d36bd186d5afe7 --include 'unimate_uniml3d_f60_v2/config.json' 'unimate_uniml3d_f60_v2/dataset_stats.npy' 'unimate_uniml3d_f60_v2/checkpoints/checkpoint_step_100000.pt' --local-dir models/source/unimate
@@ -48,6 +48,8 @@ python tools/build_bundle.py --checkpoint models/source/unimate/unimate_uniml3d_
 ```
 
 Copy the resulting bundle to `ComfyUI/models/unimate/`. Conversion selects EMA weights, validates the known legacy statistics, and writes safetensors plus numeric statistics. Runtime loading does not use pickle. The bundle includes the local tokenizer and encoder; inference works offline.
+
+For the other families, select their matching config, statistics and checkpoint from model revision `971da7cfc1c8d99c2af6c00be9d2ed5700f99073`. Mixamo has 22 padded joint slots and depth capacity 7; preview has 61 slots; v2 variants have 71. Actual skeletons must have fewer joints than the padded capacity. Mixamo requires `mixamo` normalization. Conversion rejects unrecognized legacy statistics and incompatible checkpoint inventories.
 
 ## Use
 
