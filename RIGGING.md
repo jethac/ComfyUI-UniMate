@@ -1,6 +1,6 @@
 # Automatic rigging integration
 
-Status: backend investigation. No rigging implementation or end-to-end rigging validation yet.
+Status: superseded scope investigation. The user clarified that the target is full UniMate technology coverage; see [COVERAGE.md](COVERAGE.md). Automatic rigging belongs to adjacent technology. The requirements below record the earlier proposal, not the current implementation mandate. No rigging implementation or end-to-end rigging validation exists.
 
 ## Required result
 

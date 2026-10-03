@@ -2,7 +2,7 @@
 
 ## Project scope
 
-Build a focused ComfyUI custom node pack for UniMate skeletal motion generation. DESIGN.md defines behavior and release gates. Implement only the scope requested in the current task; distinguish verified behavior from pending validation.
+Build a ComfyUI node pack covering UniMate's technology and released capabilities. COVERAGE.md records the source audit and omissions; DESIGN.md defines the existing implementation and release gates. Do not silently narrow coverage to basic text generation or substitute an unrelated rigging backend project. Distinguish verified behavior, released-but-unintegrated code, and paper-described capabilities without located implementation.
 
 Implementation is now authorized. All five nodes must work inside ComfyUI Cloud Offload partitions, including input/model staging and animated output retrieval. Keep portable values free of local paths and live model objects.
 
