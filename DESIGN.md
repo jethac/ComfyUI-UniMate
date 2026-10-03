@@ -316,12 +316,25 @@ Sample expose the prepared-feature path as V3 nodes. The sample node uses
 independent augmentation/crop seeds and supports all released augmentation
 choices plus explicit neutral FK insertion. It changes rest grounding only;
 raw motion feature extraction remains separate. Additional encoders, portable
-batches and training consumption are still required. Windows and headless stadia
+batch server workflows and training consumption are still required. Windows and headless stadia
 server/partition-handler workflows now cover all seven augmentation choices in
 both conditioning modes, neutral FK insertion, cached production and portable
 sample reload. Model staging and six returned archives passed on each platform.
 These checks do not establish training, coordinator discovery, worker-container
 deployment or injected worker cancellation.
+
+Collate Training Samples collects an execution list into `unimate.training_batch.v1`.
+The contract stores source float32/int64/bool tensors as numeric arrays, packed
+variable-length parents/edges, original parent dtypes, labels and ordered sample
+identity/provenance references. Validation checks shapes and dtypes, reconstructs
+numeric samples and compares recollation against all stored arrays. This enforces
+source masks and padding and returns owned CPU tensors for training consumption.
+References bind declared sample identities; they do not independently prove the
+contents of unavailable source samples. Archives are capped at 256 MiB; a
+configurable workspace estimate bounds aggregate decoding before allocation.
+Validation and source collation are cancellation boundaries; source bulk tensor
+operations are not internally cancellable. Numeric source comparisons and codec
+round trips establish the contract, not server, headless or training execution.
 
 ## Cloud Offload implementation
 

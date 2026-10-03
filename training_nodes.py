@@ -3,11 +3,30 @@ import json
 
 from comfy_api.latest import io
 
-from .dataset_nodes import CATEGORY,Dataset,Statistics,_cancel
+from .dataset_nodes import CATEGORY,Dataset,Statistics,_cancel,_one
 
 Model=io.Custom('UNIMATE_MODEL')
 TextCache=io.Custom('UNIMATE_TEXT_CACHE')
 TrainingSample=io.Custom('UNIMATE_TRAINING_SAMPLE')
+TrainingBatch=io.Custom('UNIMATE_TRAINING_BATCH')
+
+
+class UniMateCollateTrainingSamples(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(node_id=cls.__name__,display_name='Collate UniMate Training Samples',category=CATEGORY,
+            inputs=[TrainingSample.Input('samples'),io.Int.Input('workspace_mib',default=512,min=1,max=65536)],
+            outputs=[TrainingBatch.Output(),io.String.Output(display_name='batch provenance')],is_input_list=True)
+
+    @classmethod
+    def execute(cls,samples,workspace_mib):
+        from .unimate_pack.training_batch_contracts import collate_training_samples
+        budget=_one(workspace_mib)
+        if type(budget) is not int or not 1<=budget<=65536:
+            raise ValueError('Invalid workspace budget')
+        value=collate_training_samples(samples,max_workspace_bytes=budget*1024*1024,cancel=_cancel)
+        report={key:item for key,item in value.items() if key!='arrays'}
+        return io.NodeOutput(value,json.dumps(report,ensure_ascii=False,allow_nan=False))
 
 
 class UniMateBuildTextCache(io.ComfyNode):

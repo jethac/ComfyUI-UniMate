@@ -826,3 +826,31 @@ with two existing Torch JIT warnings. This evidence covers prepared-feature
 samples, not portable batches, training consumption, other encoders, coordinator
 asset discovery, deployed containers, provider dispatch or injected worker
 cancellation. Independent review found no actionable harness or scope findings.
+
+## Portable training batches (2026-10-03)
+
+Collate UniMate Training Samples registers as the thirtieth V3 node and collects
+an execution list. `unimate.training_batch.v1` holds numeric motion/conditioning,
+packed parents/edges, original parent dtypes, labels and ordered sample references.
+Restoration returns owned CPU tensors in the released collator's layout. Source
+comparison uses the pinned unchanged collator at
+`2c5b384715aa63d8639b1ed7eb74bfe614570c7a`; the reference file digest remains
+`7cb7672ba97572282ec7a3153abd21aeb4917ecf7f77bf7d3079e13a9f888eb2`.
+Variable joint counts, caption lengths, spectral widths and a zero valid-motion
+length match exactly, including tensor dtypes, masks and standard-deviation padding.
+Parent dtype and repeated sample order survive restoration; returned tensors own
+their storage. Client/runner codecs carry the new value without sibling changes.
+
+Tests reject forged digests, source pins, parent topology, caption-mask dtype,
+joint masks, padding values and labels. Aggregate sample/archive limits precede
+decoding; cancellation can abort before it. Sixteen contract tests passed;
+contract/collator/node focused checks passed. Independent review found no
+actionable findings. No batch server/headless workflow or training consumption
+is established by these tests.
+
+Full `pytest -q --tb=short` with training and Motion references enabled:
+903 passed, 50 skipped, six subtests, 43.61s; two existing Torch JIT warnings.
+Skipped checks remain outside this run's evidence. The first full run exposed
+an outdated expected inventory and leaked temporary-path inventory cache in the
+node test fixture (901 passed, two failed, 50 skipped). Updated inventory and
+fixture-owned cache restoration corrected both before the successful run.

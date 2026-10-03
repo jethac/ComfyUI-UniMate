@@ -57,6 +57,11 @@ class NodeTests(unittest.TestCase):
         context.start()
         self.addCleanup(context.stop)
 
+        # Inventory cache entries retain temporary directory mtimes too.
+        context = patch.dict(nodes.folder_paths.filename_list_cache, {}, clear=True)
+        context.start()
+        self.addCleanup(context.stop)
+
     def fake_module(self, name, **functions):
         module = types.ModuleType(spec.name + ".unimate_pack." + name)
         module.__dict__.update(functions)
@@ -96,6 +101,7 @@ class NodeTests(unittest.TestCase):
                 "UniMateSplitDataset",
                 "UniMatePlanSampling",
                 "UniMateBuildTextCache",
+                "UniMateCollateTrainingSamples",
                 "UniMatePrepareTrainingSample",
             ],
         )

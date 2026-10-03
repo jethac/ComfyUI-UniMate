@@ -33,6 +33,7 @@ UniMate skeletal animation nodes for ComfyUI. Input: a rigged GLB and a motion p
 | Plan UniMate Sampling | Build one/two-level weights and replacement indices for an epoch |
 | Build UniMate Text Cache | Encode dataset joint names and captions with the installed bundle's encoder |
 | Prepare UniMate Training Sample | Bind a training clip, statistics and text cache; augment, crop and normalize |
+| Collate UniMate Training Samples | Collect a sample list into a portable batch with source masks and padding |
 
 The target is complete UniMate capability coverage. Generation, in-betweening, editing and expansion are implemented. All four released model families passed checkpoint reconstruction, free and constrained inference, and Blender export on synthetic rigs. Expanded inference passed headlessly through ComfyUI on stadia-testbed; expanded Cloud Offload checks remain pending. Other gaps are recorded in [COVERAGE.md](COVERAGE.md). Input currently requires a rigged GLB. Mesh data, skin weights, inverse binds, materials, and textures remain in the original asset. Export replaces source clips with the selected motion.
 
@@ -128,7 +129,11 @@ model. Prepare Training Sample applies augmentation, cropping and normalization
 to a training clip with matching statistics and text-cache provenance. All seven
 augmentation choices and both conditioning modes passed Windows and headless
 stadia partition-handler capture/restore, model staging and file retrieval.
-Portable batches, training execution and raw-data curation remain open.
+Collate Training Samples collects execution-list values into a portable batch.
+Numeric restoration matches the pinned source collator, including variable joint
+counts, caption lengths and spectral widths. Client/runner codec round trips
+passed. Batch server/headless workflows, training execution and raw-data curation
+remain open.
 
 ## Cloud Offload
 
